@@ -49,8 +49,6 @@ next-env.d.ts
 *.log
 /print/
 
-# real stock file: supplier name and wholesale costs stay on this computer (a sample is published instead)
-/data/balaji-stock.ts
 
 # local Claude Code settings
 /.claude/settings.local.json

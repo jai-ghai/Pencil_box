@@ -22,7 +22,7 @@ Built with **Ant Design 6** (the official React package), themed with the shop's
    - `SEED_OWNER_PASSWORD` / `SEED_CASHIER_PASSWORD` for the first logins.
    - No Atlas yet? `npm run dev:db` starts a local database and prints the URI to use.
 3. `npm run seed` creates the `owner` and `cashier` logins (only).
-4. `npm run import:stock -- --replace` loads the opening stock from `data/balaji-stock.ts` if it exists (it is git-ignored because it holds supplier and cost prices), otherwise from the sample `data/stock.example.ts`. It wipes the catalogue and sales first and keeps logins. Use Admin > Products afterwards for changes.
+4. `npm run import:stock -- --replace` loads the opening stock from `data/balaji-stock.ts` if it exists, otherwise from the sample `data/stock.example.ts`. The real file holds the supplier and wholesale costs, and it is committed on purpose (the owner chose this); make the repository private on GitHub if those should not be public. It wipes the catalogue and sales first and keeps logins. Use Admin > Products afterwards for changes.
 5. `npm run dev`, then open http://localhost:3000 (customers) or /login (staff).
 
 ## QR codes and posters
