@@ -14,9 +14,15 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#12296b" };
 
+/** Runs before the first paint so the page never flashes the wrong theme. Light is the default. */
+const THEME_SCRIPT = `try{document.documentElement.dataset.theme=localStorage.getItem('pb_theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" data-theme="light" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {/* Suspense: Ant Design's provider tree reads Math.random(), which Next.js 16 only allows at request time */}
         <Suspense fallback={null}>

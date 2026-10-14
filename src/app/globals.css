@@ -7,12 +7,13 @@
   --pb-navy-deep: #0b1d52;
   --pb-sun: #ffd500;
   --pb-bg: #f2f5fb;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --pb-bg: #0a1124;
-  }
+/* The light/dark choice sets data-theme on <html> before the page paints (see the script in layout.tsx) */
+html[data-theme="dark"] {
+  --pb-bg: #0a1124;
+  color-scheme: dark;
 }
 
 html {
@@ -24,7 +25,7 @@ body {
   font-family: var(--font-geist-sans), system-ui, "Nirmala UI", sans-serif;
 }
 
-/* Hide the scrollbar on the horizontal chip rows (they still scroll by touch/trackpad) */
+/* Hide the scrollbar on the horizontal rows (they still scroll by touch/trackpad) */
 .pb-scroll-x {
   overflow-x: auto;
   scrollbar-width: none;
@@ -43,8 +44,15 @@ kbd {
   padding: 0 0.35rem;
 }
 
-/* Visible keyboard focus everywhere */
-:focus-visible {
+/*
+ * Visible keyboard focus. Not for text fields: Ant Design already draws the focus ring on the field's own border,
+ * and a second outline on the inner <input> showed up as a double border inside every search box.
+ */
+:focus-visible:not(input):not(textarea):not(select) {
   outline: 2px solid var(--pb-sun);
   outline-offset: 2px;
+}
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
 }

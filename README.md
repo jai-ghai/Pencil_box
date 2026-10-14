@@ -13,6 +13,12 @@ Shop system for Pencil Box (stationery, gifts, art, school supplies, printing an
 
 Built with **Ant Design 6** (the official React package), themed with the shop's navy and yellow, light and dark mode following the visitor's device. The design rules are in `.claude/skills/design-taste-frontend/SKILL.md` (Claude Code loads it automatically in this project). Theme tokens are in `src/lib/theme.ts`. Tailwind is used for layout only.
 
+## Look and feel
+
+- **Light and dark mode**: light by default; the moon/sun button in every header switches and the choice is remembered on that device.
+- **Brand artwork** comes from the shop poster. `node scripts/make-brand-assets.mjs path/to/poster.jpg` cuts the wordmark, mascot, category icons and favicon out of it (into `public/brand` and `src/app`). The poster is small (853 px wide): good for screens, soft for large print. Use the designer's original logo file for print.
+- **Product pictures**: `npm run images` gives products a general picture of the item (free CC0 / public-domain pictures chosen in `data/product-images.json`, uploaded to your Cloudinary). They are marked "generic" and the website says "picture is for illustration". Upload your own photo in Admin > Products and it replaces the stand-in; `npm run images` never overwrites your own photos.
+
 ## Run it
 
 1. `npm install`
@@ -50,6 +56,14 @@ Creates plain QR files (shop front, counter, bag, bill) and A4 posters in `print
 - **Prices:** each item has one price. (The data model can hold an optional higher price, `maxPrice`, but it is not used now.)
 - **Public data** (`/api/store/*`) is an allow-list: no cost prices, supplier, private notes or exact stock counts, and it is rate limited.
 - **Photos** go to Cloudinary when `CLOUDINARY_URL` is set, otherwise to `public/uploads` (local only).
+
+## Going live (pencilbox.store)
+
+1. Verify the e-mail Hostinger sent for the domain (it is suspended if this is not done in time).
+2. Deploy the app (for example on Vercel): set the same variables as `.env` (`MONGODB_URI`, `AUTH_SECRET`, `CLOUDINARY_URL`, `WHATSAPP_NUMBER`, and the two seed passwords only if you will run the seed there).
+3. In MongoDB Atlas > Network Access, allow the host (Vercel uses changing addresses, so `0.0.0.0/0` with a strong database password).
+4. Add `pencilbox.store` to the host and set the DNS records it shows in Hostinger.
+5. Open `https://pencilbox.store` and `https://pencilbox.store/q?src=front` on a phone, place a test order to WhatsApp, and only then print the QR posters from `print/`.
 
 ## Before going live
 

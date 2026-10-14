@@ -58,6 +58,7 @@ export const productInput = z.object({
   description_en: z.string().max(2000).optional(),
   description_hi: z.string().max(2000).optional(),
   internalNote: z.string().max(500).optional(),
+  imageGeneric: z.boolean().optional(),
   supplierId: z.string().length(24).optional().or(z.literal("")),
   images: z.array(z.string().max(300)).max(8).default([]),
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
@@ -81,8 +82,8 @@ export async function syncSearchText(productId: string): Promise<void> {
 }
 
 export async function saveProduct(input: ProductInput, productId?: string) {
-  const { variants, brandId, supplierId, ...fields } = input;
-  const doc = { ...fields, brandId: brandId || undefined, supplierId: supplierId || undefined };
+  const { variants, brandId, supplierId, imageGeneric, ...fields } = input;
+  const doc = { ...fields, ...(imageGeneric !== undefined ? { imageGeneric } : {}), brandId: brandId || undefined, supplierId: supplierId || undefined };
   const product = productId ? await Product.findByIdAndUpdate(productId, doc, { returnDocument: "after" }) : await Product.create(doc);
   if (!product) throw new Error("Product not found");
 

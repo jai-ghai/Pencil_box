@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Image, Input, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
+import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
 import { MinusOutlined, PictureOutlined, PlusOutlined, SearchOutlined, ShoppingCartOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
 import { AccentScope } from "./providers";
 import { inr, itemTitle } from "@/lib/client";
@@ -38,6 +40,16 @@ type T = (k: TextKey) => string;
 const CART_KEY = "pb_cart_v1";
 const LANG_KEY = "pb_lang";
 const WHATSAPP_GREEN = "#15803d"; // white text on this passes WCAG AA
+
+/** The six categories from the shop poster, with their icons and colours. Order matches the poster. */
+const TILES = [
+  { match: "Notebooks & Registers", icon: "notebooks", accent: "#1d89e4", hi: "नोटबुक और रजिस्टर" },
+  { match: "Pens & Pencils", icon: "pens", accent: "#ea1f7b", hi: "पेन और पेंसिल" },
+  { match: "Art & Craft", icon: "art", accent: "#ff791a", hi: "आर्ट और क्राफ्ट" },
+  { match: "School Supplies", icon: "school", accent: "#1ba64b", hi: "स्कूल सामान" },
+  { match: "Gifts & More", icon: "gifts", accent: "#9a28b4", hi: "उपहार और बहुत कुछ" },
+  { match: "Printing & Photocopy", icon: "printing", accent: "#1465c0", hi: "प्रिंटिंग और फोटोकॉपी" },
+] as const;
 
 /* localStorage can be blocked (private mode); the site must work without it */
 const store = {
@@ -233,15 +245,16 @@ function StorefrontInner() {
       {/* header: wordmark, language, cart; search sits in the same navy band */}
       <header style={{ background: BRAND.navy }} className="sticky top-0 z-40">
         <div className="mx-auto w-full max-w-6xl px-4 pb-3 pt-3">
-          <Flex align="center" gap={12}>
+          <Flex align="center" gap={screens.sm ? 12 : 6}>
             <div className="min-w-0 flex-1">
-              <Wordmark size={screens.sm ? 30 : 24} />
-              <div className="mt-1 truncate text-xs italic" style={{ color: "rgba(255,255,255,0.85)" }}>{t("tagline")}</div>
+              <Wordmark size={screens.sm ? 28 : 19} />
+              {screens.sm && <div className="mt-1 truncate text-xs italic" style={{ color: "rgba(255,255,255,0.85)" }}>{t("tagline")}</div>}
             </div>
-            <Segmented<Lang> size="middle" value={lang} onChange={chooseLang} aria-label={t("language")} options={[{ label: "EN", value: "en" }, { label: "हिं", value: "hi" }]} />
-            <Badge count={cartCount} color={BRAND.navyDeep} offset={[-4, 4]}>
+            <Segmented<Lang> size={screens.sm ? "middle" : "small"} value={lang} onChange={chooseLang} aria-label={t("language")} options={[{ label: "EN", value: "en" }, { label: "हिं", value: "hi" }]} />
+            <ThemeToggle toLight={t("lightMode")} toDark={t("darkMode")} />
+            <Badge count={cartCount} color={BRAND.navyDeep} offset={[-2, 4]}>
               <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => setSheet(true)} aria-label={`${t("cart")}: ${cartCount}`}>
-                {t("cart")}
+                {screens.sm ? t("cart") : null}
               </Button>
             </Badge>
           </Flex>
@@ -252,16 +265,43 @@ function StorefrontInner() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-28">
         {catalog && (
           <Flex vertical gap={10} className="mb-4">
-            <div className="pb-scroll-x -mx-4 flex gap-2 px-4" role="group" aria-label="Categories">
-              <Button type={!topCat ? "primary" : "default"} onClick={() => (setTopCat(null), setSubCat(null))}>{t("all")}</Button>
-              {topCats.map((c) => (
-                <Button key={c.id} type={topCat === c.id ? "primary" : "default"} onClick={() => (setTopCat(c.id), setSubCat(null))} className="shrink-0">
-                  {catName(c)}
-                </Button>
-              ))}
+            <div className="pb-scroll-x -mx-4 flex gap-3 px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-6 lg:overflow-visible lg:px-0" role="group" aria-label="Categories">
+              {TILES.map((tile) => {
+                const cat = topCats.find((c) => c.name_en === tile.match);
+                const active = !!cat && topCat === cat.id;
+                return (
+                  <button
+                    key={tile.match}
+                    type="button"
+                    disabled={!cat}
+                    aria-pressed={active}
+                    onClick={() => cat && (setTopCat(active ? null : cat.id), setSubCat(null))}
+                    className="flex shrink-0 items-center gap-3 text-left lg:min-w-0"
+                    style={{
+                      minWidth: 176,
+                      padding: "10px 12px",
+                      borderRadius: token.borderRadiusLG,
+                      background: token.colorBgContainer,
+                      border: `1px solid ${token.colorBorderSecondary}`,
+                      borderBottom: `4px solid ${tile.accent}`,
+                      boxShadow: active ? `0 0 0 2px ${token.colorText}` : undefined,
+                      opacity: cat ? 1 : 0.6,
+                      cursor: cat ? "pointer" : "not-allowed",
+                      color: token.colorText,
+                    }}
+                  >
+                    <NextImage src={`/brand/cat-${tile.icon}.png`} alt="" width={40} height={40} />
+                    <span style={{ fontWeight: 700, lineHeight: 1.2 }}>
+                      {cat ? catName(cat) : lang === "hi" ? tile.hi : tile.match}
+                      {!cat && <span style={{ display: "block", fontSize: 12, fontWeight: 500, color: token.colorTextSecondary }}>{t("comingSoon")}</span>}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             {subCats.length > 0 && (
-              <div className="pb-scroll-x -mx-4 flex gap-2 px-4" role="group" aria-label="Sub categories">
+              <div className="pb-scroll-x -mx-4 flex items-center gap-2 px-4" role="group" aria-label="Sub categories">
+                <Button size="small" type="text" onClick={() => (setTopCat(null), setSubCat(null))}>{t("showAll")}</Button>
                 <Button size="small" type={!subCat ? "primary" : "default"} onClick={() => setSubCat(null)}>{t("all")}</Button>
                 {subCats.map((c) => (
                   <Button key={c.id} size="small" type={subCat === c.id ? "primary" : "default"} onClick={() => setSubCat(c.id)} className="shrink-0">
@@ -295,7 +335,7 @@ function StorefrontInner() {
           </Empty>
         )}
 
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((p) => (
             <li key={p.id}>
               <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} />
@@ -305,6 +345,7 @@ function StorefrontInner() {
       </main>
 
       <footer className="px-4 pb-24 pt-2 text-center">
+        <NextImage src="/brand/mascot.png" alt="" width={72} height={68} className="mx-auto mb-2" style={{ height: "auto" }} />
         <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 4 }}>
           {t("pickupNote")} {t("finalPrice")}
         </Typography.Paragraph>
@@ -364,45 +405,55 @@ function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang
   const name = lang === "hi" && p.name_hi ? p.name_hi : p.name_en;
   const showBrand = p.brand && !p.name_en.toLowerCase().startsWith(p.brand.toLowerCase());
   return (
-    <Card hoverable={false} styles={{ body: { padding: 0 } }} className="h-full overflow-hidden">
-      <div className="flex h-full sm:flex-col">
-        {/* picture block: empty until photos are added */}
-        <div className="flex w-24 shrink-0 items-center justify-center sm:aspect-[4/3] sm:w-auto" style={{ background: "rgba(255,213,0,0.14)" }}>
-          {p.image ? <Image src={thumb(p.image)} alt={p.name_en} loading="lazy" preview={false} style={{ objectFit: "contain", width: "100%", height: "100%" }} /> : <PictureOutlined style={{ fontSize: 30, color: token.colorTextQuaternary }} aria-hidden />}
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-2 p-3">
-          <div>
+    <Card hoverable={false} styles={{ body: { padding: 0 } }} className="h-full overflow-hidden [&>.ant-card-body]:h-full">
+      <div className="flex h-full flex-col">
+        {/* phones: small picture beside the name; larger screens: picture on top. Variants always get the full width. */}
+        <div className="flex gap-3 p-3 sm:block sm:p-0">
+          {/* picture frame: a square thumbnail on phones, a 4:3 crop on larger screens; empty until a picture exists */}
+          <div
+            className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[10px] sm:h-auto sm:w-full sm:aspect-[4/3] sm:rounded-none"
+            style={{ background: "rgba(255,213,0,0.14)" }}
+          >
+            {p.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={thumb(p.image)} alt={p.name_en} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 30, color: token.colorTextQuaternary }} aria-hidden /></div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1 sm:p-3 sm:pb-1">
             {showBrand && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{p.brand}</Typography.Text>}
             <Typography.Title level={5} style={{ margin: 0, lineHeight: 1.3 }}>{name}</Typography.Title>
+            {p.imageGeneric && <Typography.Text type="secondary" style={{ fontSize: 11 }}>{t("illustration")}</Typography.Text>}
           </div>
-          <ul className="mt-auto">
-            {p.variants.map((v, i) => {
-              const qty = cart[v.id] ?? 0;
-              return (
-                <li key={v.id} className="py-2" style={i > 0 ? { borderTop: `1px solid ${token.colorBorderSecondary}` } : undefined}>
-                  <Flex align="center" gap={8}>
-                    <div className="min-w-0 flex-1">
-                      <div style={{ fontWeight: 600, lineHeight: 1.25 }}>{v.label || " "}</div>
-                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t("code")} <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontWeight: 700 }}>{v.code}</span></Typography.Text>
-                    </div>
-                    <div className="text-right">
-                      <div style={{ fontWeight: 800, fontSize: 17 }}>{priceText(v)}</div>
-                      {v.low && <Tag color="warning" variant="filled" style={{ marginInlineEnd: 0 }}>{t("fewLeft")}</Tag>}
-                    </div>
-                    {qty === 0 ? (
-                      <Button type="primary" onClick={() => setQty(v.id, 1)} aria-label={`${t("add")}: ${name} ${v.label}`}>{t("add")}</Button>
-                    ) : (
-                      <Stepper qty={qty} max={v.maxQty} onChange={(n) => setQty(v.id, n)} label={`${name} ${v.label}`} t={t} />
-                    )}
-                  </Flex>
-                  {v.offers.map((o) => (
-                    <Tag key={o.label_en} color="success" variant="solid" style={{ marginTop: 6 }}>{lang === "hi" && o.label_hi ? o.label_hi : o.label_en}</Tag>
-                  ))}
-                </li>
-              );
-            })}
-          </ul>
         </div>
+        <ul className="px-3 pb-2">
+          {p.variants.map((v, i) => {
+            const qty = cart[v.id] ?? 0;
+            return (
+              <li key={v.id} className="py-2" style={{ borderTop: `1px solid ${token.colorBorderSecondary}` }}>
+                <Flex align="center" gap={8}>
+                  <div className="min-w-0 flex-1">
+                    <div style={{ fontWeight: 600, lineHeight: 1.25 }}>{v.label || "\u00a0"}</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t("code")} <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontWeight: 700 }}>{v.code}</span></Typography.Text>
+                  </div>
+                  <div className="text-right">
+                    <div style={{ fontWeight: 800, fontSize: 17 }}>{priceText(v)}</div>
+                    {v.low && <Tag color="warning" variant="filled" style={{ marginInlineEnd: 0 }}>{t("fewLeft")}</Tag>}
+                  </div>
+                  {qty === 0 ? (
+                    <Button type="primary" onClick={() => setQty(v.id, 1)} aria-label={`${t("add")}: ${name} ${v.label}`}>{t("add")}</Button>
+                  ) : (
+                    <Stepper qty={qty} max={v.maxQty} onChange={(n) => setQty(v.id, n)} label={`${name} ${v.label}`} t={t} />
+                  )}
+                </Flex>
+                {v.offers.map((o) => (
+                  <Tag key={o.label_en} color="success" variant="solid" style={{ marginTop: 6 }}>{lang === "hi" && o.label_hi ? o.label_hi : o.label_en}</Tag>
+                ))}
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </Card>
   );

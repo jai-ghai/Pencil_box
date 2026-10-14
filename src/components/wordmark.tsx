@@ -1,10 +1,8 @@
-import { BRAND } from "@/lib/theme";
+import Image from "next/image";
 
-/** Text wordmark from the shop poster: PENCIL in white, BOX in yellow. Always sits on the navy header. */
+/** The shop wordmark from the poster (white PENCIL with the pencil as the I, yellow BOX). Made for the navy header. */
 export function Wordmark({ size = 28 }: { size?: number }) {
-  return (
-    <span className="font-black leading-none tracking-wide whitespace-nowrap" style={{ fontSize: size, color: "#fff" }} aria-label="Pencil Box">
-      PENCIL <span style={{ color: BRAND.sun }}>BOX</span>
-    </span>
-  );
+  const height = Math.round(size * 1.25);
+  const width = Math.round((height * 1470) / 256);
+  return <Image src="/brand/wordmark.png" alt="Pencil Box" width={width} height={height} priority style={{ width, height }} />;
 }

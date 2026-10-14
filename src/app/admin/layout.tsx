@@ -7,6 +7,7 @@ import { Button, Drawer, Flex, Grid, Menu } from "antd";
 import type { MenuProps } from "antd";
 import { AppstoreOutlined, DashboardOutlined, FileTextOutlined, InboxOutlined, LogoutOutlined, MenuOutlined, SettingOutlined, ShoppingOutlined, TagsOutlined, UploadOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { BRAND } from "@/lib/theme";
 
 const NAV = [
@@ -40,7 +41,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {!desktop && <Button type="text" aria-label="Open menu" icon={<MenuOutlined style={{ color: "#fff", fontSize: 18 }} />} onClick={() => setOpen(true)} />}
           <Link href="/admin" aria-label="Pencil Box admin home"><Wordmark size={22} /></Link>
           {desktop && <Menu theme="dark" mode="horizontal" items={items} selectedKeys={selected} className="min-w-0 flex-1" style={{ background: "transparent", borderBottom: 0 }} />}
-          <Flex gap={8} className="ml-auto">
+          <Flex gap={8} align="center" className="ml-auto">
+            <ThemeToggle />
             <Link href="/pos"><Button>Open billing</Button></Link>
             {desktop && <Button icon={<LogoutOutlined />} onClick={signOut}>Sign out</Button>}
           </Flex>

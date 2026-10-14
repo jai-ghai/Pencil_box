@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { Brand, Category, OfferModel, Variant } from "./models";
+import { Brand, Category, OfferModel, Product, Variant } from "./models";
 import { CatalogError, codePrefix, saveProduct } from "./catalog";
 import { buildStoreCatalog } from "./store";
 import { completeSale, SaleError } from "./sales";
@@ -102,5 +102,27 @@ describe("billing with a two-price item", () => {
   it("a single-price item rejects any custom price", async () => {
     const id = String((await Variant.findOne({ label: "Small" }))!._id);
     await expect(completeSale({ items: [{ variantId: id, qty: 1, unitPrice: 500 }], payments: { cash: 500, upi: 0 } }, "c")).rejects.toThrow(SaleError);
+  });
+});
+
+describe("stand-in pictures", () => {
+  it("marks a general picture so the website can say 'for illustration', and never for a missing picture", async () => {
+    await product("Pic Item", penCat, [v("X", 5, { openingStock: 4 })], { images: ["https://example.test/a.jpg"], imageGeneric: true });
+    await product("Empty Item", penCat, [v("Y", 5, { openingStock: 4 })], { imageGeneric: true });
+    const cat = await buildStoreCatalog();
+    expect(cat.products.find((x) => x.name_en === "Pic Item")!.imageGeneric).toBe(true);
+    expect(cat.products.find((x) => x.name_en === "Empty Item")!.imageGeneric).toBe(false);
+    expect(JSON.stringify(cat)).not.toContain("imageSource"); // where the picture came from stays private
+  });
+
+  it("keeps the flag when other fields are edited, and clears it when the owner sets it to false", async () => {
+    const base = await product("Keep Flag", penCat, [v("Z", 5, { openingStock: 2 })], { images: ["https://example.test/b.jpg"], imageGeneric: true });
+    const variantId = String((await Variant.findOne({ productId: base._id }))!._id);
+    const edit = (extra: Record<string, unknown>) =>
+      saveProduct({ name_en: "Keep Flag", categoryId: penCat, images: ["https://example.test/b.jpg"], attributes: {}, tags: [], active: true, variants: [{ ...v("Z", 6), _id: variantId }], ...extra } as Parameters<typeof saveProduct>[0], String(base._id));
+    await edit({});
+    expect((await Product.findById(base._id))!.imageGeneric).toBe(true);
+    await edit({ imageGeneric: false });
+    expect((await Product.findById(base._id))!.imageGeneric).toBe(false);
   });
 });

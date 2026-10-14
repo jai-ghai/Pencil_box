@@ -41,7 +41,7 @@ export default function Dashboard() {
       <Row gutter={[12, 12]}>
         {tiles.map((t) => (
           <Col key={t.title} xs={12} md={6}>
-            <Card><Statistic title={t.title} value={t.value} prefix={t.prefix} precision={t.value % 1 ? 2 : 0} />{t.note && <Typography.Text type="secondary">{t.note}</Typography.Text>}</Card>
+            <Card className="h-full"><Statistic title={t.title} value={t.value} prefix={t.prefix} precision={t.value % 1 ? 2 : 0} />{t.note && <Typography.Text type="secondary">{t.note}</Typography.Text>}</Card>
           </Col>
         ))}
       </Row>

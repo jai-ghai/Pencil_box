@@ -6,6 +6,7 @@ import { App, Button, Card, Col, Drawer, Empty, Flex, Input, InputNumber, Row, S
 import type { InputRef, TableColumnsType } from "antd";
 import { CloseOutlined, DeleteOutlined, FileTextOutlined, QrcodeOutlined, SearchOutlined, WalletOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
 import { BillsTable, type Bill } from "@/components/bills-table";
 import { api, inr, itemTitle } from "@/lib/client";
@@ -197,7 +198,8 @@ export default function PosPage() {
       <header style={{ background: BRAND.navy }}>
         <Flex className="mx-auto w-full max-w-[1400px] px-4 py-3" align="center" gap={12} justify="space-between">
           <Wordmark size={24} />
-          <Flex gap={8}>
+          <Flex gap={8} align="center">
+            <ThemeToggle />
             <Button icon={<FileTextOutlined />} onClick={openBills}>Today&apos;s bills</Button>
             <Link href="/admin"><Button>Admin</Button></Link>
           </Flex>

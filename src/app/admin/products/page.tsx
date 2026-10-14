@@ -16,6 +16,8 @@ interface ProductDoc {
   categoryId?: { _id: string; name_en: string } | null;
   supplierId?: string;
   internalNote?: string;
+  imageGeneric?: boolean;
+  imageSource?: string;
   images: string[];
   variants: VariantDoc[];
 }
@@ -55,6 +57,7 @@ export default function Products() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<string | null>(null); // product id, or "new"
   const [images, setImages] = useState<string[]>([]);
+  const [generic, setGeneric] = useState(false); // the picture is a stand-in from the internet
   const [saving, setSaving] = useState(false);
 
   const loadList = useCallback(async (search = "") => {
@@ -81,6 +84,7 @@ export default function Products() {
     form.resetFields();
     form.setFieldsValue({ variants: [blankVariant()] });
     setImages([]);
+    setGeneric(false);
     setEditing("new");
   }
   function startEdit(p: ProductDoc) {
@@ -95,6 +99,7 @@ export default function Products() {
       variants: p.variants.map((v) => ({ _id: v._id, label: v.label, shortCode: v.shortCode, sellPrice: v.sellPrice / 100, costPrice: v.costPrice / 100, packSize: v.packSize, reorderLevel: v.reorderLevel, quickTap: v.quickTap, trackStock: v.trackStock !== false, stockOnHand: v.stockOnHand })),
     });
     setImages(p.images);
+    setGeneric(!!p.imageGeneric);
     setEditing(p._id);
   }
 
@@ -109,6 +114,7 @@ export default function Products() {
         supplierId: v.supplierId || undefined,
         internalNote: v.internalNote?.trim() || undefined,
         images,
+        imageGeneric: images.length > 0 && generic,
         variants: v.variants.map((x) => ({
           _id: x._id,
           label: (x.label ?? "").trim(),
@@ -199,6 +205,7 @@ export default function Products() {
             <Col xs={24} md={12}><Form.Item label="Private note (only you see this)" name="internalNote"><Input maxLength={500} /></Form.Item></Col>
           </Row>
 
+          {generic && <Alert type="info" showIcon style={{ marginBottom: 12 }} title="This is a general picture from the internet (free licence), not your exact item. The website labels it 'for illustration'. Upload your own photo to replace it." />}
           <Form.Item label="Photos (JPG, PNG or WebP, up to 5 MB)" extra="Photos appear on the website. Until you add one, the card shows an empty picture block.">
             <Upload
               listType="picture-card"
@@ -215,13 +222,14 @@ export default function Products() {
                   const data = await res.json();
                   if (!res.ok) throw new Error(data.error ?? "Upload failed");
                   setImages((im) => [...im, data.url]);
+                  setGeneric(false); // your own photo replaces the stand-in
                   onSuccess?.(data);
                 } catch (e) {
                   message.error((e as Error).message);
                   onError?.(e as Error);
                 }
               }}
-              onRemove={(f) => setImages((im) => im.filter((u) => u !== f.url))}
+              onRemove={(f) => (setImages((im) => im.filter((u) => u !== f.url)), setGeneric(false))}
             >
               {images.length < 8 && <div><PlusOutlined /><div style={{ marginTop: 6 }}>Photo</div></div>}
             </Upload>

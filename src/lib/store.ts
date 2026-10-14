@@ -30,6 +30,8 @@ export interface StoreProduct {
   brandId: string;
   categoryId: string;
   image: string;
+  /** the picture is a general stand-in, not the exact item (the website says so) */
+  imageGeneric: boolean;
   variants: StoreVariant[];
 }
 export interface StoreCatalog {
@@ -84,6 +86,7 @@ export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog>
       brandId: p.brandId ? String(p.brandId) : "",
       categoryId: String(p.categoryId),
       image: p.images?.[0] ?? "",
+      imageGeneric: !!p.images?.[0] && p.imageGeneric === true,
       variants: vs.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })),
     });
   }

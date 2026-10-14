@@ -53,6 +53,10 @@ const productSchema = new Schema(
     description_hi: String,
     /** admin-only note, never shown to customers (e.g. "confirm sell price") */
     internalNote: { type: String, trim: true },
+    /** true when the picture is a general stand-in from the internet, not the actual item */
+    imageGeneric: { type: Boolean, default: false },
+    /** where a stand-in picture came from (title, creator, licence, link); admin only */
+    imageSource: { type: String },
     supplierId: { type: Schema.Types.ObjectId, ref: "Supplier" },
     images: { type: [String], default: [] },
     attributes: { type: Schema.Types.Mixed, default: {} },

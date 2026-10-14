@@ -35,6 +35,11 @@ const en = {
   removedSoldOut: "Some items in your cart are no longer in stock and were removed.",
   qtyTrimmed: "Quantities were adjusted to what is in stock.",
   language: "Language",
+  lightMode: "Switch to light mode",
+  darkMode: "Switch to dark mode",
+  comingSoon: "Coming soon",
+  showAll: "Show all items",
+  illustration: "Picture is for illustration",
 };
 
 const hi: typeof en = {
@@ -72,6 +77,11 @@ const hi: typeof en = {
   removedSoldOut: "कार्ट के कुछ आइटम स्टॉक में नहीं हैं, इसलिए हटा दिए गए।",
   qtyTrimmed: "मात्रा स्टॉक के अनुसार बदल दी गई है।",
   language: "भाषा",
+  lightMode: "लाइट मोड चालू करें",
+  darkMode: "डार्क मोड चालू करें",
+  comingSoon: "जल्द आ रहा है",
+  showAll: "सभी आइटम दिखाएं",
+  illustration: "तस्वीर सिर्फ समझाने के लिए है",
 };
 
 export const dict = { en, hi };
