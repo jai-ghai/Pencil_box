@@ -1,26 +1,50 @@
+/* Layer order lets Ant Design's styles win over Tailwind's reset (Tailwind is used for layout only). */
+@layer theme, base, antd, components, utilities;
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --pb-navy: #12296b;
+  --pb-navy-deep: #0b1d52;
+  --pb-sun: #ffd500;
+  --pb-bg: #f2f5fb;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --pb-bg: #0a1124;
   }
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--pb-bg);
+  font-family: var(--font-geist-sans), system-ui, "Nirmala UI", sans-serif;
+}
+
+/* Hide the scrollbar on the horizontal chip rows (they still scroll by touch/trackpad) */
+.pb-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pb-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* Keyboard hint keys on the billing screen */
+kbd {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.72rem;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 0 0.35rem;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--pb-sun);
+  outline-offset: 2px;
 }

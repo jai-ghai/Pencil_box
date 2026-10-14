@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev db and uploads
+/.data
+/public/uploads
+!.env.example
+
+# logs, local data, generated print files
+*.log
+/print/
+
+# real stock file: supplier name and wholesale costs stay on this computer (a sample is published instead)
+/data/balaji-stock.ts
+
+# local Claude Code settings
+/.claude/settings.local.json
