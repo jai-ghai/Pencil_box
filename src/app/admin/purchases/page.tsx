@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Card, Table, Typography } from "antd";
+import { Alert, Button, Card, Flex, Table, Typography } from "antd";
+import { DownloadOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import Link from "next/link";
 import { api, inr } from "@/lib/client";
@@ -33,7 +34,10 @@ export default function Purchases() {
 
   return (
     <div className="flex max-w-5xl flex-col gap-4">
-      <Typography.Title level={3} style={{ margin: 0 }}>Purchases</Typography.Title>
+      <Flex justify="space-between" align="center" wrap gap={12}>
+        <Typography.Title level={3} style={{ margin: 0 }}>Purchases</Typography.Title>
+        <Button icon={<DownloadOutlined />} href="/api/admin/purchases/export">Download all as Excel</Button>
+      </Flex>
       <Typography.Text type="secondary">Stock bought from suppliers. To record a new purchase for now, use <Link href="/admin/stock">Stock → Bought stock</Link> on each item.</Typography.Text>
       {err && <Alert type="error" showIcon title={err} />}
       <Card styles={{ body: { padding: 0 } }}>
@@ -49,6 +53,7 @@ export default function Purchases() {
             expandedRowRender: (p) => (
               <div>
                 {p.note && <Typography.Paragraph type="secondary">{p.note}</Typography.Paragraph>}
+                <Button icon={<DownloadOutlined />} href={`/api/admin/purchases/export?id=${p._id}`} style={{ marginBottom: 12 }}>Download this purchase as Excel</Button>
                 <Table<Line> rowKey={(_, i) => String(i)} size="small" columns={lineColumns} dataSource={p.items} pagination={false} scroll={{ y: 360 }} />
               </div>
             ),
