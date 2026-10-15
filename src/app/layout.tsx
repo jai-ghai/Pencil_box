@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "./providers";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -27,6 +29,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Suspense: Ant Design's provider tree reads Math.random(), which Next.js 16 only allows at request time */}
         <Suspense fallback={null}>
           <Providers>{children}</Providers>
+        </Suspense>
+        <Suspense fallback={null}>
+          <Analytics />
+          <SpeedInsights />
         </Suspense>
       </body>
     </html>
