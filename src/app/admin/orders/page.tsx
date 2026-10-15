@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, App, Button, Card, DatePicker, Flex, Popconfirm, Statistic, Typography } from "antd";
+import { Alert, App, Button, Card, DatePicker, Flex, InputNumber, Popconfirm, Statistic, Tag, Typography } from "antd";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { BillsTable, type Bill } from "@/components/bills-table";
@@ -13,6 +13,33 @@ interface Day {
   date: string;
   summary: { bills: number; total: number; cash: number; upi: number; discount: number };
   bills: Bill[];
+}
+
+/** End-of-day check: type what is in the drawer and what the UPI app shows; the difference to the bills is shown. Nothing is saved. */
+function DailyClose({ cash, upi }: { cash?: number; upi?: number }) {
+  const [counted, setCounted] = useState<number | null>(null);
+  const [received, setReceived] = useState<number | null>(null);
+  const row = (label: string, expected: number | undefined, value: number | null, set: (v: number | null) => void) => {
+    const diff = value === null || expected === undefined ? null : Math.round(value * 100) - expected;
+    return (
+      <Flex gap={12} align="center" wrap>
+        <div style={{ minWidth: 150 }}>
+          <div>{label} in bills</div>
+          <Typography.Text strong>₹{expected === undefined ? "…" : expected / 100}</Typography.Text>
+        </div>
+        <InputNumber aria-label={`${label} actually counted`} placeholder={`${label} counted`} prefix="₹" min={0} value={value} onChange={set} style={{ width: 170 }} />
+        {diff !== null && (diff === 0 ? <Tag color="success">Matches</Tag> : <Tag color={diff < 0 ? "error" : "warning"}>{diff < 0 ? `Short ₹${-diff / 100}` : `Extra ₹${diff / 100}`}</Tag>)}
+      </Flex>
+    );
+  };
+  return (
+    <Card size="small" title="Daily close">
+      <Flex gap={24} wrap>
+        {row("Cash", cash, counted, setCounted)}
+        {row("UPI", upi, received, setReceived)}
+      </Flex>
+    </Card>
+  );
 }
 
 export default function OrdersPage() {
@@ -62,6 +89,7 @@ export default function OrdersPage() {
           <Card key={String(t)} size="small" style={{ minWidth: 130 }}><Statistic title={String(t)} value={typeof v === "number" ? v : "…"} prefix={money ? "₹" : undefined} /></Card>
         ))}
       </Flex>
+      <DailyClose key={date ?? "today"} cash={data?.summary.cash} upi={data?.summary.upi} />
       <Card styles={{ body: { padding: 0 } }}>
         <BillsTable
           bills={data?.bills ?? []}

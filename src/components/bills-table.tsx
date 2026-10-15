@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Table, Tag, Typography } from "antd";
+import { Button, Flex, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
+import { PrinterOutlined } from "@ant-design/icons";
+import { printReceipt } from "@/lib/receipt";
 import { inr } from "@/lib/client";
 import { formatIST } from "@/lib/time";
 
@@ -66,7 +68,10 @@ export function BillsTable({ bills, loading, actions }: { bills: Bill[]; loading
                 <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, margin: "6px 0 0", fontFamily: "inherit" }}>{b.waText}</pre>
               </details>
             )}
-            {actions && <div style={{ marginTop: 10 }}>{actions(b)}</div>}
+            <Flex gap={8} wrap style={{ marginTop: 10 }}>
+              <Button icon={<PrinterOutlined />} onClick={() => printReceipt(b)}>Print receipt</Button>
+              {actions?.(b)}
+            </Flex>
           </div>
         ),
       }}

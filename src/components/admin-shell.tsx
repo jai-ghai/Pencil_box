@@ -33,7 +33,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const screens = Grid.useBreakpoint();
   const me = useMe();
   const [open, setOpen] = useState(false);
-  const desktop = !!screens.lg;
+  const desktop = !!screens.xl; // below 1200px the full menu would not fit, so it moves into the drawer
 
   const allowed = (n: NavItem) => !!me && (n.perm === "users" ? me.role === "superadmin" : me.permissions.includes(n.perm));
   const visible = NAV.filter(allowed);
