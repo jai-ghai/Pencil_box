@@ -14,7 +14,8 @@
     "import:stock": "tsx scripts/import-stock.ts",
     "qr": "tsx scripts/make-qr.ts",
     "images": "tsx scripts/set-product-images.ts",
-    "services": "tsx scripts/add-services.ts"
+    "services": "tsx scripts/add-services.ts",
+    "add:purchase": "tsx scripts/add-purchase.ts"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",
