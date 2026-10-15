@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Button, Drawer, Flex, Grid, Menu, Result, Skeleton, Tag, theme } from "antd";
+import { Button, Drawer, Flex, Grid, Menu, Result, Skeleton, Tooltip, theme } from "antd";
 import type { MenuProps } from "antd";
 import { LogoutOutlined, MenuOutlined } from "@ant-design/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -76,10 +76,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </nav>
           )}
           <Flex gap={8} align="center" className="ml-auto shrink-0">
-            {me && screens.xxl && <Tag color="gold" style={{ marginInlineEnd: 0 }}>{me.username} · {ROLE_LABEL[me.role]}</Tag>}
             <ThemeToggle />
             <Link href="/pos"><Button>Billing</Button></Link>
-            {desktop && <Button icon={<LogoutOutlined />} onClick={signOut} aria-label="Sign out">{screens.xxl ? "Sign out" : null}</Button>}
+            {desktop && <Tooltip title={me ? `Sign out ${me.username} (${ROLE_LABEL[me.role]})` : "Sign out"}><Button icon={<LogoutOutlined />} onClick={signOut} aria-label="Sign out" /></Tooltip>}
           </Flex>
         </Flex>
       </header>
