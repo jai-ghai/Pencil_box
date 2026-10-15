@@ -9,6 +9,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import dotenv from "dotenv";
+import type { StockProduct } from "../data/balaji-stock";
 import mongoose from "mongoose";
 
 dotenv.config({ path: ".env" });
@@ -19,7 +20,9 @@ const { recordMovement, withStockTransaction, verifyLedger } = await import("../
 const file = process.argv.slice(2).find((a) => !a.startsWith("--"));
 if (!file) throw new Error("Give the purchase file, e.g. data/purchase-2026-10-15.ts");
 const dry = process.argv.includes("--dry");
-const { PRODUCTS, NEW_CATEGORIES, PURCHASE_NOTE } = (await import(pathToFileURL(path.resolve(file)).href)) as typeof import("../data/purchase-2026-10-15");
+// the purchase file is local only (git-ignored), so its shape is declared here instead of imported
+interface PurchaseFile { PRODUCTS: StockProduct[]; NEW_CATEGORIES: { top: string; name: string; hi: string }[]; PURCHASE_NOTE: string }
+const { PRODUCTS, NEW_CATEGORIES, PURCHASE_NOTE } = (await import(pathToFileURL(path.resolve(file)).href)) as PurchaseFile;
 
 const uri = process.env.MONGODB_URI;
 if (!uri || uri.startsWith("YOUR_")) throw new Error("Set MONGODB_URI in .env first");
