@@ -1,7 +1,7 @@
-import { route, OWNER, HttpError } from "@/lib/api";
+import { route, can, HttpError } from "@/lib/api";
 import { saveProductImage } from "@/lib/storage";
 
-export const POST = route(OWNER, async (req) => {
+export const POST = route(can("products"), async (req) => {
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) throw new HttpError(400, "No file");

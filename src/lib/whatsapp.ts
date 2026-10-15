@@ -44,3 +44,22 @@ export function buildOrderMessage(lines: OrderLine[], total: number, opts: { lan
 export function whatsappUrl(number: string, text: string): string {
   return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 }
+
+/**
+ * Reads a customer's WhatsApp order back into item codes and quantities. Understands the lines this website writes
+ * ("1. [BP-02] Ball Pen Blue x 5 = ₹25", with or without "(1 free)") and plain "BP-02 x 5". The quantity is the LAST
+ * "x <number>" on the line, so product names like "Doms X1 Pencil" are not mistaken for a quantity.
+ */
+export function parseOrderText(text: string): { code: string; qty: number }[] {
+  const merged = new Map<string, number>();
+  for (const line of text.split(/\r?\n/)) {
+    const code = /\b([A-Za-z]{2,4}-\d{1,4})\b/.exec(line)?.[1];
+    if (!code) continue;
+    const qtys = [...line.matchAll(/\s[x×]\s+(\d{1,5})\b/gi)];
+    const qty = qtys.length ? parseInt(qtys[qtys.length - 1][1], 10) : 0;
+    if (qty < 1) continue;
+    const key = code.toUpperCase();
+    merged.set(key, (merged.get(key) ?? 0) + qty);
+  }
+  return [...merged].map(([code, qty]) => ({ code, qty }));
+}

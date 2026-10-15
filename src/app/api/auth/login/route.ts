@@ -4,6 +4,7 @@ import { z } from "zod";
 import { connectDb } from "@/lib/db";
 import { User } from "@/lib/models";
 import { setSessionCookie } from "@/lib/auth";
+import { normalizeRole } from "@/lib/permissions";
 
 const body = z.object({ username: z.string().min(1).max(50), password: z.string().min(1).max(200) });
 
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Wrong username or password" }, { status: 401 });
   }
   fails.delete(key);
-  await setSessionCookie({ uid: String(user._id), username: user.username, role: user.role });
-  return NextResponse.json({ ok: true, role: user.role });
+  const role = normalizeRole(user.role) ?? "cashier"; // old accounts called "owner" are now super admins
+  await setSessionCookie({ uid: String(user._id), username: user.username, role });
+  return NextResponse.json({ ok: true, role });
 }

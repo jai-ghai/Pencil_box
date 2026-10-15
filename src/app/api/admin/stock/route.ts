@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { route, OWNER, HttpError } from "@/lib/api";
+import { route, can, HttpError } from "@/lib/api";
 import { StockMovement, Variant } from "@/lib/models";
 import { adjustStock } from "@/lib/stock";
 import { toPaise } from "@/lib/catalog";
@@ -12,7 +12,7 @@ const body = z.discriminatedUnion("mode", [
   z.object({ mode: z.enum(["DAMAGE", "RETURN"]), variantId: z.string().length(24), qty: z.number().int().min(1), note: z.string().max(200).optional() }),
 ]);
 
-export const POST = route(OWNER, async (req, session) => {
+export const POST = route(can("stock"), async (req, session) => {
   const b = body.parse(await req.json());
   const variant = await Variant.findById(b.variantId);
   if (!variant) throw new HttpError(404, "Item not found");
@@ -38,7 +38,7 @@ export const POST = route(OWNER, async (req, session) => {
 });
 
 /** Recent ledger rows for one variant: ?variantId=... */
-export const GET = route(OWNER, async (req) => {
+export const GET = route(can("stock"), async (req) => {
   const variantId = new URL(req.url).searchParams.get("variantId");
   if (!variantId || !/^[a-f0-9]{24}$/.test(variantId)) throw new HttpError(400, "variantId required");
   return { movements: await StockMovement.find({ variantId }).sort({ at: -1 }).limit(50).lean() };

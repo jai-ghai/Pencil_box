@@ -19,10 +19,27 @@ export const saleInputSchema = z.object({
     cash: z.number().int().min(0).default(0),
     upi: z.number().int().min(0).default(0),
   }),
+  note: z.string().max(200).optional(),
+  /** "whatsapp" when the cart was filled from a pasted customer message (the text is kept on the bill) */
+  source: z.enum(["pos", "whatsapp"]).optional(),
+  waText: z.string().max(3000).optional(),
 });
 export type SaleInput = z.infer<typeof saleInputSchema>;
 
 export class SaleError extends Error {}
+
+/**
+ * What leaves the shelf when `qty` of this variant is sold: a gift hamper takes its components, a service takes
+ * nothing, anything else takes itself. Billing, bill editing and bill deleting all use this one rule.
+ */
+export function stockEffects(
+  v: { _id: unknown; trackStock?: boolean | null; bundleItems?: { variantId: unknown; qty: number }[] | null },
+  qty: number,
+): { variantId: string; qty: number }[] {
+  if (v.bundleItems?.length) return v.bundleItems.map((b) => ({ variantId: String(b.variantId), qty: b.qty * qty }));
+  if (v.trackStock === false) return [];
+  return [{ variantId: String(v._id), qty }];
+}
 
 /** Load live offers from the DB in the pure-engine shape. */
 export async function loadOffers(): Promise<Offer[]> {
@@ -131,6 +148,9 @@ export async function completeSale(input: SaleInput, cashierId: string) {
           total: priced.total,
           payments: { cash, upi },
           cashierId,
+          note: input.note?.trim() || undefined,
+          source: input.source ?? "pos",
+          waText: input.source === "whatsapp" ? input.waText : undefined,
           at: new Date(),
         },
       ],
@@ -139,15 +159,9 @@ export async function completeSale(input: SaleInput, cashierId: string) {
 
     for (const l of priced.lines) {
       const v = variants.get(l.variantId)!;
-      if (v.trackStock === false && !v.bundleItems?.length) continue; // services: nothing on the shelf to deduct
-      if (v.bundleItems?.length) {
-        // hamper: deduct each component, not the hamper itself
-        for (const b of v.bundleItems) {
-          await recordMovement({ variantId: String(b.variantId), type: "SALE", qty: -(b.qty * l.qty), refId: created._id, by: cashierId, note: `bill ${counter.seq} (bundle)` }, session);
-        }
-      } else {
-        // free units are still handed over, so stock goes down by the full qty
-        await recordMovement({ variantId: l.variantId, type: "SALE", qty: -l.qty, unitCost: v.costPrice, refId: created._id, by: cashierId, note: `bill ${counter.seq}` }, session);
+      // free units are still handed over, so stock goes down by the full qty
+      for (const e of stockEffects(v, l.qty)) {
+        await recordMovement({ variantId: e.variantId, type: "SALE", qty: -e.qty, unitCost: e.variantId === l.variantId ? v.costPrice : undefined, refId: created._id, by: cashierId, note: `bill ${counter.seq}${v.bundleItems?.length ? " (bundle)" : ""}` }, session);
       }
     }
     return created;

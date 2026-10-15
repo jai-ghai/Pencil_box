@@ -1,10 +1,11 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { normalizeRole, type Role } from "./permissions";
 
 export const SESSION_COOKIE = "pb_session";
 const SESSION_HOURS = 12;
 
-export type Role = "owner" | "cashier";
+export type { Role };
 export interface Session {
   uid: string;
   username: string;
@@ -26,12 +27,17 @@ export async function createSessionToken(s: Session): Promise<string> {
     .sign(secretKey());
 }
 
+/**
+ * The token only proves who signed in. The role and permissions are re-read from the database on every API call
+ * (see lib/api.ts), so changing someone's access takes effect immediately, not when their cookie expires.
+ */
 export async function verifySessionToken(token: string | undefined): Promise<Session | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"] });
-    if (!payload.sub || (payload.role !== "owner" && payload.role !== "cashier")) return null;
-    return { uid: payload.sub, username: String(payload.username), role: payload.role };
+    const role = normalizeRole(payload.role);
+    if (!payload.sub || !role) return null;
+    return { uid: payload.sub, username: String(payload.username), role };
   } catch {
     return null;
   }

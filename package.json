@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "import:stock": "tsx scripts/import-stock.ts",
     "qr": "tsx scripts/make-qr.ts",
-    "images": "tsx scripts/set-product-images.ts"
+    "images": "tsx scripts/set-product-images.ts",
+    "services": "tsx scripts/add-services.ts"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",

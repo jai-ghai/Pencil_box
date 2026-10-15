@@ -21,7 +21,7 @@ export default function LoginPage() {
     }
     // only follow same-site relative paths, never an arbitrary URL
     const next = new URLSearchParams(window.location.search).get("next") ?? "";
-    window.location.href = next.startsWith("/") && !next.startsWith("//") ? next : data.role === "owner" ? "/admin" : "/pos";
+    window.location.href = next.startsWith("/") && !next.startsWith("//") ? next : data.role === "cashier" ? "/pos" : "/admin";
   }
 
   return (

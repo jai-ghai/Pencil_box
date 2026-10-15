@@ -11,7 +11,9 @@ const userSchema = new Schema(
   {
     username: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ["owner", "cashier"], required: true },
+    role: { type: String, enum: ["superadmin", "admin", "cashier"], required: true },
+    /** page and action permissions for an admin (the super admin always has all of them) */
+    permissions: { type: [String], default: [] },
     active: { type: Boolean, default: true },
   },
   opts,
@@ -207,6 +209,12 @@ const saleSchema = new Schema(
       upi: { type: Number, default: 0 },
     },
     cashierId: String,
+    note: String,
+    /** "whatsapp" when the cart was filled from a pasted customer message */
+    source: { type: String, enum: ["pos", "whatsapp"], default: "pos" },
+    waText: String,
+    editedAt: Date,
+    editedBy: String,
     voided: { type: Boolean, default: false },
     at: { type: Date, default: Date.now, index: true },
   },
@@ -217,5 +225,29 @@ export const Sale = model("Sale", saleSchema);
 /** Monotonic counters, e.g. bill numbers */
 const counterSchema = new Schema({ _id: String, seq: { type: Number, default: 0 } });
 export const Counter = model("Counter", counterSchema);
+
+/* ---------- Small settings (key/value), QR scan counts, audit trail ---------- */
+const settingSchema = new Schema({ _id: { type: String }, value: { type: Schema.Types.Mixed } }, opts);
+export const Setting = model("Setting", settingSchema);
+
+/** One row per QR placement per day, counted every time /q is opened. */
+const qrScanSchema = new Schema({ _id: { type: String }, src: { type: String, index: true }, day: { type: String, index: true }, count: { type: Number, default: 0 } });
+export const QrScan = model("QrScan", qrScanSchema);
+
+/** Who did what: deleted or edited bills, product archiving, user and permission changes. Never edited. */
+const auditSchema = new Schema(
+  {
+    at: { type: Date, default: Date.now, index: true },
+    by: { type: String, required: true },
+    action: { type: String, required: true },
+    entity: { type: String, required: true },
+    entityId: String,
+    summary: { type: String, required: true },
+    /** snapshot of what was changed or removed, so a deleted bill can still be looked up */
+    meta: Schema.Types.Mixed,
+  },
+  { timestamps: false },
+);
+export const AuditLog = model("AuditLog", auditSchema);
 
 export type UserDoc = InferSchemaType<typeof userSchema>;

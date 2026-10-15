@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { z } from "zod";
-import { route, OWNER, HttpError } from "@/lib/api";
+import { route, can, HttpError } from "@/lib/api";
 import { Brand, Category, Product } from "@/lib/models";
 import { saveProduct, slugify } from "@/lib/catalog";
 import { escapeRegex } from "@/lib/search";
@@ -30,7 +30,7 @@ const row = z.object({
 
 const clean = (s?: string) => (s ?? "").trim();
 
-export const POST = route(OWNER, async (req) => {
+export const POST = route(can("import"), async (req) => {
   const text = await req.text();
   if (text.length > 2_000_000) throw new HttpError(413, "CSV too large (max about 2 MB)");
   const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true, transformHeader: (h) => h.trim().toLowerCase() });

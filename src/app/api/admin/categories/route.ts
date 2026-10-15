@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { route, OWNER, STAFF, HttpError } from "@/lib/api";
+import { route, can, STAFF, HttpError } from "@/lib/api";
 import { Category } from "@/lib/models";
 import { slugify } from "@/lib/catalog";
 
@@ -12,7 +12,7 @@ const body = z.object({
   attributeTemplate: z.array(z.string().max(30)).max(10).default([]),
 });
 
-export const POST = route(OWNER, async (req) => {
+export const POST = route(can("setup"), async (req) => {
   const data = body.parse(await req.json());
   const slug = slugify(data.name_en);
   if (await Category.findOne({ slug })) throw new HttpError(409, "Category already exists");

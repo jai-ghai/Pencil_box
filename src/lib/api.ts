@@ -1,10 +1,13 @@
 import { NextResponse, connection } from "next/server";
 import { ZodError } from "zod";
 import { connectDb } from "./db";
-import { getSession, type Role, type Session } from "./auth";
+import { getSession } from "./auth";
+import { AppError } from "./errors";
 import { SaleError } from "./sales";
 import { CatalogError } from "./catalog";
 import { allow, clientKey } from "./ratelimit";
+import { User } from "./models";
+import { effectivePerms, normalizeRole, type Perm, type Role } from "./permissions";
 
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -14,26 +17,47 @@ export class HttpError extends Error {
 
 type Ctx = { params: Promise<Record<string, string>> };
 
+/** Who is making the request, as read from the database just now (not from the cookie). */
+export interface Actor {
+  uid: string;
+  username: string;
+  role: Role;
+  permissions: Perm[];
+}
+
+/** A list of allowed roles, or roles plus one specific permission the person must have been given. */
+export type Access = Role[] | { roles?: Role[]; perm?: Perm };
+
+export const STAFF: Role[] = ["superadmin", "admin", "cashier"];
+export const ADMINS: Role[] = ["superadmin", "admin"];
+export const SUPER: Role[] = ["superadmin"];
+/** Admins who have been given this permission (the super admin always has every permission). */
+export const can = (perm: Perm): Access => ({ roles: ADMINS, perm });
+
 /**
- * Wrap a route handler: connect DB, require a signed-in user with one of `roles`,
- * and turn known errors into clean JSON. Unknown errors are logged without request
- * bodies (no PII) and returned as a generic 500.
+ * Wrap a route handler: connect DB, check the signed-in user (role and permission, read fresh from the database),
+ * and turn known errors into clean JSON. Unknown errors are logged without request bodies (no personal data)
+ * and returned as a generic 500.
  */
-export function route(
-  roles: Role[],
-  fn: (req: Request, session: Session, ctx: Ctx) => Promise<Response | object>,
-) {
+export function route(access: Access, fn: (req: Request, actor: Actor, ctx: Ctx) => Promise<Response | object>) {
   return async (req: Request, ctx: Ctx): Promise<Response> => {
     await connection(); // per-request only; kept outside try/catch so Next can abort build-time prerendering
     try {
       const session = await getSession();
       if (!session) throw new HttpError(401, "Not signed in");
-      if (!roles.includes(session.role)) throw new HttpError(403, "Not allowed");
       await connectDb();
-      const out = await fn(req, session, ctx);
+      const user = await User.findById(session.uid).lean();
+      const role = normalizeRole(user?.role);
+      if (!user || !user.active || !role) throw new HttpError(401, "Not signed in");
+      const { roles, perm } = Array.isArray(access) ? { roles: access, perm: undefined } : access;
+      const permissions = effectivePerms(role, user.permissions);
+      if (roles && !roles.includes(role)) throw new HttpError(403, "Not allowed");
+      if (perm && !permissions.includes(perm)) throw new HttpError(403, "You do not have access to this");
+      const out = await fn(req, { uid: String(user._id), username: user.username, role, permissions }, ctx);
       return out instanceof Response ? out : NextResponse.json(out);
     } catch (e) {
       if (e instanceof HttpError) return NextResponse.json({ error: e.message }, { status: e.status });
+      if (e instanceof AppError) return NextResponse.json({ error: e.message }, { status: e.status });
       if (e instanceof SaleError || e instanceof CatalogError) return NextResponse.json({ error: e.message }, { status: 400 });
       if (e instanceof ZodError) return NextResponse.json({ error: "Invalid input", issues: e.issues.map((i) => ({ path: i.path.join("."), message: i.message })) }, { status: 400 });
       console.error("API error:", e instanceof Error ? e.message : "unknown");
@@ -41,9 +65,6 @@ export function route(
     }
   };
 }
-
-export const OWNER: Role[] = ["owner"];
-export const STAFF: Role[] = ["owner", "cashier"];
 
 /**
  * Wrapper for the public (no login) storefront endpoints: per-IP rate limit, DB connection,

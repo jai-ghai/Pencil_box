@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, App, Button, Card, Col, Drawer, Empty, Flex, Form, Grid, Image, Input, InputNumber, Row, Select, Switch, Table, Tag, Typography, Upload } from "antd";
+import { Alert, App, Button, Card, Col, Drawer, Empty, Flex, Form, Grid, Image, Input, InputNumber, Popconfirm, Row, Select, Switch, Table, Tag, Typography, Upload } from "antd";
 import type { TableColumnsType, UploadFile } from "antd";
 import { CopyOutlined, DeleteOutlined, PictureOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { api, inr } from "@/lib/client";
+import { can, useMe } from "@/lib/use-me";
 
 interface Opt { _id: string; name?: string; name_en?: string; parentId?: string | null }
 interface VariantDoc { _id: string; label: string; shortCode?: string; sellPrice: number; costPrice: number; packSize: number; reorderLevel: number; quickTap: boolean; trackStock?: boolean; stockOnHand: number }
@@ -55,13 +56,15 @@ export default function Products() {
   const [suppliers, setSuppliers] = useState<Opt[]>([]);
   const [list, setList] = useState<ProductDoc[] | null>(null);
   const [q, setQ] = useState("");
+  const [archived, setArchived] = useState(false);
+  const me = useMe();
   const [editing, setEditing] = useState<string | null>(null); // product id, or "new"
   const [images, setImages] = useState<string[]>([]);
   const [generic, setGeneric] = useState(false); // the picture is a stand-in from the internet
   const [saving, setSaving] = useState(false);
 
-  const loadList = useCallback(async (search = "") => {
-    const d = await api<{ products: ProductDoc[] }>(`/api/admin/products?q=${encodeURIComponent(search)}`);
+  const loadList = useCallback(async (search = "", arch = false) => {
+    const d = await api<{ products: ProductDoc[] }>(`/api/admin/products?q=${encodeURIComponent(search)}${arch ? "&archived=1" : ""}`);
     setList(d.products);
   }, []);
 
@@ -132,7 +135,7 @@ export default function Products() {
       else await api(`/api/admin/products/${editing}`, { method: "PATCH", body });
       message.success(`Saved "${body.name_en}"`);
       setEditing(null);
-      await loadList(q);
+      await loadList(q, archived);
     } catch (e) {
       message.error((e as Error).message);
     } finally {
@@ -141,6 +144,16 @@ export default function Products() {
   }
 
   const fileList: UploadFile[] = images.map((url) => ({ uid: url, name: url.split("/").pop() ?? "photo", status: "done", url }));
+
+  async function setArchivedFlag(prod: ProductDoc, value: boolean) {
+    try {
+      await api(`/api/admin/products/${prod._id}/archive`, { body: { archived: value } });
+      message.success(value ? `"${prod.name_en}" is archived: hidden from the website and billing` : `"${prod.name_en}" is back on sale`);
+      await loadList(q, archived);
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  }
 
   const columns: TableColumnsType<ProductDoc> = [
     {
@@ -172,16 +185,36 @@ export default function Products() {
         </div>
       ),
     },
-    { title: "", key: "a", width: 80, render: (_: unknown, p) => <Button onClick={() => startEdit(p)}>Edit</Button> },
+    {
+      title: "",
+      key: "a",
+      width: 190,
+      render: (_: unknown, p) => (
+        <Flex gap={8}>
+          <Button onClick={() => startEdit(p)}>Edit</Button>
+          {can(me, "products:delete") &&
+            (archived ? (
+              <Button onClick={() => setArchivedFlag(p, false)}>Restore</Button>
+            ) : (
+              <Popconfirm title={`Archive "${p.name_en}"?`} description="It disappears from the website and billing. Past bills and reports are not affected. You can restore it." okText="Archive" onConfirm={() => setArchivedFlag(p, true)}>
+                <Button danger>Archive</Button>
+              </Popconfirm>
+            ))}
+        </Flex>
+      ),
+    },
   ];
 
   return (
     <div className="flex flex-col gap-4">
       <Flex justify="space-between" align="center" gap={12} wrap>
         <Typography.Title level={3} style={{ margin: 0 }}>Products</Typography.Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={startNew}>Add product</Button>
+        <Flex gap={12} align="center" wrap>
+          <Flex gap={8} align="center"><Switch checked={archived} onChange={(v) => (setList(null), setArchived(v), loadList(q, v))} aria-label="Show archived products" /><Typography.Text>Show archived</Typography.Text></Flex>
+          {!archived && <Button type="primary" icon={<PlusOutlined />} onClick={startNew}>Add product</Button>}
+        </Flex>
       </Flex>
-      <Input.Search placeholder="Search products" allowClear enterButton={<SearchOutlined />} value={q} onChange={(e) => setQ(e.target.value)} onSearch={(v) => loadList(v)} style={{ maxWidth: 420 }} />
+      <Input.Search placeholder="Search products" allowClear enterButton={<SearchOutlined />} value={q} onChange={(e) => setQ(e.target.value)} onSearch={(v) => loadList(v, archived)} style={{ maxWidth: 420 }} />
       <Card styles={{ body: { padding: 0 } }}>
         <Table<ProductDoc> rowKey="_id" size="middle" loading={!list} columns={columns} dataSource={list ?? []} pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No products yet. Add one or import a CSV." /> }} />
       </Card>

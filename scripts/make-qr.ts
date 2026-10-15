@@ -1,28 +1,23 @@
 /**
- * Print-ready QR codes + A4 posters for Pencil Box.
+ * Print-ready QR codes + A4 posters for Pencil Box, from the command line.
+ * (The same files can be made in the browser at /qr-generator, which is easier.)
  *
  *   npm run qr -- https://YOUR-DOMAIN.in/q [--phone "98xxx xxxxx"] [--out print]
  *
- * One QR per placement (shop front, counter, bag, bill). Each adds ?src=<placement> so the dashboard can later show
+ * One QR per placement (shop front, counter, bag, bill). Each adds ?src=<placement> so the QR generator can show
  * which placement gets scanned. Every PNG is decoded again before it is written, so a bad code can never be printed.
  *
- * IMPORTANT: a printed QR cannot be changed. Use your final domain (ideally a short path like /q that the website
- * redirects to the shop page, so the destination can change later without reprinting).
+ * A printed QR cannot be changed, so it points at the short address /q. Where /q leads (the homepage by default)
+ * is a setting in the QR generator and can be changed any time without reprinting.
  */
 import fs from "node:fs";
 import os from "node:os";
-import { execFileSync } from "node:child_process";
 import path from "node:path";
-import QRCode from "qrcode";
+import { execFileSync } from "node:child_process";
 import { Resvg } from "@resvg/resvg-js";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
-
-const NAVY = "#12296b";
-const NAVY_DARK = "#0b1d52";
-const YELLOW = "#ffd500";
-const CREAM = "#f7f3ea";
-const QR_INK = "#0b1d52";
+import { plainQrSvg, posterSvg, POSTER_H, POSTER_W } from "../src/lib/qr";
 
 const args = process.argv.slice(2);
 const flag = (name: string) => {
@@ -35,7 +30,7 @@ const base = positional[0];
 const phone = flag("phone");
 const outDir = flag("out") ?? "print";
 
-if (!base || base.startsWith("--")) {
+if (!base) {
   console.error('Usage: npm run qr -- https://YOUR-DOMAIN.in/q [--phone "..."] [--out print]');
   process.exit(1);
 }
@@ -68,76 +63,6 @@ const urlFor = (key: string) => {
   u.searchParams.set("src", key);
   return u.toString();
 };
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-/** Vector QR: one path, quiet zone of 4 modules (the standard minimum) included. */
-function qrPath(text: string): { d: string; size: number } {
-  const qr = QRCode.create(text, { errorCorrectionLevel: "Q" });
-  const n = qr.modules.size;
-  const quiet = 4;
-  let d = "";
-  for (let y = 0; y < n; y++) {
-    let x = 0;
-    while (x < n) {
-      if (!qr.modules.get(x, y)) { x++; continue; }
-      let run = 1;
-      while (x + run < n && qr.modules.get(x + run, y)) run++;
-      d += `M${x + quiet} ${y + quiet}h${run}v1h-${run}z`;
-      x += run;
-    }
-  }
-  return { d, size: n + quiet * 2 };
-}
-
-function plainQrSvg(text: string): string {
-  const { d, size } = qrPath(text);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="${QR_INK}"/></svg>`;
-}
-
-const FONT = "Segoe UI, Arial, sans-serif";
-/** Hindi runs use ONE Devanagari font so letters and matras are shaped together (mixed fallback garbles words). */
-const HINDI = "Nirmala UI, Mangal, sans-serif";
-
-function posterSvg(text: string, placementTitle: string): string {
-  const { d, size } = qrPath(text);
-  const W = 2100, H = 2970;
-  const qrBox = 1100;
-  const scale = qrBox / size;
-  const qx = (W - qrBox) / 2, qy = 1010;
-  const cats = ["Notebooks & Registers", "Pens & Pencils", "Art & Craft", "School Supplies", "Gifts & More", "Printing & Photocopy"];
-  const chips = cats
-    .map((c, i) => {
-      const col = i % 3, row = Math.floor(i / 3);
-      const cw = 600, gap = 40, x0 = (W - (cw * 3 + gap * 2)) / 2;
-      const x = x0 + col * (cw + gap), y = 2480 + row * 130;
-      return `<rect x="${x}" y="${y}" width="${cw}" height="110" rx="26" fill="${CREAM}"/><text x="${x + cw / 2}" y="${y + 72}" text-anchor="middle" font-size="40" font-weight="800" fill="${NAVY}">${esc(c)}</text>`;
-    })
-    .join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="${FONT}">
-  <rect width="${W}" height="${H}" fill="${NAVY}"/>
-  <circle cx="${W / 2}" cy="620" r="900" fill="${NAVY_DARK}" opacity="0.35"/>
-  <!-- wordmark -->
-  <text x="${W / 2}" y="470" text-anchor="middle" font-size="330" font-weight="900" letter-spacing="6" fill="#fff" stroke="${NAVY_DARK}" stroke-width="10" paint-order="stroke"><tspan>PENCIL </tspan><tspan fill="${YELLOW}">BOX</tspan></text>
-  <text x="${W / 2}" y="600" text-anchor="middle" font-size="72" font-style="italic" fill="#fff">Write  •  Create  •  Learn  •  Grow</text>
-  <rect x="${W / 2 - 430}" y="670" width="860" height="130" rx="65" fill="${YELLOW}"/>
-  <text x="${W / 2}" y="760" text-anchor="middle" font-size="64" font-weight="800" letter-spacing="4" fill="${NAVY_DARK}">STATIONERY &amp; MORE</text>
-  <!-- call to action -->
-  <text x="${W / 2}" y="930" text-anchor="middle" font-size="86" font-weight="900" fill="#fff">SCAN TO SEE OUR PRODUCTS</text>
-  <text x="${W / 2}" y="1000" text-anchor="middle" font-size="58" font-family="${HINDI}" fill="${YELLOW}">सभी सामान देखने के लिए स्कैन करें</text>
-  <!-- QR card -->
-  <rect x="${qx - 70}" y="${qy + 10}" width="${qrBox + 140}" height="${qrBox + 140}" rx="70" fill="${YELLOW}"/>
-  <rect x="${qx - 40}" y="${qy + 40}" width="${qrBox + 80}" height="${qrBox + 80}" rx="50" fill="#fff"/>
-  <g transform="translate(${qx} ${qy + 80}) scale(${scale})" shape-rendering="crispEdges"><path d="${d}" fill="${QR_INK}"/></g>
-  <text x="${W / 2}" y="${qy + qrBox + 250}" text-anchor="middle" font-size="60" font-weight="800" fill="#fff">Pick the items you want. Pay and collect in store.</text>
-  <text x="${W / 2}" y="${qy + qrBox + 320}" text-anchor="middle" font-size="50" font-family="${HINDI}" fill="${YELLOW}">आइटम चुनें और दुकान से ले जाएं</text>
-  ${chips}
-  <!-- footer -->
-  <rect y="2790" width="${W}" height="180" fill="${YELLOW}"/>
-  <text x="${W / 2}" y="${phone ? 2865 : 2905}" text-anchor="middle" font-size="62" font-weight="900" fill="${NAVY_DARK}">Notebooks · Pens · Art · Gifts · Printing &amp; Photocopy</text>
-  ${phone ? `<text x="${W / 2}" y="2935" text-anchor="middle" font-size="64" font-weight="900" fill="${NAVY_DARK}">CALL NOW  ${esc(phone)}</text>` : ""}
-  <text x="40" y="${H - 14}" font-size="1" fill="${YELLOW}">${esc(placementTitle)}</text>
-</svg>`;
-}
 
 function render(svg: string, widthPx: number): Buffer {
   const r = new Resvg(svg, { fitTo: { mode: "width", value: widthPx }, background: "#ffffff", font: { loadSystemFonts: true, defaultFontFamily: "Segoe UI" } });
@@ -171,7 +96,11 @@ function renderPosterPng(svg: string, w: number, h: number): Buffer | null {
   } catch {
     return null;
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -194,8 +123,8 @@ for (const p of PLACEMENTS) {
   report.push(`qr-${p.key}.svg / .png`);
 
   if (p.poster) {
-    const svg = posterSvg(url, p.title);
-    const png = renderPosterPng(svg, 2480, 3507); // A4 at about 300 dpi
+    const svg = posterSvg(url, { phone });
+    const png = renderPosterPng(svg, 2480, Math.round((2480 * POSTER_H) / POSTER_W)); // A4 at about 300 dpi
     if (png && decode(png) !== url) throw new Error(`Poster self-check FAILED for ${p.key}. Nothing was written for it.`);
     fs.writeFileSync(path.join(outDir, `poster-${p.key}-A4.svg`), svg);
     if (png) fs.writeFileSync(path.join(outDir, `poster-${p.key}-A4.png`), png);

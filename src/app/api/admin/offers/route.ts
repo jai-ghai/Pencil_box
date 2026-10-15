@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { route, OWNER, HttpError } from "@/lib/api";
+import { route, can, HttpError } from "@/lib/api";
 import { OfferModel } from "@/lib/models";
 import { toPaise } from "@/lib/catalog";
 
@@ -23,9 +23,9 @@ const body = z.discriminatedUnion("type", [
   z.object({ type: z.literal("SLAB"), slabMinQty: z.number().int().min(2).max(100000), slabPrice: z.number().min(0), ...base }),
 ]);
 
-export const GET = route(OWNER, async () => ({ offers: await OfferModel.find().sort({ createdAt: -1 }).lean() }));
+export const GET = route(can("offers"), async () => ({ offers: await OfferModel.find().sort({ createdAt: -1 }).lean() }));
 
-export const POST = route(OWNER, async (req) => {
+export const POST = route(can("offers"), async (req) => {
   const b = body.parse(await req.json());
   if (!b.variantIds.length && !b.categoryIds.length && !b.brandIds.length) throw new HttpError(400, "Pick at least one item, category or brand for the offer");
   const { variantIds, categoryIds, brandIds, startsAt, endsAt, ...rest } = b;

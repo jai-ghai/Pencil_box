@@ -1,9 +1,9 @@
-import { route, OWNER } from "@/lib/api";
+import { route, can } from "@/lib/api";
 import { Product, Sale, Variant } from "@/lib/models";
 import { startOfDayIST } from "@/lib/time";
 import { verifyLedger } from "@/lib/stock";
 
-export const GET = route(OWNER, async () => {
+export const GET = route(can("dashboard"), async () => {
   const from = startOfDayIST();
   const [today] = await Sale.aggregate([
     { $match: { at: { $gte: from }, voided: false } },

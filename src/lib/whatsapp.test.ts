@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOrderMessage, normalizeWhatsappNumber, whatsappUrl, MAX_LINES } from "./whatsapp";
+import { buildOrderMessage, normalizeWhatsappNumber, parseOrderText, whatsappUrl, MAX_LINES } from "./whatsapp";
 
 describe("normalizeWhatsappNumber", () => {
   it("adds India's 91 to a 10-digit number and strips formatting", () => {
@@ -47,5 +47,28 @@ describe("whatsappUrl", () => {
     const url = whatsappUrl("919876543210", text);
     expect(url.startsWith("https://wa.me/919876543210?text=")).toBe(true);
     expect(decodeURIComponent(url.split("?text=")[1])).toBe(text);
+  });
+});
+
+describe("parseOrderText", () => {
+  const lines = [
+    { code: "bp-02", name: "Ball Pen (Standard) Blue", qty: 5, freeUnits: 0, lineTotal: 2500 },
+    { code: "reg-01", name: "Register ₹20", qty: 7, freeUnits: 1, lineTotal: 12000 },
+    { code: "pen-05", name: "Doms X1 Pencil", qty: 10, freeUnits: 0, lineTotal: 5000 },
+  ];
+  it("reads back exactly what the website wrote, in English and Hindi", () => {
+    for (const lang of ["en", "hi"] as const) {
+      const parsed = parseOrderText(buildOrderMessage(lines, 19500, { lang, hasPriceRange: false }));
+      expect(parsed).toEqual([{ code: "BP-02", qty: 5 }, { code: "REG-01", qty: 7 }, { code: "PEN-05", qty: 10 }]);
+    }
+  });
+  it("is not fooled by an X in the product name", () => {
+    expect(parseOrderText("1. [PEN-05] Doms X1 Pencil x 10 = ₹50")).toEqual([{ code: "PEN-05", qty: 10 }]);
+  });
+  it("accepts plain lines, merges repeated codes and ignores everything else", () => {
+    const text = "Hello Pencil Box!\nbp-02 x 3\nBP-02 × 2\nSER-01 x 25\nEstimated total: ₹100\nPlease confirm";
+    expect(parseOrderText(text)).toEqual([{ code: "BP-02", qty: 5 }, { code: "SER-01", qty: 25 }]);
+    expect(parseOrderText("nothing useful here")).toEqual([]);
+    expect(parseOrderText("[BP-02] no quantity")).toEqual([]);
   });
 });

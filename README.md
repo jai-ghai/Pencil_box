@@ -70,3 +70,11 @@ Creates plain QR files (shop front, counter, bag, bill) and A4 posters in `print
 - Strong unique passwords for the staff logins; a strong `AUTH_SECRET`; Atlas backups on.
 - The login and public-API rate limits are in memory (fine for one server). Use a shared store if you run several instances.
 - Set `WHATSAPP_NUMBER` and send yourself a test order from a phone.
+
+## Roles, reports, QR generator
+
+- **Roles:** `superadmin` (everything), `admin` (only the pages and actions the super admin ticks), `cashier` (billing only). Manage them at `/admin/users` (super admin only). Permissions are re-read from the database on every request, so changes apply at once. Edit bill / delete bill / archive product are separate ticks. Every edit and delete is written to the activity log.
+- **Reports** (`/admin/reports`): sales, cost, profit and margin by day / week / month, best sellers, categories, CSV. Photocopy and printout items have no cost saved yet, so profit for them is overstated until a cost per page is set.
+- **Services:** photocopy Rs 2, printout B&W Rs 5, colour Rs 10 (`npm run services`, safe to re-run). They hold no stock.
+- **Paste order:** on the billing screen, paste the WhatsApp order text; item codes fill the cart and the bill is saved as a WhatsApp order.
+- **QR generator** (`/qr-generator`): download PNG/SVG, print, A4 poster. Printed QR codes point at `/q`, and where `/q` lands is a setting, so printed codes never need re-printing.

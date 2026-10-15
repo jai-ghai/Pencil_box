@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { App, Button, Card, Col, Drawer, Empty, Flex, Input, InputNumber, Row, Statistic, Table, Tag, Typography, theme } from "antd";
+import { App, Button, Card, Col, Drawer, Empty, Flex, Input, InputNumber, Modal, Row, Statistic, Table, Tag, Typography, theme } from "antd";
 import type { InputRef, TableColumnsType } from "antd";
-import { CloseOutlined, DeleteOutlined, FileTextOutlined, QrcodeOutlined, SearchOutlined, WalletOutlined } from "@ant-design/icons";
+import { CloseOutlined, DeleteOutlined, FileTextOutlined, QrcodeOutlined, SearchOutlined, WalletOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
 import { BillsTable, type Bill } from "@/components/bills-table";
 import { api, inr, itemTitle } from "@/lib/client";
 import { BRAND } from "@/lib/theme";
+import { parseOrderText } from "@/lib/whatsapp";
 
 interface Item {
   variantId: string;
@@ -62,6 +63,10 @@ export default function PosPage() {
   const [billsOpen, setBillsOpen] = useState(false);
   const [bills, setBills] = useState<{ bills: Bill[]; summary: { bills: number; total: number; cash: number; upi: number } } | null>(null);
   const priceSeq = useRef(0);
+  // a pasted WhatsApp order: kept with the bill so the order is saved, not just the sale
+  const [waOpen, setWaOpen] = useState(false);
+  const [waDraft, setWaDraft] = useState("");
+  const [waSaved, setWaSaved] = useState("");
 
   const focusSearch = useCallback(() => searchRef.current?.focus(), []);
   const priced = cart.length ? pricedRaw : null; // no cart, no price
@@ -111,6 +116,7 @@ export default function PosPage() {
 
   const clear = useCallback(() => {
     setCart([]);
+    setWaSaved("");
     setReceived(null);
     setQuery("");
     focusSearch();
@@ -122,7 +128,7 @@ export default function PosPage() {
       setBusy(true);
       try {
         const out = await api<{ billNo: number; total: number; warnings: string[] }>("/api/pos/sale", {
-          body: { items: cart.map((c) => ({ variantId: c.variantId, qty: c.qty })), payments: { cash: 0, upi: 0, [mode]: priced.total } },
+          body: { items: cart.map((c) => ({ variantId: c.variantId, qty: c.qty })), payments: { cash: 0, upi: 0, [mode]: priced.total }, ...(waSaved ? { source: "whatsapp", waText: waSaved } : {}) },
         });
         clear();
         message.success({ content: `Bill #${out.billNo} saved · ${inr(out.total)} · ${mode === "upi" ? "UPI" : "Cash"}`, duration: 4 });
@@ -133,7 +139,7 @@ export default function PosPage() {
         setBusy(false);
       }
     },
-    [priced, busy, cart, clear, message],
+    [priced, busy, cart, clear, message, waSaved],
   );
 
   /* keyboard shortcuts: F2 or / search, F8 cash, F9 UPI */
@@ -156,6 +162,32 @@ export default function PosPage() {
       const m = /^(\d+)\*/.exec(query);
       add(results[hi], m ? Math.min(parseInt(m[1], 10), 100000) : 1);
       setQuery("");
+    }
+  }
+
+  /** Fill the bill from a customer's WhatsApp message (the lines the website writes, with item codes). */
+  async function pasteOrder() {
+    const wanted = parseOrderText(waDraft);
+    if (!wanted.length) {
+      message.warning("No item codes found. Paste the whole order message from WhatsApp.");
+      return;
+    }
+    try {
+      const { items, missing } = await api<{ items: Item[]; missing: string[] }>("/api/pos/by-codes", { body: { codes: wanted.map((w) => w.code) } });
+      const byCode = new Map(items.map((i) => [i.shortCode.toUpperCase(), i]));
+      let added = 0;
+      for (const w of wanted) {
+        const item = byCode.get(w.code);
+        if (item) (add(item, w.qty), added++);
+      }
+      setWaSaved(waDraft.trim().slice(0, 3000));
+      setWaOpen(false);
+      setWaDraft("");
+      if (added) message.success(`Added ${added} item${added === 1 ? "" : "s"} from the WhatsApp order. Check the quantities, then take payment.`);
+      if (missing.length) message.warning({ content: `Not found: ${missing.join(", ")}. Add them by hand.`, duration: 8 });
+      focusSearch();
+    } catch (e) {
+      message.error((e as Error).message);
     }
   }
 
@@ -226,6 +258,9 @@ export default function PosPage() {
             <Typography.Text type="secondary" style={{ fontSize: 13 }}>
               <kbd>↑</kbd> <kbd>↓</kbd> choose · <kbd>Enter</kbd> add · <kbd>5*code</kbd> add 5 · <kbd>F2</kbd> search · <kbd>F8</kbd> cash · <kbd>F9</kbd> UPI
             </Typography.Text>
+
+            <Button icon={<WhatsAppOutlined />} onClick={() => setWaOpen(true)} style={{ alignSelf: "flex-start" }}>Paste WhatsApp order</Button>
+            {waSaved && <Tag color="success" style={{ alignSelf: "flex-start", marginInlineEnd: 0 }}>This bill is from a WhatsApp order</Tag>}
 
             {searching ? (
               <SimpleList
@@ -314,6 +349,20 @@ export default function PosPage() {
           </Flex>
         </Col>
       </Row>
+
+      <Modal
+        open={waOpen}
+        title="Paste the customer's WhatsApp order"
+        okText="Add to bill"
+        cancelText="Cancel"
+        onOk={pasteOrder}
+        onCancel={() => setWaOpen(false)}
+        okButtonProps={{ disabled: !waDraft.trim() }}
+        destroyOnHidden
+      >
+        <Typography.Paragraph type="secondary">Copy the message the customer sent on WhatsApp and paste it here. Items are found by their codes (like BP-02). The message is saved with the bill.</Typography.Paragraph>
+        <Input.TextArea value={waDraft} onChange={(e) => setWaDraft(e.target.value)} rows={10} autoFocus aria-label="WhatsApp order text" placeholder={"1. [BP-04] Ball Pen (Standard) Blue x 5 = ₹25\n2. [REG-01] Register ₹20 x 7 (1 free) = ₹120"} />
+      </Modal>
 
       <Drawer open={billsOpen} onClose={() => setBillsOpen(false)} title="Today's bills" size={640} destroyOnHidden>
         {bills && (

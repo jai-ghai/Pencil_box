@@ -116,6 +116,11 @@ await m.OfferModel.create({
   label_en: "Buy 6 Get 1 Free", label_hi: "6 खरीदें 1 फ्री पाएं",
 });
 
+// photocopy and printing (per page) are not part of the wholesale package, so they are added here
+const { ensureServices } = await import("../src/lib/seed-services");
+const services = await ensureServices();
+console.log(`services: ${services.created} added`);
+
 const pieces = lines.reduce((s, l) => s + l.qty, 0);
 console.log(`imported: ${PRODUCTS.length} products, ${lines.length} variants, ${pieces} pieces, supplier "${SUPPLIER.name}"`);
 console.log(`purchase total (qty x cost): Rs ${(total / 100).toFixed(2)}`);

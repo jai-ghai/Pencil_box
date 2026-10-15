@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
 /**
- * First gate for staff areas. Route handlers re-check the role themselves (see lib/api.ts),
- * so this is defence in depth, not the only check.
+ * First gate for staff areas. Route handlers re-check the role and the exact permission against the database
+ * (see lib/api.ts), so this is defence in depth, not the only check.
  */
 export async function proxy(req: NextRequest) {
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value);
@@ -16,12 +16,11 @@ export async function proxy(req: NextRequest) {
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
-  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    if (session.role !== "owner") {
-      return isApi ? NextResponse.json({ error: "Owner only" }, { status: 403 }) : NextResponse.redirect(new URL("/pos", req.url));
-    }
+  const adminArea = pathname.startsWith("/admin") || pathname.startsWith("/api/admin") || pathname.startsWith("/qr-generator");
+  if (adminArea && session.role === "cashier") {
+    return isApi ? NextResponse.json({ error: "Not allowed" }, { status: 403 }) : NextResponse.redirect(new URL("/pos", req.url));
   }
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/admin/:path*", "/pos/:path*", "/api/admin/:path*", "/api/pos/:path*"] };
+export const config = { matcher: ["/admin/:path*", "/pos/:path*", "/qr-generator/:path*", "/api/admin/:path*", "/api/pos/:path*", "/api/auth/me"] };
