@@ -424,7 +424,6 @@ function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang
           <div className="min-w-0 flex-1 sm:p-3 sm:pb-1">
             {showBrand && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{p.brand}</Typography.Text>}
             <Typography.Title level={5} style={{ margin: 0, lineHeight: 1.3 }}>{name}</Typography.Title>
-            {p.imageGeneric && <Typography.Text type="secondary" style={{ fontSize: 11 }}>{t("illustration")}</Typography.Text>}
           </div>
         </div>
         <ul className="px-3 pb-2">

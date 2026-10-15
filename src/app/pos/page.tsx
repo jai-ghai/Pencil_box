@@ -238,7 +238,8 @@ export default function PosPage() {
         </Flex>
       </header>
 
-      <Row gutter={[16, 16]} className="mx-auto w-full max-w-[1400px] flex-1 p-4">
+      <div className="mx-auto w-full max-w-[1400px] flex-1 p-4">
+      <Row gutter={[16, 16]}>
         {/* left: find items */}
         <Col xs={24} lg={11}>
           <Flex vertical gap={12}>
@@ -349,6 +350,7 @@ export default function PosPage() {
           </Flex>
         </Col>
       </Row>
+      </div>
 
       <Modal
         open={waOpen}
