@@ -1,9 +1,13 @@
 import { z } from "zod";
 import { route, can, STAFF, HttpError } from "@/lib/api";
-import { Category } from "@/lib/models";
+import { Category, Product } from "@/lib/models";
 import { slugify } from "@/lib/catalog";
 
-export const GET = route(STAFF, async () => ({ categories: await Category.find().sort({ sortOrder: 1, name_en: 1 }).lean() }));
+export const GET = route(STAFF, async () => {
+  const counts = new Map((await Product.aggregate<{ _id: unknown; n: number }>([{ $group: { _id: "$categoryId", n: { $sum: 1 } } }])).map((c) => [String(c._id), c.n]));
+  const categories = await Category.find().sort({ sortOrder: 1, name_en: 1 }).lean();
+  return { categories: categories.map((c) => ({ ...c, products: counts.get(String(c._id)) ?? 0 })) };
+});
 
 const body = z.object({
   name_en: z.string().min(1).max(60),
