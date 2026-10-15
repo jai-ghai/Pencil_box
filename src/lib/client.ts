@@ -26,3 +26,10 @@ export const inr = (paise: number) =>
 /** "Brand Product Label", without repeating the brand when the product name already starts with it. */
 export const itemTitle = (i: { brand?: string; name: string; label?: string }) =>
   [i.brand && !i.name.toLowerCase().startsWith(i.brand.toLowerCase()) ? i.brand : "", i.name, i.label].filter(Boolean).join(" ");
+
+/** "Akash Notebook ₹20" with brand "Akash" becomes "Notebook ₹20", for screens that already show the brand beside the name. */
+export function stripBrand(name: string, brand?: string | null): string {
+  if (!brand) return name;
+  const b = brand.trim();
+  return name.toLowerCase().startsWith(b.toLowerCase() + " ") ? name.slice(b.length).replace(/^[\s+\-–]+/, "").trim() || name : name;
+}

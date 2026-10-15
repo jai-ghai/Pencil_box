@@ -9,7 +9,7 @@ import { Wordmark } from "@/components/wordmark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
 import { AccentScope } from "./providers";
-import { inr, itemTitle } from "@/lib/client";
+import { inr, itemTitle, stripBrand } from "@/lib/client";
 import { text, type Lang, type TextKey } from "@/lib/i18n";
 import { BRAND } from "@/lib/theme";
 import { buildOrderMessage, whatsappUrl, type OrderLine } from "@/lib/whatsapp";
@@ -402,8 +402,8 @@ function Stepper({ qty, max, onChange, label, t }: { qty: number; max: number; o
 
 function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang; t: T; cart: Cart; setQty: (id: string, qty: number) => void }) {
   const { token } = theme.useToken();
-  const name = lang === "hi" && p.name_hi ? p.name_hi : p.name_en;
-  const showBrand = p.brand && !p.name_en.toLowerCase().startsWith(p.brand.toLowerCase());
+  const name = lang === "hi" && p.name_hi ? p.name_hi : stripBrand(p.name_en, p.brand);
+  const showBrand = !!p.brand;
   return (
     <Card hoverable={false} styles={{ body: { padding: 0 } }} className="h-full overflow-hidden [&>.ant-card-body]:h-full">
       <div className="flex h-full flex-col">
