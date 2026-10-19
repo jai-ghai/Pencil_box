@@ -19,7 +19,7 @@ interface NavItem {
   perm: Perm | "users";
 }
 const SHORT: Partial<Record<Perm, string>> = { setup: "Setup", qr: "QR codes" }; // shorter names so the whole menu fits on one line
-const NAV: NavItem[] = [...PAGE_PERMS.map((p) => ({ href: p.href, label: SHORT[p.key] ?? p.label, perm: p.key })), { href: "/admin/users", label: "Users", perm: "users" }];
+const NAV: NavItem[] = [...PAGE_PERMS.map((p) => ({ href: p.href, label: SHORT[p.key] ?? p.label, perm: p.key })), { href: "/admin/requests", label: "Requests", perm: "products" }, { href: "/admin/users", label: "Users", perm: "users" }];
 const ROLE_LABEL = { superadmin: "Super admin", admin: "Admin", cashier: "Cashier" } as const;
 
 /**

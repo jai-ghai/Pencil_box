@@ -251,3 +251,18 @@ const auditSchema = new Schema(
 export const AuditLog = model("AuditLog", auditSchema);
 
 export type UserDoc = InferSchemaType<typeof userSchema>;
+
+/* ---------- Customer requests: items a visitor asked for that the shop does not stock ---------- */
+export const REQUEST_STATUSES = ["new", "ordered", "in_stock", "declined"] as const;
+const itemRequestSchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    note: { type: String, trim: true },
+    /** optional, so the shop can call back; delete the request to remove it */
+    phone: { type: String, trim: true },
+    imageUrl: { type: String },
+    status: { type: String, enum: REQUEST_STATUSES, default: "new", index: true },
+  },
+  opts,
+);
+export const ItemRequest = model("ItemRequest", itemRequestSchema);

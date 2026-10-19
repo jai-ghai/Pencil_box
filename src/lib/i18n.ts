@@ -40,6 +40,19 @@ const en = {
   comingSoon: "Coming soon",
   showAll: "Show all items",
   illustration: "Picture is for illustration",
+  offersToday: "Today's offers",
+  noOffers: "No offers running right now. Check back soon!",
+  reqCta: "Can't find it? Request an item",
+  reqTitle: "Request an item",
+  reqIntro: "Tell us what you need. If we can get it, we will arrange it for you.",
+  reqName: "What do you need?",
+  reqNote: "More details (size, colour, brand) - optional",
+  reqPhone: "Your phone number - optional, so we can call you",
+  reqPhoto: "Add a photo - optional",
+  reqSend: "Send request",
+  reqDone: "Thank you! We have your request.",
+  reqFail: "Could not send. Please try again.",
+  reqPrivacy: "Your number is used only to contact you about this request.",
 };
 
 const hi: typeof en = {
@@ -82,6 +95,19 @@ const hi: typeof en = {
   comingSoon: "जल्द आ रहा है",
   showAll: "सभी आइटम दिखाएं",
   illustration: "तस्वीर सिर्फ समझाने के लिए है",
+  offersToday: "आज के ऑफ़र",
+  noOffers: "अभी कोई ऑफ़र नहीं है। जल्द फिर देखें!",
+  reqCta: "नहीं मिला? आइटम की रिक्वेस्ट करें",
+  reqTitle: "आइटम की रिक्वेस्ट",
+  reqIntro: "बताइए आपको क्या चाहिए। मिल सका तो हम मंगा देंगे।",
+  reqName: "आपको क्या चाहिए?",
+  reqNote: "और जानकारी (साइज़, रंग, ब्रांड) - ज़रूरी नहीं",
+  reqPhone: "आपका फ़ोन नंबर - ज़रूरी नहीं, ताकि हम फ़ोन कर सकें",
+  reqPhoto: "फ़ोटो जोड़ें - ज़रूरी नहीं",
+  reqSend: "रिक्वेस्ट भेजें",
+  reqDone: "धन्यवाद! आपकी रिक्वेस्ट हमें मिल गई।",
+  reqFail: "भेज नहीं सके। कृपया फिर कोशिश करें।",
+  reqPrivacy: "आपका नंबर सिर्फ इस रिक्वेस्ट के बारे में संपर्क के लिए इस्तेमाल होगा।",
 };
 
 export const dict = { en, hi };

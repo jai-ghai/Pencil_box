@@ -46,7 +46,7 @@ const HINDI = "Nirmala UI, Mangal, sans-serif";
 export const POSTER_W = 2100;
 export const POSTER_H = 2970;
 
-/** A4 poster (2100 x 2970 units): shop name, "scan to see our products" in English and Hindi, the QR, the six categories. */
+/** A4 poster (2100 x 2970 units): shop name, "scan for products and today's offers" in English and Hindi, the QR, the six categories. */
 export function posterSvg(url: string, opts: { phone?: string } = {}): string {
   const { phone } = opts;
   const { d, size } = qrPath(url);
@@ -76,8 +76,8 @@ export function posterSvg(url: string, opts: { phone?: string } = {}): string {
   <text x="${W / 2}" y="600" text-anchor="middle" font-size="72" font-style="italic" fill="#fff">Write  •  Create  •  Learn  •  Grow</text>
   <rect x="${W / 2 - 430}" y="670" width="860" height="130" rx="65" fill="${YELLOW}"/>
   <text x="${W / 2}" y="760" text-anchor="middle" font-size="64" font-weight="800" letter-spacing="4" fill="${NAVY_DARK}">STATIONERY &amp; MORE</text>
-  <text x="${W / 2}" y="930" text-anchor="middle" font-size="86" font-weight="900" fill="#fff">SCAN TO SEE OUR PRODUCTS</text>
-  <text x="${W / 2}" y="1000" text-anchor="middle" font-size="58" font-family="${HINDI}" fill="${YELLOW}">सभी सामान देखने के लिए स्कैन करें</text>
+  <text x="${W / 2}" y="910" text-anchor="middle" font-size="86" font-weight="900" fill="#fff">SCAN FOR PRODUCTS &amp; TODAY'S OFFERS</text>
+  <text x="${W / 2}" y="985" text-anchor="middle" font-size="56" font-family="${HINDI}" fill="${YELLOW}">सामान और आज के ऑफ़र देखने के लिए स्कैन करें</text>
   <rect x="${qx - 70}" y="${qy + 10}" width="${qrBox + 140}" height="${qrBox + 140}" rx="70" fill="${YELLOW}"/>
   <rect x="${qx - 40}" y="${qy + 40}" width="${qrBox + 80}" height="${qrBox + 80}" rx="50" fill="#fff"/>
   <g transform="translate(${qx} ${qy + 80}) scale(${scale})" shape-rendering="crispEdges"><path d="${d}" fill="${QR_INK}"/></g>

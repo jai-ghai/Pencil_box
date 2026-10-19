@@ -3,8 +3,8 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
-import { MinusOutlined, PictureOutlined, PlusOutlined, SearchOutlined, ShoppingCartOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
+import { MinusOutlined, PictureOutlined, PlusOutlined, SearchOutlined, ShoppingCartOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
@@ -96,12 +96,14 @@ function StorefrontInner() {
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
   const [lang, setLang] = useState<Lang>("en");
+  const [requestOpen, setRequestOpen] = useState(false);
   const [catalog, setCatalog] = useState<StoreCatalog | null>(null);
   const [error, setError] = useState(false);
   const [q, setQ] = useState("");
   const [topCat, setTopCat] = useState<string | null>(null);
   const [subCat, setSubCat] = useState<string | null>(null);
   const [brand, setBrand] = useState<string | undefined>(undefined);
+  const [offersOnly, setOffersOnly] = useState(false);
   const [cart, setCart] = useState<Cart>({});
   const [pricedRaw, setPriced] = useState<PricedCart | null>(null);
   const [sheet, setSheet] = useState(false);
@@ -124,6 +126,7 @@ function StorefrontInner() {
         setCart(kept);
         if (dropped) setNotice("removedSoldOut");
         setCatalog(c);
+        if (new URLSearchParams(window.location.search).get("offers") === "1") setOffersOnly(true); // QR / link straight to the offers
         setReady(true);
       })
       .catch(() => setError(true));
@@ -209,16 +212,19 @@ function StorefrontInner() {
     return (catalog?.products ?? []).filter((p) => {
       if (subCat ? p.categoryId !== subCat : topCat && p.categoryId !== topCat && parentOf.get(p.categoryId) !== topCat) return false;
       if (brand && p.brandId !== brand) return false;
+      if (offersOnly && !p.variants.some((v) => v.offers.length > 0)) return false;
       if (!words.length) return true;
       const hay = `${p.name_en} ${p.name_hi} ${p.brand} ${p.variants.map((v) => `${v.label} ${v.code}`).join(" ")}`.toLowerCase();
       return words.every((w) => hay.includes(w));
     });
-  }, [catalog, q, topCat, subCat, brand, parentOf]);
+  }, [catalog, q, topCat, subCat, brand, offersOnly, parentOf]);
+  const hasOffers = !!catalog?.products.some((p) => p.variants.some((v) => v.offers.length > 0));
   const clearFilters = () => {
     setQ("");
     setTopCat(null);
     setSubCat(null);
     setBrand(undefined);
+    setOffersOnly(false);
   };
 
   /* cart numbers */
@@ -265,6 +271,11 @@ function StorefrontInner() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-28">
         {catalog && (
           <Flex vertical gap={10} className="mb-4">
+            {hasOffers && (
+              <Button type={offersOnly ? "primary" : "default"} size="large" icon={<TagsOutlined />} aria-pressed={offersOnly} onClick={() => setOffersOnly((v) => !v)} style={{ alignSelf: "flex-start" }}>
+                {t("offersToday")}
+              </Button>
+            )}
             <div className="pb-scroll-x -mx-4 flex gap-3 px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-6 lg:overflow-visible lg:px-0" role="group" aria-label="Categories">
               {TILES.map((tile) => {
                 const cat = topCats.find((c) => c.name_en === tile.match);
@@ -344,6 +355,11 @@ function StorefrontInner() {
         </ul>
       </main>
 
+      <div className="px-4 pb-4 text-center">
+        <Button onClick={() => setRequestOpen(true)}>{t("reqCta")}</Button>
+      </div>
+      <RequestModal open={requestOpen} onClose={() => setRequestOpen(false)} t={t} />
+
       <footer className="px-4 pb-24 pt-2 text-center">
         <NextImage src="/brand/mascot.png" alt="" width={72} height={68} className="mx-auto mb-2" style={{ height: "auto" }} />
         <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 4 }}>
@@ -367,6 +383,59 @@ function StorefrontInner() {
         total={total} hasRange={hasRange} waHref={waHref} setQty={setQty} onClear={() => (setCart({}), setNotice(""), setSheet(false))} wide={!!screens.md}
       />
     </div>
+  );
+}
+
+/** "Request an item": name, optional note, phone and photo, sent to the shop (no login needed). */
+function RequestModal({ open, onClose, t }: { open: boolean; onClose: () => void; t: T }) {
+  const [name, setName] = useState("");
+  const [note, setNote] = useState("");
+  const [phone, setPhone] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [trap, setTrap] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+
+  async function send() {
+    setState("sending");
+    const fd = new FormData();
+    fd.set("name", name);
+    fd.set("note", note);
+    fd.set("phone", phone);
+    fd.set("website", trap);
+    if (photo) fd.set("photo", photo);
+    try {
+      const res = await fetch("/api/store/request", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("failed");
+      setState("done");
+      setName("");
+      setNote("");
+      setPhone("");
+      setPhoto(null);
+    } catch {
+      setState("error");
+    }
+  }
+  const close = () => (setState("idle"), onClose());
+
+  return (
+    <Modal open={open} onCancel={close} title={t("reqTitle")} footer={null} destroyOnHidden>
+      {state === "done" ? (
+        <Result status="success" title={t("reqDone")} extra={<Button type="primary" onClick={close}>{t("close")}</Button>} />
+      ) : (
+        <Flex vertical gap={12}>
+          <Typography.Text type="secondary">{t("reqIntro")}</Typography.Text>
+          <label>{t("reqName")}<Input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} /></label>
+          <label>{t("reqNote")}<Input.TextArea value={note} maxLength={300} rows={2} onChange={(e) => setNote(e.target.value)} /></label>
+          <label>{t("reqPhone")}<Input value={phone} maxLength={15} inputMode="tel" onChange={(e) => setPhone(e.target.value)} /></label>
+          <label>{t("reqPhoto")}<input type="file" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-sm" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} /></label>
+          {/* hidden trap field for bots */}
+          <input aria-hidden tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} style={{ position: "absolute", left: -9999, height: 0, width: 0, opacity: 0 }} />
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t("reqPrivacy")}</Typography.Text>
+          {state === "error" && <Alert type="error" showIcon title={t("reqFail")} />}
+          <Button type="primary" size="large" loading={state === "sending"} disabled={name.trim().length < 2} onClick={send}>{t("reqSend")}</Button>
+        </Flex>
+      )}
+    </Modal>
   );
 }
 
