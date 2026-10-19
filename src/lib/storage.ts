@@ -47,3 +47,40 @@ export async function saveProductImage(buf: Buffer): Promise<string> {
   await fs.writeFile(path.join(dir, name), buf);
   return `/uploads/${name}`;
 }
+
+/** The Cloudinary public id inside one of our image links ("pencilbox/abc123"), or null for any other link. */
+export function cloudinaryPublicId(url: string): string | null {
+  const m = /^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/(?:[^/]+\/)*?(?:v\d+\/)?(pencilbox\/[A-Za-z0-9_-]+)\.[a-z]+$/.exec(url);
+  return m ? m[1] : null;
+}
+
+/**
+ * Delete a product image from where it is stored: Cloudinary (our "pencilbox" folder) or public/uploads on the server.
+ * Links that are not ours are left alone. Never throws, so a failed clean-up cannot block saving a product.
+ */
+export async function deleteProductImage(url: string): Promise<boolean> {
+  try {
+    const local = /^\/uploads\/([a-f0-9]{24}\.(?:jpg|png|webp))$/.exec(url);
+    if (local) {
+      await fs.unlink(path.join(process.cwd(), "public", "uploads", local[1]));
+      return true;
+    }
+    const publicId = cloudinaryPublicId(url);
+    const cld = process.env.CLOUDINARY_URL;
+    const m = cld && /^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/.exec(cld);
+    if (!publicId || !m) return false;
+    const [, key, secret, cloud] = m;
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = crypto.createHash("sha1").update(`invalidate=true&public_id=${publicId}&timestamp=${timestamp}${secret}`).digest("hex");
+    const form = new FormData();
+    form.set("public_id", publicId);
+    form.set("invalidate", "true");
+    form.set("api_key", key);
+    form.set("timestamp", timestamp);
+    form.set("signature", signature);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud}/image/destroy`, { method: "POST", body: form });
+    return res.ok && ((await res.json()) as { result?: string }).result === "ok";
+  } catch {
+    return false;
+  }
+}

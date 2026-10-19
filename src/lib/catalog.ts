@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Brand, Category, Product, Variant } from "./models";
 import { buildSearchText } from "./search";
 import { adjustStock } from "./stock";
+import { deleteProductImage } from "./storage";
 
 export class CatalogError extends Error {}
 
@@ -81,11 +82,23 @@ export async function syncSearchText(productId: string): Promise<void> {
   }
 }
 
+/** Delete pictures nobody uses any more, from the server / Cloudinary. A picture still on another product is kept (stand-ins are shared). */
+export async function removeUnusedImages(urls: string[]): Promise<number> {
+  let removed = 0;
+  for (const url of new Set(urls)) {
+    if (await Product.exists({ images: url })) continue;
+    if (await deleteProductImage(url)) removed++;
+  }
+  return removed;
+}
+
 export async function saveProduct(input: ProductInput, productId?: string) {
   const { variants, brandId, supplierId, imageGeneric, ...fields } = input;
+  const before: string[] = productId ? ((await Product.findById(productId, { images: 1 }).lean())?.images ?? []) : [];
   const doc = { ...fields, ...(imageGeneric !== undefined ? { imageGeneric } : {}), brandId: brandId || undefined, supplierId: supplierId || undefined };
   const product = productId ? await Product.findByIdAndUpdate(productId, doc, { returnDocument: "after" }) : await Product.create(doc);
   if (!product) throw new Error("Product not found");
+  await removeUnusedImages(before.filter((u) => !product.images.includes(u)));
 
   const cat = await Category.findById(product.categoryId).lean();
   const prefix = codePrefix(cat?.name_en ?? "");
