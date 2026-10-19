@@ -16,7 +16,8 @@
     "images": "tsx scripts/set-product-images.ts",
     "services": "tsx scripts/add-services.ts",
     "add:purchase": "tsx scripts/add-purchase.ts",
-    "remove:images": "tsx scripts/remove-images.ts"
+    "remove:images": "tsx scripts/remove-images.ts",
+    "add:offers": "tsx scripts/add-offers.ts"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",

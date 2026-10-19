@@ -1,37 +1,51 @@
-import { z } from "zod";
 import { route, can, HttpError } from "@/lib/api";
-import { OfferModel } from "@/lib/models";
-import { toPaise } from "@/lib/catalog";
+import { Brand, OfferModel, Product, Variant } from "@/lib/models";
+import { offerBody, offerFields } from "@/lib/offers-input";
+import { profitShare } from "@/lib/offer-margin";
 
-const ids = z.array(z.string().length(24)).max(200).default([]);
-const base = {
-  variantIds: ids,
-  categoryIds: ids,
-  brandIds: ids,
-  startsAt: z.string().datetime().optional().or(z.literal("")),
-  endsAt: z.string().datetime().optional().or(z.literal("")),
-  label_en: z.string().min(1).max(80),
-  label_hi: z.string().max(80).optional(),
-};
+/**
+ * All offers, each with the items it names directly and a profit check: the lowest profit share across the items it covers
+ * (cost vs the price the customer pays under the offer) and how many covered items would sell at a loss.
+ */
+export const GET = route(can("offers"), async () => {
+  const offers = await OfferModel.find().sort({ createdAt: -1 }).lean();
+  const [variants, products, brands] = await Promise.all([
+    Variant.find({ active: true }).lean(),
+    Product.find({}, "name_en brandId categoryId").lean(),
+    Brand.find({}, "name").lean(),
+  ]);
+  const prod = new Map(products.map((p) => [String(p._id), p]));
+  const brandName = new Map(brands.map((b) => [String(b._id), b.name]));
+  const rows = variants.flatMap((v) => {
+    const p = prod.get(String(v.productId));
+    if (!p) return [];
+    const brand = p.brandId ? String(p.brandId) : "";
+    return [{ id: String(v._id), cat: String(p.categoryId), brand, price: v.sellPrice, cost: v.costPrice, title: [brand ? brandName.get(brand) : "", p.name_en, v.label].filter(Boolean).join(" ") }];
+  });
+  const label = new Map(rows.map((r) => [r.id, r.title]));
 
-// Money fields arrive in rupees from the UI; stored as integer paise.
-const body = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("BUY_X_GET_Y"), buyQty: z.number().int().min(1).max(1000), freeQty: z.number().int().min(1).max(1000), ...base }),
-  z.object({ type: z.literal("BUNDLE"), bundleQty: z.number().int().min(2).max(1000), bundlePrice: z.number().positive(), ...base }),
-  z.object({ type: z.literal("PERCENT"), percent: z.number().min(1).max(100), ...base }),
-  z.object({ type: z.literal("FLAT"), flatOff: z.number().positive(), ...base }),
-  z.object({ type: z.literal("SLAB"), slabMinQty: z.number().int().min(2).max(100000), slabPrice: z.number().min(0), ...base }),
-]);
+  return {
+    offers: offers.map((o) => {
+      const s: { variantIds?: string[]; categoryIds?: string[]; brandIds?: string[] } = o.scope ?? {};
+      const covered = rows.filter((r) => s.variantIds?.includes(r.id) || s.categoryIds?.includes(r.cat) || (r.brand && s.brandIds?.includes(r.brand)));
+      const shares = covered.flatMap((r) => {
+        const x = profitShare(o, r.price, r.cost);
+        return x === null ? [] : [x];
+      });
+      return {
+        ...o,
+        scopeItems: (s.variantIds ?? []).map((id) => ({ value: id, label: label.get(id) ?? "(removed item)" })),
+        coveredCount: covered.length,
+        lowestProfit: shares.length ? Math.min(...shares) : null,
+        losing: shares.filter((x) => x < 0).length,
+      };
+    }),
+  };
+});
 
-export const GET = route(can("offers"), async () => ({ offers: await OfferModel.find().sort({ createdAt: -1 }).lean() }));
-
+/** New offers start switched OFF; the owner turns them on when ready. */
 export const POST = route(can("offers"), async (req) => {
-  const b = body.parse(await req.json());
+  const b = offerBody.parse(await req.json());
   if (!b.variantIds.length && !b.categoryIds.length && !b.brandIds.length) throw new HttpError(400, "Pick at least one item, category or brand for the offer");
-  const { variantIds, categoryIds, brandIds, startsAt, endsAt, ...rest } = b;
-  const doc: Record<string, unknown> = { ...rest, scope: { variantIds, categoryIds, brandIds }, startsAt: startsAt || undefined, endsAt: endsAt || undefined };
-  if ("bundlePrice" in b) doc.bundlePrice = toPaise(b.bundlePrice);
-  if ("flatOff" in b) doc.flatOff = toPaise(b.flatOff);
-  if ("slabPrice" in b) doc.slabPrice = toPaise(b.slabPrice);
-  return { offer: await OfferModel.create(doc) };
+  return { offer: await OfferModel.create({ ...offerFields(b), active: false }) };
 });
