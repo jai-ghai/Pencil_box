@@ -24,6 +24,7 @@ export const ACTION_PERMS = [
   { key: "orders:edit", label: "Edit bills" },
   { key: "orders:delete", label: "Delete bills" },
   { key: "products:delete", label: "Archive and restore products" },
+  { key: "purchases:edit", label: "Edit and delete purchases" },
 ] as const;
 
 export type PagePerm = (typeof PAGE_PERMS)[number]["key"];
