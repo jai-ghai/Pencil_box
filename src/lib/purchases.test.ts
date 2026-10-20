@@ -4,7 +4,7 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { Category, Product, Purchase, StockMovement, Supplier, Variant } from "./models";
 import { saveProduct } from "./catalog";
 import { recordMovement, verifyLedger, withStockTransaction } from "./stock";
-import { deletePurchase, editPurchase } from "./purchases";
+import { createPurchase, deletePurchase, editPurchase } from "./purchases";
 import { AppError } from "./errors";
 
 let repl: MongoMemoryReplSet;
@@ -61,5 +61,30 @@ describe("deletePurchase", () => {
     expect(await StockMovement.countDocuments({ variantId: variant._id })).toBe(2); // the purchase and its reversal
     expect(await verifyLedger()).toEqual([]);
     expect(await Product.countDocuments({ name_en: "Del A" })).toBe(1); // the product itself stays
+  });
+});
+
+describe("createPurchase", () => {
+  it("adds stock, records the purchase, updates cost and price, and creates a new supplier by name", async () => {
+    const { variant } = await setup("New A"); // stock 20, cost 5, price 10
+    const out = await createPurchase({ supplierName: "Fresh Supplier", lines: [{ variantId: String(variant._id), qty: 10, cost: 6, price: 12 }] }, "owner");
+    expect(out?.total).toBe(6000);
+    expect(out?.supplierId).toMatchObject({ name: "Fresh Supplier" });
+    const v = (await Variant.findById(variant._id))!;
+    expect(v.stockOnHand).toBe(30);
+    expect(v.costPrice).toBe(600);
+    expect(v.sellPrice).toBe(1200);
+    expect(await verifyLedger()).toEqual([]);
+    // the same name later finds the same supplier
+    await createPurchase({ supplierName: "fresh supplier", lines: [{ variantId: String(variant._id), qty: 1, cost: 6 }] }, "owner");
+    expect(await Supplier.countDocuments({ name: /^fresh supplier$/i })).toBe(1);
+  });
+  it("refuses an empty list, a repeated item, a zero quantity and a missing supplier", async () => {
+    const { variant } = await setup("New B");
+    const id = String(variant._id);
+    await expect(createPurchase({ supplierName: "X", lines: [] }, "o")).rejects.toBeInstanceOf(AppError);
+    await expect(createPurchase({ supplierName: "X", lines: [{ variantId: id, qty: 1, cost: 1 }, { variantId: id, qty: 1, cost: 1 }] }, "o")).rejects.toBeInstanceOf(AppError);
+    await expect(createPurchase({ supplierName: "X", lines: [{ variantId: id, qty: 0, cost: 1 }] }, "o")).rejects.toBeInstanceOf(AppError);
+    await expect(createPurchase({ lines: [{ variantId: id, qty: 1, cost: 1 }] }, "o")).rejects.toBeInstanceOf(AppError);
   });
 });

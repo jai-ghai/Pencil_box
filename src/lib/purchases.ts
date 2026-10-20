@@ -1,4 +1,5 @@
-import { Purchase, Variant } from "./models";
+import { Product, Purchase, Supplier, Variant } from "./models";
+import { escapeRegex } from "./search";
 import { recordMovement, withStockTransaction } from "./stock";
 import { toPaise } from "./catalog";
 import { AppError } from "./errors";
@@ -90,4 +91,63 @@ export async function deletePurchase(id: string, by: string) {
     await Purchase.deleteOne({ _id: purchase._id }, { session });
   });
   await audit(by, "purchase.delete", "purchase", `Deleted purchase (${purchase.items.length} lines, total ${purchase.total / 100})`, { entityId: id });
+}
+
+export interface NewPurchase {
+  supplierId?: string;
+  /** used when no supplier is chosen: finds the supplier by this name or creates it */
+  supplierName?: string;
+  invoiceNo?: string;
+  note?: string;
+  date?: Date;
+  lines: { variantId: string; qty: number; cost: number; price?: number }[];
+}
+
+/**
+ * Record stock bought from a supplier: one purchase record, one ledger row per item (stock goes up),
+ * and the item's cost price (and selling price, if given) is brought in line with this bill.
+ */
+export async function createPurchase(input: NewPurchase, by: string) {
+  if (!input.lines.length) throw new AppError("Add at least one item");
+  const seen = new Set<string>();
+  for (const l of input.lines) {
+    if (seen.has(l.variantId)) throw new AppError("The same item is in the list twice. Add its quantities together.");
+    seen.add(l.variantId);
+    if (!Number.isInteger(l.qty) || l.qty < 1) throw new AppError("Every quantity must be a whole number of at least 1");
+    if (!Number.isFinite(l.cost) || l.cost < 0) throw new AppError("Cost cannot be negative");
+  }
+
+  let supplier = input.supplierId ? await Supplier.findById(input.supplierId) : null;
+  const name = input.supplierName?.trim();
+  if (!supplier && name) supplier = (await Supplier.findOne({ name: new RegExp(`^${escapeRegex(name)}$`, "i") })) ?? (await Supplier.create({ name }));
+  if (!supplier) throw new AppError("Choose a supplier or type a new supplier name");
+
+  const variants = await Variant.find({ _id: { $in: input.lines.map((l) => l.variantId) } }).lean();
+  const products = await Product.find({ _id: { $in: variants.map((v) => v.productId) } }, "name_en").lean();
+  const vById = new Map(variants.map((v) => [String(v._id), v]));
+  const pName = new Map(products.map((p) => [String(p._id), p.name_en]));
+  const items = input.lines.map((l) => {
+    const v = vById.get(l.variantId);
+    if (!v) throw new AppError("An item in the list was not found. Reload and try again.", 404);
+    const unitCost = toPaise(l.cost);
+    return { variantId: v._id, name: [pName.get(String(v.productId)), v.label].filter(Boolean).join(" "), qty: l.qty, unitCost, lineTotal: l.qty * unitCost };
+  });
+  const total = items.reduce((s, i) => s + i.lineTotal, 0);
+
+  const purchaseId = await withStockTransaction(async (session) => {
+    const [purchase] = await Purchase.create([{ supplierId: supplier._id, invoiceNo: input.invoiceNo?.trim() || undefined, note: input.note?.trim() || undefined, items, total, date: input.date ?? new Date() }], { session });
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      await recordMovement({ variantId: String(it.variantId), type: "PURCHASE", qty: it.qty, unitCost: it.unitCost, refId: purchase._id, note: "Purchase", by }, session);
+      const set: Record<string, number> = {};
+      if (it.unitCost !== vById.get(String(it.variantId))!.costPrice) set.costPrice = it.unitCost;
+      const price = input.lines[i].price;
+      if (price !== undefined && toPaise(price) !== vById.get(String(it.variantId))!.sellPrice) set.sellPrice = toPaise(price);
+      if (Object.keys(set).length) await Variant.updateOne({ _id: it.variantId }, { $set: set }, { session });
+    }
+    return String(purchase._id);
+  });
+  await Variant.updateMany({ _id: { $in: items.map((x) => x.variantId) }, $expr: { $lt: ["$maxPrice", "$sellPrice"] } }, { $unset: { maxPrice: "" } });
+  await audit(by, "purchase.create", "purchase", `New purchase from ${supplier.name}: ${items.length} items, total ${total / 100}`, { entityId: purchaseId });
+  return Purchase.findById(purchaseId).populate("supplierId", "name").lean();
 }
