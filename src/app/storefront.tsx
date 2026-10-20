@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import NextImage from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
 import { MinusOutlined, PictureOutlined, PlusOutlined, SearchOutlined, ShoppingCartOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
@@ -38,6 +38,8 @@ type Cart = Record<string, number>;
 type T = (k: TextKey) => string;
 
 const CART_KEY = "pb_cart_v1";
+const CATALOG_KEY = "pb_catalog_v1"; // last catalogue seen, so a repeat visit paints at once
+const PAGE = 24; // product cards drawn at first, and added each time the visitor nears the end
 const LANG_KEY = "pb_lang";
 const WHATSAPP_GREEN = "#15803d"; // white text on this passes WCAG AA
 
@@ -112,6 +114,22 @@ function StorefrontInner() {
   const t: T = useCallback((k) => text(lang, k), [lang]);
 
   const load = useCallback(() => {
+    // repeat visitors: draw the last catalogue straight away, the fresh one replaces it a moment later
+    Promise.resolve().then(() => {
+      try {
+        const cached = JSON.parse(store.get(CATALOG_KEY) ?? "null") as StoreCatalog | null;
+        if (cached && Array.isArray(cached.products)) {
+          const saved = store.get(LANG_KEY);
+          setLang(saved === "hi" || saved === "en" ? saved : navigator.language?.toLowerCase().startsWith("hi") ? "hi" : "en");
+          setCart(loadCart());
+          setCatalog((now) => now ?? cached); // never replace a fresher catalogue that already arrived
+          if (new URLSearchParams(window.location.search).get("offers") === "1") setOffersOnly(true);
+          setReady(true);
+        }
+      } catch {
+        /* no saved copy: wait for the network */
+      }
+    });
     fetch("/api/store/products")
       .then((r) => (r.ok ? (r.json() as Promise<StoreCatalog>) : Promise.reject(new Error("bad"))))
       .then((c) => {
@@ -126,10 +144,11 @@ function StorefrontInner() {
         setCart(kept);
         if (dropped) setNotice("removedSoldOut");
         setCatalog(c);
+        store.set(CATALOG_KEY, JSON.stringify(c));
         if (new URLSearchParams(window.location.search).get("offers") === "1") setOffersOnly(true); // QR / link straight to the offers
         setReady(true);
       })
-      .catch(() => setError(true));
+      .catch(() => setError((e) => e || !store.get(CATALOG_KEY)));
   }, []);
   useEffect(() => {
     load();
@@ -218,6 +237,17 @@ function StorefrontInner() {
       return words.every((w) => hay.includes(w));
     });
   }, [catalog, q, topCat, subCat, brand, offersOnly, parentOf]);
+  const filterSig = `${q}|${topCat}|${subCat}|${brand}|${offersOnly}`;
+  const [limit, setLimit] = useState({ sig: filterSig, n: PAGE });
+  const count = limit.sig === filterSig ? limit.n : PAGE; // a new search or filter starts again from the first page
+  const sentinel = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || count >= shown.length) return;
+    const io = new IntersectionObserver((entries) => entries[0]?.isIntersecting && setLimit({ sig: filterSig, n: count + PAGE }), { rootMargin: "900px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [count, shown.length, filterSig]);
   const hasOffers = !!catalog?.products.some((p) => p.variants.some((v) => v.offers.length > 0));
   const clearFilters = () => {
     setQ("");
@@ -347,12 +377,14 @@ function StorefrontInner() {
         )}
 
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start lg:grid-cols-3 xl:grid-cols-4">
-          {shown.map((p) => (
+          {shown.slice(0, count).map((p) => (
             <li key={p.id}>
               <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} />
             </li>
           ))}
         </ul>
+        {/* nearing this marker draws the next page of product cards */}
+        <div ref={sentinel} aria-hidden style={{ height: 1 }} />
       </main>
 
       <div className="px-4 pb-4 text-center">

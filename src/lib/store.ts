@@ -2,6 +2,7 @@ import { Brand, Category, Product, Variant } from "./models";
 import { loadOffers } from "./sales";
 import { isOfferLive, offerApplies } from "./pricing";
 import { normalizeWhatsappNumber } from "./whatsapp";
+import { ENFORCE_STOCK_LIMITS } from "./flags";
 
 /**
  * What the public website may see. This is an allow-list: cost price, supplier, private notes and exact
@@ -45,11 +46,17 @@ export const LOW_STOCK_AT = 5;
 export const MAX_CART_QTY = 99;
 
 export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog> {
-  const variants = await Variant.find({ active: true, $or: [{ trackStock: false }, { stockOnHand: { $gt: 0 } }] }).lean();
-  const products = await Product.find({ active: true, _id: { $in: variants.map((v) => v.productId) } }).lean();
-  const cats = await Category.find().sort({ sortOrder: 1, name_en: 1 }).lean();
-  const brands = await Brand.find().lean();
-  const offers = (await loadOffers()).filter((o) => isOfferLive(o, now));
+  // everything is read at the same time, and only the fields the website shows (no costs, notes or search text)
+  const [variants, allProducts, cats, brands, allOffers] = await Promise.all([
+    Variant.find(ENFORCE_STOCK_LIMITS ? { active: true, $or: [{ trackStock: false }, { stockOnHand: { $gt: 0 } }] } : { active: true }, "productId shortCode label sellPrice maxPrice stockOnHand trackStock").lean(),
+    Product.find({ active: true }, "name_en name_hi brandId categoryId images imageGeneric").lean(),
+    Category.find({}, "name_en name_hi parentId sortOrder").sort({ sortOrder: 1, name_en: 1 }).lean(),
+    Brand.find({}, "name").lean(),
+    loadOffers(),
+  ]);
+  const withStock = new Set(variants.map((v) => String(v.productId)));
+  const products = allProducts.filter((p) => withStock.has(String(p._id)));
+  const offers = allOffers.filter((o) => isOfferLive(o, now));
   const brandName = new Map(brands.map((b) => [String(b._id), b.name]));
 
   const byProduct = new Map<string, StoreVariant[]>();
@@ -58,7 +65,7 @@ export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog>
     const p = productById.get(String(v.productId));
     if (!p || !v.shortCode) continue; // items without a code can't be ordered by code, so they are not listed
     const line = { variantId: String(v._id), qty: 1, unitPrice: v.sellPrice, categoryId: String(p.categoryId), brandId: p.brandId ? String(p.brandId) : undefined };
-    const stock = v.trackStock === false ? MAX_CART_QTY : Math.min(v.stockOnHand, MAX_CART_QTY);
+    const stock = !ENFORCE_STOCK_LIMITS || v.trackStock === false ? MAX_CART_QTY : Math.min(v.stockOnHand, MAX_CART_QTY);
     const sv: StoreVariant = {
       id: String(v._id),
       code: v.shortCode.toUpperCase(),
@@ -66,7 +73,7 @@ export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog>
       price: v.sellPrice,
       maxPrice: v.maxPrice && v.maxPrice > v.sellPrice ? v.maxPrice : 0,
       maxQty: stock,
-      low: v.trackStock !== false && v.stockOnHand <= LOW_STOCK_AT,
+      low: ENFORCE_STOCK_LIMITS && v.trackStock !== false && v.stockOnHand <= LOW_STOCK_AT,
       offers: offers.filter((o) => offerApplies(o, line)).map((o) => ({ label_en: o.label_en, label_hi: o.label_hi })),
     };
     const arr = byProduct.get(String(v.productId)) ?? [];

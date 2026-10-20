@@ -41,6 +41,8 @@ interface PricedLine {
   stockOnHand: number;
 }
 interface Priced {
+  /** false while stock limits are switched off: no "only N in stock" warning */
+  stockLimits?: boolean;
   lines: PricedLine[];
   subtotal: number;
   discount: number;
@@ -215,7 +217,7 @@ export default function PosPage() {
             <div style={{ fontWeight: 600, lineHeight: 1.3 }}>{c.name}</div>
             {p?.offerLabel_en && <Tag color="success" style={{ marginTop: 4 }}>{p.offerLabel_en}{p.freeUnits > 0 ? ` · ${p.freeUnits} free (−${inr(p.discount)})` : ""}</Tag>}
             {p?.nudge && <Tag color="gold" style={{ marginTop: 4, color: token.colorText }}>{p.nudge.label_en}</Tag>}
-            {p && c.qty > p.stockOnHand && p.stockOnHand >= 0 && <Typography.Text type="danger" style={{ display: "block", fontSize: 12 }}>Only {p.stockOnHand} in stock</Typography.Text>}
+            {priced?.stockLimits && p && c.qty > p.stockOnHand && p.stockOnHand >= 0 && <Typography.Text type="danger" style={{ display: "block", fontSize: 12 }}>Only {p.stockOnHand} in stock</Typography.Text>}
           </div>
         );
       },

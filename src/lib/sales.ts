@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Counter, OfferModel, Product, Sale, Variant } from "./models";
 import { priceCart, type CartLineInput, type Offer } from "./pricing";
 import { recordMovement, withStockTransaction } from "./stock";
+import { ENFORCE_STOCK_LIMITS } from "./flags";
 
 export const saleInputSchema = z.object({
   items: z
@@ -121,7 +122,7 @@ export async function completeSale(input: SaleInput, cashierId: string) {
   const warnings: string[] = [];
   for (const l of priced.lines) {
     const m = meta.get(l.variantId)!;
-    if (variants.get(l.variantId)!.trackStock !== false && m.stockOnHand < l.qty) warnings.push(`Low stock: ${m.name} (have ${m.stockOnHand}, selling ${l.qty})`);
+    if (ENFORCE_STOCK_LIMITS && variants.get(l.variantId)!.trackStock !== false && m.stockOnHand < l.qty) warnings.push(`Low stock: ${m.name} (have ${m.stockOnHand}, selling ${l.qty})`);
   }
 
   const sale = await withStockTransaction(async (session) => {

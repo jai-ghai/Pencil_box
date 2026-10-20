@@ -3,6 +3,7 @@ import { publicRoute } from "@/lib/api";
 import { Variant } from "@/lib/models";
 import { priceFromDb } from "@/lib/sales";
 import { MAX_CART_QTY } from "@/lib/store";
+import { ENFORCE_STOCK_LIMITS } from "@/lib/flags";
 
 const body = z.object({
   items: z.array(z.object({ variantId: z.string().length(24), qty: z.number().int().min(1).max(MAX_CART_QTY) })).min(1).max(60),
@@ -24,7 +25,7 @@ export const POST = publicRoute({ bucket: "store-price", limit: 90 }, async (req
   const valid: { variantId: string; qty: number }[] = [];
   for (const [variantId, qty] of wanted) {
     const v = byId.get(variantId);
-    const available = !v ? 0 : v.trackStock === false ? MAX_CART_QTY : Math.min(v.stockOnHand, MAX_CART_QTY);
+    const available = !v ? 0 : !ENFORCE_STOCK_LIMITS || v.trackStock === false ? MAX_CART_QTY : Math.min(v.stockOnHand, MAX_CART_QTY);
     if (available < 1) {
       unavailable.push(variantId);
       continue;
