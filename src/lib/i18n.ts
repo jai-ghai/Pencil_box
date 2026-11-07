@@ -53,6 +53,20 @@ const en = {
   reqDone: "Thank you! We have your request.",
   reqFail: "Could not send. Please try again.",
   reqPrivacy: "Your number is used only to contact you about this request.",
+  policyFixed: "Fixed price on stationery. No bargaining.",
+  policyNoReturn: "No return or exchange on toys and electronics.",
+  policyBulk: "Teachers and schools: bulk prices on 10 or more of one item. Tap Today's offers.",
+  ratesTitle: "Photocopy and printout rates",
+  perPage: "per page",
+  collectionsTitle: "Shop by collection",
+  seeAllCollections: "See all collections",
+  fewerCollections: "Show fewer",
+  viewAll: "View all",
+  allItems: "All items",
+  itemsCount: "items",
+  options: "options",
+  added: "added",
+  done: "Done",
 };
 
 const hi: typeof en = {
@@ -108,6 +122,20 @@ const hi: typeof en = {
   reqDone: "धन्यवाद! आपकी रिक्वेस्ट हमें मिल गई।",
   reqFail: "भेज नहीं सके। कृपया फिर कोशिश करें।",
   reqPrivacy: "आपका नंबर सिर्फ इस रिक्वेस्ट के बारे में संपर्क के लिए इस्तेमाल होगा।",
+  policyFixed: "स्टेशनरी पर रेट फिक्स है। मोल-भाव नहीं।",
+  policyNoReturn: "खिलौने और इलेक्ट्रॉनिक सामान की वापसी या बदली नहीं होगी।",
+  policyBulk: "टीचर और स्कूल के लिए: एक आइटम 10 या ज़्यादा लेने पर थोक रेट। 'आज के ऑफ़र' देखें।",
+  ratesTitle: "फोटोकॉपी और प्रिंटआउट रेट",
+  perPage: "प्रति पेज",
+  collectionsTitle: "कलेक्शन के हिसाब से खरीदें",
+  seeAllCollections: "सभी कलेक्शन देखें",
+  fewerCollections: "कम दिखाएं",
+  viewAll: "सभी देखें",
+  allItems: "सभी आइटम",
+  itemsCount: "आइटम",
+  options: "विकल्प",
+  added: "जोड़े गए",
+  done: "हो गया",
 };
 
 export const dict = { en, hi };

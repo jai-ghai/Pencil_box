@@ -38,6 +38,7 @@ export function buildOrderMessage(lines: OrderLine[], total: number, opts: { lan
     "",
     `${hi ? "अनुमानित कुल" : "Estimated total"}: ${rs(total)}${opts.hasPriceRange ? (hi ? " (कुछ आइटम के दो रेट हैं)" : " (some items have two possible prices)") : ""}`,
     hi ? "कृपया उपलब्धता और अंतिम कीमत बताएं। मैं दुकान से ले जाऊंगा/जाऊंगी।" : "Please confirm availability and final price. I will pick up from the shop.",
+    hi ? "मैं समझता/समझती हूँ: स्टेशनरी का रेट फिक्स है; खिलौने और इलेक्ट्रॉनिक सामान की वापसी या बदली नहीं होगी।" : "I understand: stationery prices are fixed; no return or exchange on toys and electronics.",
   ].join("\n");
 }
 

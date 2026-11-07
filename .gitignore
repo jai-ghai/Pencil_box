@@ -53,3 +53,8 @@ next-env.d.ts
 # local Claude Code settings
 /.claude/settings.local.json
 data/purchase-*.ts
+
+# competitor catalogue list used only to pick pictures (not for publishing)
+data/competitor-products.json
+data/wholesaler-products.json
+data/open-candidates.json

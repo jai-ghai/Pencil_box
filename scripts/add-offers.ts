@@ -56,6 +56,31 @@ const SPECS: Spec[] = [
   { en: "Printout (Colour): 10 or more pages at ₹8", hi: "प्रिंटआउट (रंगीन): 10 या ज़्यादा पेज, ₹8 प्रति पेज", rule: { type: "SLAB", slabMinQty: 10, slabPrice: 800 }, items: byName("Printout (Colour)"), note: "Cost per page is not entered in the system, so profit is not checked." },
 ];
 
+/* Bulk prices for teachers and schools: 10 or more of the SAME item at about 10% less. One offer per category and price point.
+   Items already in an offer above are left out, and the profit check below drops any item whose profit would fall under MIN_MARGIN. */
+const BULK_CATS = ["Notebooks", "Registers", "Ball Pens", "Gel Pens", "Pencils", "Erasers", "Sharpeners", "Colours", "Chart Paper", "Glue & Whitener", "Markers", "Geometry & Scales", "Craft Paper", "Brushes", "Covers & Name Slips"];
+const alreadyOffered = new Set(SPECS.flatMap((s) => s.items.map((v) => v.id)));
+const catHi = new Map((await m.Category.find({}, "name_en name_hi").lean()).map((c) => [c.name_en, c.name_hi ?? ""]));
+const rupees = (paise: number) => `₹${paise % 100 ? (paise / 100).toFixed(2) : paise / 100}`;
+const bulkGroups = new Map<string, V[]>();
+for (const v of all) {
+  if (!BULK_CATS.includes(v.cat) || v.price < 500 || alreadyOffered.has(v.id)) continue;
+  const key = `${v.cat}|${v.price}`;
+  bulkGroups.set(key, [...(bulkGroups.get(key) ?? []), v]);
+}
+for (const [key, items] of bulkGroups) {
+  const [cat, p] = key.split("|");
+  const price = Number(p);
+  const slab = Math.floor((price * 0.9) / 50) * 50; // about 10% off, in whole 50 paise
+  if (slab < 1 || slab >= price) continue;
+  SPECS.push({
+    en: `Bulk (teachers & schools): 10 or more ${cat} (${rupees(price)}) at ${rupees(slab)} each`,
+    hi: `थोक (टीचर और स्कूल): ${catHi.get(cat) || cat} (${rupees(price)}) 10 या ज़्यादा, ${rupees(slab)} में एक`,
+    rule: { type: "SLAB", slabMinQty: 10, slabPrice: slab },
+    items,
+  });
+}
+
 let created = 0;
 for (const s of SPECS) {
   const rows = s.items.map((v) => {

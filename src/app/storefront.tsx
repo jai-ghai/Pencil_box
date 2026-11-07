@@ -4,7 +4,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
-import { MinusOutlined, PictureOutlined, PlusOutlined, SearchOutlined, ShoppingCartOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { DownOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, SearchOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
@@ -249,6 +249,42 @@ function StorefrontInner() {
     return () => io.disconnect();
   }, [count, shown.length, filterSig]);
   const hasOffers = !!catalog?.products.some((p) => p.variants.some((v) => v.offers.length > 0));
+  /* photocopy and printout rates come from the Printing & Photocopy > Services items, so a price changed in admin changes here too */
+  const printTop = topCats.find((c) => c.name_en === "Printing & Photocopy");
+  const servicesCat = catalog?.categories.find((c) => c.name_en === "Services" && c.parentId === printTop?.id);
+  const rates = servicesCat ? (catalog?.products ?? []).filter((p) => p.categoryId === servicesCat.id && p.variants.length > 0) : [];
+  const showRates = rates.length > 0 && !q && !brand && !offersOnly && !subCat && (!topCat || topCat === printTop?.id);
+  /* landing view (nothing searched or filtered): collection tiles and a row of products per category, before the full list */
+  const landing = !q && !topCat && !subCat && !brand && !offersOnly;
+  const [allCollections, setAllCollections] = useState(false);
+  const collections = useMemo(
+    () =>
+      (catalog?.categories ?? [])
+        .filter((c) => c.parentId)
+        .map((c) => {
+          const items = (catalog?.products ?? []).filter((p) => p.categoryId === c.id);
+          return { cat: c, count: items.length, image: items.find((p) => p.image)?.image ?? "" };
+        })
+        .filter((x) => x.count > 0)
+        .sort((a, b) => b.count - a.count || a.cat.name_en.localeCompare(b.cat.name_en)),
+    [catalog],
+  );
+  const categoryRows = landing
+    ? TILES.flatMap((tile) => {
+        const cat = topCats.find((c) => c.name_en === tile.match);
+        if (!cat || cat.id === printTop?.id) return []; // printing already has the rates card
+        const items = (catalog?.products ?? []).filter((p) => p.categoryId === cat.id || parentOf.get(p.categoryId) === cat.id);
+        // short cards keep the row tidy (a card with ten colours would stretch it); pictures first
+        const compact = items.filter((p) => p.variants.length <= 3);
+        const ranked = [...compact.filter((p) => p.image), ...compact.filter((p) => !p.image), ...items.filter((p) => p.variants.length > 3)].slice(0, 8);
+        return ranked.length ? [{ cat, accent: tile.accent, items: ranked, total: items.length }] : [];
+      })
+    : [];
+  const pickCollection = (catId: string, parentId: string | null) => {
+    setTopCat(parentId ?? catId);
+    setSubCat(parentId ? catId : null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const clearFilters = () => {
     setQ("");
     setTopCat(null);
@@ -366,7 +402,33 @@ function StorefrontInner() {
           </Flex>
         )}
 
+        {catalog && <PolicyStrip t={t} showBulk={hasOffers} />}
+        {showRates && <RatesCard rates={rates} lang={lang} t={t} />}
+
         {notice && <Alert type="info" showIcon closable title={t(notice)} className="mb-3" onClose={() => setNotice("")} />}
+
+        {landing && collections.length > 0 && (
+          <CollectionGrid
+            items={collections} expanded={allCollections} onToggle={() => setAllCollections((v) => !v)} name={catName} t={t}
+            onPick={(c) => pickCollection(c.id, c.parentId)}
+          />
+        )}
+        {categoryRows.map((row) => (
+          <section key={row.cat.id} className="mb-5" aria-label={catName(row.cat)}>
+            <Flex align="center" justify="space-between" gap={8} className="mb-2" style={{ borderLeft: `4px solid ${row.accent}`, paddingLeft: 10 }}>
+              <Typography.Title level={4} style={{ margin: 0 }}>{catName(row.cat)}</Typography.Title>
+              <Button type="link" onClick={() => pickCollection(row.cat.id, null)}>{t("viewAll")} ({row.total})</Button>
+            </Flex>
+            <ul className="pb-scroll-x -mx-4 flex items-start gap-3 px-4 pb-2 lg:mx-0 lg:px-0">
+              {row.items.map((p) => (
+                <li key={p.id} className="w-[172px] shrink-0">
+                  <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+        {landing && categoryRows.length > 0 && <Typography.Title level={4} className="!mb-3 !mt-2">{t("allItems")}</Typography.Title>}
 
         {!catalog && !error && <LoadingGrid />}
         {error && <Result status="warning" title={t("error")} extra={<Button type="primary" onClick={() => (setError(false), load())}>{t("retry")}</Button>} />}
@@ -376,7 +438,7 @@ function StorefrontInner() {
           </Empty>
         )}
 
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-start lg:grid-cols-3 xl:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {shown.slice(0, count).map((p) => (
             <li key={p.id}>
               <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} />
@@ -471,6 +533,99 @@ function RequestModal({ open, onClose, t }: { open: boolean; onClose: () => void
   );
 }
 
+/** Shop rules, shown before anyone orders: fixed prices, no return on toys and electronics, bulk prices when offers exist. */
+function PolicyStrip({ t, showBulk }: { t: T; showBulk: boolean }) {
+  const { token } = theme.useToken();
+  const rows = [
+    { icon: <SafetyCertificateOutlined />, text: t("policyFixed"), color: token.colorSuccess },
+    { icon: <StopOutlined />, text: t("policyNoReturn"), color: token.colorError },
+    ...(showBulk ? [{ icon: <TagsOutlined />, text: t("policyBulk"), color: token.colorPrimaryText }] : []),
+  ];
+  return (
+    <ul className="mb-4 flex flex-col gap-1 rounded-[12px] px-3 py-2" style={{ background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}` }} aria-label="Shop rules">
+      {rows.map((r) => (
+        <li key={r.text} className="flex items-start gap-2" style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.35 }}>
+          <span style={{ color: r.color, marginTop: 2 }} aria-hidden>{r.icon}</span>
+          <span>{r.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** "Shop by collection": one tile per sub-category with a picture and item count. The first few show, the rest open with a button. */
+const COLLECTIONS_SHOWN = 8;
+function CollectionGrid({ items, expanded, onToggle, onPick, name, t }: {
+  items: { cat: { id: string; name_en: string; name_hi: string; parentId: string | null }; count: number; image: string }[];
+  expanded: boolean;
+  onToggle: () => void;
+  onPick: (c: { id: string; parentId: string | null }) => void;
+  name: (c: { name_en: string; name_hi: string }) => string;
+  t: T;
+}) {
+  const { token } = theme.useToken();
+  const shown = expanded ? items : items.slice(0, COLLECTIONS_SHOWN);
+  return (
+    <section className="mb-5" aria-label={t("collectionsTitle")}>
+      <Typography.Title level={4} className="!mb-2">{t("collectionsTitle")}</Typography.Title>
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {shown.map(({ cat, count, image }) => (
+          <li key={cat.id}>
+            <button
+              type="button"
+              onClick={() => onPick(cat)}
+              className="flex w-full items-center gap-3 text-left"
+              style={{ padding: 8, borderRadius: token.borderRadiusLG, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, color: token.colorText, cursor: "pointer" }}
+            >
+              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px]" style={{ background: "rgba(255,213,0,0.14)" }}>
+                {image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={thumb(image)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 22, color: token.colorTextQuaternary }} aria-hidden /></span>
+                )}
+              </span>
+              <span className="min-w-0">
+                <span style={{ display: "block", fontWeight: 700, lineHeight: 1.2 }}>{name(cat)}</span>
+                <span style={{ fontSize: 12, color: token.colorTextSecondary }}>{count} {t("itemsCount")}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {items.length > COLLECTIONS_SHOWN && (
+        <div className="mt-2 text-center"><Button onClick={onToggle}>{expanded ? t("fewerCollections") : `${t("seeAllCollections")} (${items.length})`}</Button></div>
+      )}
+    </section>
+  );
+}
+
+/** Photocopy and printout prices per page, taken live from the Services items. */
+function RatesCard({ rates, lang, t }: { rates: StoreProduct[]; lang: Lang; t: T }) {
+  const { token } = theme.useToken();
+  const rows = rates
+    .map((p) => ({ id: p.id, name: lang === "hi" && p.name_hi ? p.name_hi : p.name_en, price: p.variants[0].price }))
+    .sort((a, b) => a.price - b.price);
+  return (
+    <section className="mb-4 rounded-[12px] p-3" style={{ background: BRAND.navy, color: "#fff" }} aria-label={t("ratesTitle")}>
+      <div className="mb-2 flex items-center gap-2" style={{ fontWeight: 800, fontSize: 16 }}>
+        <PrinterOutlined aria-hidden /> {t("ratesTitle")}
+      </div>
+      <ul className="grid gap-2 sm:grid-cols-3">
+        {rows.map((r) => (
+          <li key={r.id} className="flex items-center justify-between gap-3 rounded-[10px] px-3 py-2" style={{ background: token.colorBgContainer, color: token.colorText }}>
+            <span style={{ fontWeight: 600, lineHeight: 1.25 }}>{r.name}</span>
+            <span className="text-right" style={{ fontWeight: 800, fontSize: 20, lineHeight: 1 }}>
+              {inr(r.price)}
+              <span style={{ display: "block", fontSize: 11, fontWeight: 500, color: token.colorTextSecondary }}>{t("perPage")}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function LoadingGrid() {
   return (
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-busy="true">
@@ -490,71 +645,99 @@ function LoadingGrid() {
   );
 }
 
-function Stepper({ qty, max, onChange, label, t }: { qty: number; max: number; onChange: (n: number) => void; label: string; t: T }) {
+function Stepper({ qty, max, onChange, label, t, block }: { qty: number; max: number; onChange: (n: number) => void; label: string; t: T; block?: boolean }) {
   const { token } = theme.useToken();
   return (
-    <Space.Compact>
-      <Button icon={<MinusOutlined />} onClick={() => onChange(qty - 1)} aria-label={`${t("remove")}: ${label}`} />
-      <Button disabled style={{ width: 44, color: token.colorText, background: token.colorBgContainer, cursor: "default", fontWeight: 700 }} aria-live="polite">{qty}</Button>
-      <Button icon={<PlusOutlined />} disabled={qty >= max} title={qty >= max ? t("maxReached") : undefined} onClick={() => onChange(qty + 1)} aria-label={`${t("add")}: ${label}`} />
+    <Space.Compact block={block}>
+      <Button type={block ? "primary" : "default"} icon={<MinusOutlined />} onClick={() => onChange(qty - 1)} aria-label={`${t("remove")}: ${label}`} />
+      <Button disabled style={{ width: block ? undefined : 44, flex: block ? 1 : undefined, color: token.colorText, background: token.colorBgContainer, cursor: "default", fontWeight: 700 }} aria-live="polite">{qty}</Button>
+      <Button type={block ? "primary" : "default"} icon={<PlusOutlined />} disabled={qty >= max} title={qty >= max ? t("maxReached") : undefined} onClick={() => onChange(qty + 1)} aria-label={`${t("add")}: ${label}`} />
     </Space.Compact>
   );
 }
 
+/**
+ * A compact card: picture, name, price and ONE button. An item with a single choice is added straight from the card;
+ * an item with several (colours, sizes, languages) shows "N options" and opens the choices only when tapped.
+ */
 function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang; t: T; cart: Cart; setQty: (id: string, qty: number) => void }) {
   const { token } = theme.useToken();
+  const [open, setOpen] = useState(false);
   const name = lang === "hi" && p.name_hi ? p.name_hi : stripBrand(p.name_en, p.brand);
-  const showBrand = !!p.brand;
+  const single = p.variants.length === 1 ? p.variants[0] : null;
+  const inCart = p.variants.reduce((s, v) => s + (cart[v.id] ?? 0), 0);
+  const prices = p.variants.map((v) => v.price);
+  const lowest = Math.min(...prices);
+  const samePrice = Math.max(...prices) === lowest;
+  const offers = single ? single.offers : [];
   return (
     <Card hoverable={false} styles={{ body: { padding: 0 } }} className="h-full overflow-hidden [&>.ant-card-body]:h-full">
       <div className="flex h-full flex-col">
-        {/* phones: small picture beside the name; larger screens: picture on top. Variants always get the full width. */}
-        <div className="flex gap-3 p-3 sm:block sm:p-0">
-          {/* picture frame: a square thumbnail on phones, a 4:3 crop on larger screens; empty until a picture exists */}
-          <div
-            className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[10px] sm:h-auto sm:w-full sm:aspect-[4/3] sm:rounded-none"
-            style={{ background: "rgba(255,213,0,0.14)" }}
-          >
-            {p.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={thumb(p.image)} alt={p.name_en} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 30, color: token.colorTextQuaternary }} aria-hidden /></div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1 sm:p-3 sm:pb-1">
-            {showBrand && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{p.brand}</Typography.Text>}
-            <Typography.Title level={5} style={{ margin: 0, lineHeight: 1.3 }}>{name}</Typography.Title>
-          </div>
+        {/* picture frame: square, the whole picture visible; empty until a picture exists */}
+        <div className="relative aspect-square w-full overflow-hidden" style={{ background: p.image ? "#fff" : "rgba(255,213,0,0.14)" }}>
+          {p.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumb(p.image)} alt={p.name_en} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-contain p-2" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 30, color: token.colorTextQuaternary }} aria-hidden /></div>
+          )}
         </div>
-        <ul className="px-3 pb-2">
-          {p.variants.map((v, i) => {
-            const qty = cart[v.id] ?? 0;
-            return (
-              <li key={v.id} className="py-2" style={{ borderTop: `1px solid ${token.colorBorderSecondary}` }}>
-                <Flex align="center" gap={8}>
-                  <div className="min-w-0 flex-1">
-                    <div style={{ fontWeight: 600, lineHeight: 1.25 }}>{v.label || "\u00a0"}</div>
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t("code")} <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontWeight: 700 }}>{v.code}</span></Typography.Text>
-                  </div>
-                  <div className="text-right">
-                    <div style={{ fontWeight: 800, fontSize: 17 }}>{priceText(v)}</div>
-                    {v.low && <Tag color="warning" variant="filled" style={{ marginInlineEnd: 0 }}>{t("fewLeft")}</Tag>}
-                  </div>
-                  {qty === 0 ? (
-                    <Button type="primary" onClick={() => setQty(v.id, 1)} aria-label={`${t("add")}: ${name} ${v.label}`}>{t("add")}</Button>
-                  ) : (
-                    <Stepper qty={qty} max={v.maxQty} onChange={(n) => setQty(v.id, n)} label={`${name} ${v.label}`} t={t} />
-                  )}
-                </Flex>
-                {v.offers.map((o) => (
-                  <Tag key={o.label_en} color="success" variant="solid" style={{ marginTop: 6 }}>{lang === "hi" && o.label_hi ? o.label_hi : o.label_en}</Tag>
-                ))}
-              </li>
-            );
-          })}
-        </ul>
+        <div className="flex flex-1 flex-col gap-1 p-3 pt-2">
+          {!!p.brand && <Typography.Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>{p.brand}</Typography.Text>}
+          <div className="line-clamp-2" style={{ fontWeight: 700, lineHeight: 1.3, minHeight: "2.6em" }}>{name}</div>
+          {single?.label && <Typography.Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>{single.label}</Typography.Text>}
+          <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
+            <span style={{ fontWeight: 800, fontSize: 17 }}>{single ? priceText(single) : `${samePrice ? "" : `${t("fromPrice")} `}${inr(lowest)}`}</span>
+            {single?.low && <Tag color="warning" variant="filled" style={{ marginInlineEnd: 0 }}>{t("fewLeft")}</Tag>}
+          </div>
+          {offers.map((o) => (
+            <Tag key={o.label_en} color="success" variant="solid" style={{ whiteSpace: "normal", marginInlineEnd: 0 }}>{lang === "hi" && o.label_hi ? o.label_hi : o.label_en}</Tag>
+          ))}
+          {single ? (
+            (cart[single.id] ?? 0) === 0 ? (
+              <Button type="primary" block onClick={() => setQty(single.id, 1)} aria-label={`${t("add")}: ${name}`}>{t("add")}</Button>
+            ) : (
+              <Stepper block qty={cart[single.id]} max={single.maxQty} onChange={(n) => setQty(single.id, n)} label={name} t={t} />
+            )
+          ) : (
+            <Button type={inCart ? "primary" : "default"} block icon={<DownOutlined />} iconPlacement="end" onClick={() => setOpen(true)} aria-label={`${name}: ${p.variants.length} ${t("options")}`}>
+              {inCart ? `${inCart} ${t("added")}` : `${p.variants.length} ${t("options")}`}
+            </Button>
+          )}
+        </div>
       </div>
+      {!single && (
+        <Modal open={open} onCancel={() => setOpen(false)} title={name} destroyOnHidden centered
+          footer={<Button type="primary" block size="large" onClick={() => setOpen(false)}>{t("done")}{inCart ? ` (${inCart})` : ""}</Button>}>
+          <ul>
+            {p.variants.map((v) => {
+              const qty = cart[v.id] ?? 0;
+              return (
+                <li key={v.id} className="py-2" style={{ borderTop: `1px solid ${token.colorBorderSecondary}` }}>
+                  <Flex align="center" gap={8}>
+                    <div className="min-w-0 flex-1">
+                      <div style={{ fontWeight: 600, lineHeight: 1.25 }}>{v.label || name}</div>
+                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t("code")} <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontWeight: 700 }}>{v.code}</span></Typography.Text>
+                    </div>
+                    <div className="text-right">
+                      <div style={{ fontWeight: 800, fontSize: 17 }}>{priceText(v)}</div>
+                      {v.low && <Tag color="warning" variant="filled" style={{ marginInlineEnd: 0 }}>{t("fewLeft")}</Tag>}
+                    </div>
+                    {qty === 0 ? (
+                      <Button type="primary" onClick={() => setQty(v.id, 1)} aria-label={`${t("add")}: ${name} ${v.label}`}>{t("add")}</Button>
+                    ) : (
+                      <Stepper qty={qty} max={v.maxQty} onChange={(n) => setQty(v.id, n)} label={`${name} ${v.label}`} t={t} />
+                    )}
+                  </Flex>
+                  {v.offers.map((o) => (
+                    <Tag key={o.label_en} color="success" variant="solid" style={{ marginTop: 6 }}>{lang === "hi" && o.label_hi ? o.label_hi : o.label_en}</Tag>
+                  ))}
+                </li>
+              );
+            })}
+          </ul>
+        </Modal>
+      )}
     </Card>
   );
 }
@@ -606,6 +789,7 @@ function CartDrawer(props: {
               <Alert type="warning" showIcon title={t("orderSoon")} />
             )}
             <Typography.Text type="secondary" style={{ fontSize: 12, textAlign: "center" }}>{t("pickupNote")} {t("finalPrice")}</Typography.Text>
+            <Typography.Text style={{ fontSize: 12, textAlign: "center", fontWeight: 600 }}>{t("policyFixed")} {t("policyNoReturn")}</Typography.Text>
             <Button type="link" danger onClick={onClear}>{t("clear")}</Button>
           </Flex>
         ) : undefined

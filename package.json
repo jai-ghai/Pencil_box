@@ -17,7 +17,10 @@
     "services": "tsx scripts/add-services.ts",
     "add:purchase": "tsx scripts/add-purchase.ts",
     "remove:images": "tsx scripts/remove-images.ts",
-    "add:offers": "tsx scripts/add-offers.ts"
+    "add:offers": "tsx scripts/add-offers.ts",
+    "add:kits": "tsx scripts/add-kits-and-drafts.ts",
+    "images:distributor": "tsx scripts/set-distributor-images.ts",
+    "images:open": "tsx scripts/set-open-images.ts"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",

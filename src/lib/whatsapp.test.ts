@@ -33,6 +33,15 @@ describe("buildOrderMessage", () => {
     expect(m).toContain("फ्री");
     expect(m).toContain("दो रेट");
   });
+  it("states the shop rules (fixed price, no return on toys and electronics) in both languages, without disturbing the order lines", () => {
+    const en = buildOrderMessage(lines, 14500, { lang: "en", hasPriceRange: false });
+    expect(en).toContain("stationery prices are fixed");
+    expect(en).toContain("no return or exchange on toys and electronics");
+    const hi = buildOrderMessage(lines, 14500, { lang: "hi", hasPriceRange: false });
+    expect(hi).toContain("वापसी या बदली नहीं होगी");
+    // the shop's order reader must still see only the real items
+    expect(parseOrderText(en)).toEqual([{ code: "BP-02", qty: 5 }, { code: "REG-01", qty: 7 }]);
+  });
   it("caps very long carts so the link stays small", () => {
     const many = Array.from({ length: MAX_LINES + 5 }, (_, i) => ({ code: `x-${i}`, name: "Item", qty: 1, freeUnits: 0, lineTotal: 100 }));
     const m = buildOrderMessage(many, 100, { lang: "en", hasPriceRange: false });
