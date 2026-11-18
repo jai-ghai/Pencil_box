@@ -3,16 +3,17 @@
 @import "tailwindcss";
 
 :root {
-  --pb-navy: #12296b;
-  --pb-navy-deep: #0b1d52;
-  --pb-sun: #ffd500;
-  --pb-bg: #f2f5fb;
+  --pb-navy: #0f2a5c;
+  --pb-navy-deep: #081936;
+  --pb-sun: #f5c518;
+  --pb-teal: #0d9488;
+  --pb-bg: #eef2f7;
   color-scheme: light;
 }
 
 /* The light/dark choice sets data-theme on <html> before the page paints (see the script in layout.tsx) */
 html[data-theme="dark"] {
-  --pb-bg: #0a1124;
+  --pb-bg: #070f1f;
   color-scheme: dark;
 }
 
@@ -23,6 +24,50 @@ html {
 body {
   background: var(--pb-bg);
   font-family: var(--font-geist-sans), system-ui, "Nirmala UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Shop calendar: taller day cells that scroll when a day has many events */
+.pb-cal-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+.pb-cal-scroll .ant-picker-calendar.ant-picker-calendar-full {
+  background: transparent;
+}
+.pb-cal-scroll .ant-picker-panel {
+  background: transparent;
+}
+.pb-cal-scroll .ant-picker-calendar-date-content {
+  height: 5.5rem !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 !important;
+  scrollbar-width: thin;
+}
+.pb-cal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 4.5rem;
+  padding-inline: 2px;
+}
+.pb-cal-chip {
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid;
+  padding: 1px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.pb-cal-more {
+  font-size: 10px;
+  opacity: 0.7;
+  padding-inline: 2px;
 }
 
 /* Hide the scrollbar on the horizontal rows (they still scroll by touch/trackpad) */

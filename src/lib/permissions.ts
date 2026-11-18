@@ -7,19 +7,20 @@
  */
 export type Role = "superadmin" | "admin" | "cashier";
 
+/** Order = shop-ops first (calendar, daybook, capital), then catalogue and extras. */
 export const PAGE_PERMS = [
-  { key: "dashboard", label: "Dashboard", href: "/admin" },
-  { key: "daybook", label: "Daily book", href: "/admin/daybook" },
-  { key: "analytics", label: "Profit", href: "/admin/analytics" },
-  { key: "capital", label: "Capital", href: "/admin/capital" },
+  { key: "dashboard", label: "Today", href: "/admin" },
   { key: "calendar", label: "Calendar", href: "/admin/calendar" },
+  { key: "daybook", label: "Daily book", href: "/admin/daybook" },
+  { key: "capital", label: "Capital", href: "/admin/capital" },
+  { key: "analytics", label: "Profit", href: "/admin/analytics" },
   { key: "check", label: "Shop check", href: "/admin/check" },
-  { key: "orders", label: "Orders", href: "/admin/orders" },
-  { key: "reports", label: "Reports", href: "/admin/reports" },
   { key: "products", label: "Products", href: "/admin/products" },
   { key: "stock", label: "Stock", href: "/admin/stock" },
   { key: "purchases", label: "Purchases", href: "/admin/purchases" },
   { key: "offers", label: "Offers", href: "/admin/offers" },
+  { key: "orders", label: "Orders", href: "/admin/orders" },
+  { key: "reports", label: "Reports", href: "/admin/reports" },
   { key: "import", label: "Import", href: "/admin/import" },
   { key: "setup", label: "Brands & categories", href: "/admin/setup" },
   { key: "qr", label: "QR generator", href: "/qr-generator" },

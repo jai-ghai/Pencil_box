@@ -81,18 +81,62 @@ export function expandMonthlyBill(opts: {
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "bill";
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** nth weekday of a month (weekday: 0=Sun … 6=Sat; n starts at 1). */
+export function nthWeekday(year: number, month: number, weekday: number, n: number): string {
+  const firstDow = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+  const day = 1 + ((weekday - firstDow + 7) % 7) + (n - 1) * 7;
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
 
 /**
  * Stationery-relevant festivals and seasons for a calendar year.
  * Lunar festival dates are set for that year (edit on the calendar if your local date differs).
+ * Re-run "Load seasonal pack" after updates — new templateKeys insert without duplicating old ones.
  */
 export function seasonalPackForYear(year: number): CalendarEventInput[] {
-  const lunar: Record<number, { rakhi: string; diwali: string; holi: string }> = {
-    2025: { rakhi: "2025-08-09", diwali: "2025-10-20", holi: "2025-03-14" },
-    2026: { rakhi: "2026-08-28", diwali: "2026-11-08", holi: "2026-03-03" },
-    2027: { rakhi: "2027-08-17", diwali: "2027-10-29", holi: "2027-03-22" },
+  const lunar: Record<
+    number,
+    { rakhi: string; diwali: string; holi: string; guruNanak: string; karva: string; bhaiDooj: string }
+  > = {
+    2025: {
+      rakhi: "2025-08-09",
+      diwali: "2025-10-20",
+      holi: "2025-03-14",
+      guruNanak: "2025-11-05",
+      karva: "2025-10-10",
+      bhaiDooj: "2025-10-23",
+    },
+    2026: {
+      rakhi: "2026-08-28",
+      diwali: "2026-11-08",
+      holi: "2026-03-03",
+      guruNanak: "2026-11-24",
+      karva: "2026-10-29",
+      bhaiDooj: "2026-11-11",
+    },
+    2027: {
+      rakhi: "2027-08-17",
+      diwali: "2027-10-29",
+      holi: "2027-03-22",
+      guruNanak: "2027-11-14",
+      karva: "2027-10-19",
+      bhaiDooj: "2027-10-31",
+    },
   };
-  const L = lunar[year] ?? { rakhi: `${year}-08-20`, diwali: `${year}-11-01`, holi: `${year}-03-15` };
+  const L = lunar[year] ?? {
+    rakhi: `${year}-08-20`,
+    diwali: `${year}-11-01`,
+    holi: `${year}-03-15`,
+    guruNanak: `${year}-11-15`,
+    karva: `${year}-10-20`,
+    bhaiDooj: `${year}-11-03`,
+  };
+
+  const friendship = nthWeekday(year, 8, 0, 1);
+  const mothers = nthWeekday(year, 5, 0, 2);
+  const fathers = nthWeekday(year, 6, 0, 3);
 
   const e = (
     date: string,
@@ -111,16 +155,56 @@ export function seasonalPackForYear(year: number): CalendarEventInput[] {
     templateKey: `season:${key}:${year}`,
   });
 
-  return [
+  const pack = [
+    // —— January ——
+    e(`${year}-01-01`, "New Year Day", "Diaries, planners, calendars, desk organisers, gift pens", "Face-out planners and calendars. Bundle with a pen set.", "new-year-day", 7),
+    e(`${year}-01-13`, "Lohri / Makar Sankranti", "Greeting cards, gift wraps, kids colour packs", "Light festive traffic — cards and small gift stationery ready.", "lohri-sankranti", 5),
+    e(`${year}-01-26`, "Republic Day", "Tricolour notebooks, flag stickers, craft paper, patriotic cards", "School craft rush before 26 Jan. Keep craft paper and stickers stocked.", "republic-day", 7),
+
+    // —— February: Valentine week (big stationery / gift week) ——
+    e(`${year}-02-01`, "Exam season (Feb–Mar)", "Exam pads, blue/black pens, geometry, rough notebooks", "Board / school exams. Keep pens and pads fully stocked.", "exams-feb", 10),
+    e(`${year}-02-07`, "Rose Day", "Rose cards, stickers, small gift pens, wrapping", "Valentine week starts — rose-themed cards near the counter.", "rose-day", 5),
+    e(`${year}-02-08`, "Propose Day", "Love cards, photo frames, fancy pens, gift bags", "Keep a small romance gift corner visible.", "propose-day", 3),
+    e(`${year}-02-09`, "Chocolate Day", "Gift wraps, ribbons, greeting cards, return-gift packs", "Wraps and cards sell with chocolate gifts — stock ribbons.", "chocolate-day", 3),
+    e(`${year}-02-10`, "Teddy Day", "Gift bags, cards, stickers, cute notebooks", "Cute stationery pairs well with soft toys.", "teddy-day", 3),
+    e(`${year}-02-11`, "Promise Day", "Promise cards, couple diaries, gel pens", "Small card display for Promise Day.", "promise-day", 2),
+    e(`${year}-02-12`, "Hug Day", "Friendship / love cards, stickers, colour pens", "Keep Valentine card rack full through the week.", "hug-day", 2),
+    e(`${year}-02-13`, "Kiss Day", "Last-minute Valentine cards, wraps, gift pens", "Eve of Valentine — cards and wraps at the front.", "kiss-day", 1),
+    e(`${year}-02-14`, "Valentine's Day", "Love cards, photo albums, fancy diaries, gift sets, wrapping", "Peak Valentine day — love cards and gift stationery face-out.", "valentines-day", 7),
+
+    // —— March ——
+    e(L.holi, "Holi", "Art / craft leftovers clearance, return gifts, colour paper", "Light festive traffic — good day for a small clearance offer.", "holi", 5),
+    e(`${year}-03-08`, "Women's Day", "Diaries, premium pens, gift sets, greeting cards", "Gift pens and diaries for Women's Day near billing.", "womens-day", 5),
+
+    // —— May / June ——
+    e(mothers, "Mother's Day", "Greeting cards, photo frames, gift diaries, wrapping", "Mother's Day cards and gift stationery on the counter.", "mothers-day", 7),
     e(`${year}-06-01`, "Back-to-school starts", "Notebooks, pencils, pens, geometry boxes, school bags, name slips, covers", "Parents start buying from June. Keep bundles and offers ready.", "back-to-school-start", 14),
+    e(fathers, "Father's Day", "Diaries, pens gift sets, desk organisers, cards", "Father's Day — pen and diary gift sets face-out.", "fathers-day", 7),
     e(`${year}-06-15`, "Back-to-school peak", "Classmate/Doms sets, registers, colour pencils, lunch boxes", "Peak footfall mid-June to mid-July. Check stock of bestsellers.", "back-to-school-peak", 7),
     e(`${year}-07-15`, "Back-to-school wind-down", "Leftover kits, late admissions stationery", "Clear slow kits with a small offer before exam stock arrives.", "back-to-school-end", 3),
-    e(`${year}-09-05`, "Teachers' Day", "Greeting cards, diaries, pens gift sets, return-gift packs", "Teachers' Day — gift sets and cards near the counter.", "teachers-day", 7),
+
+    // —— August ——
+    e(friendship, "Friendship Day", "Friendship bands, cards, stickers, gel pens, scrap books", "Friendship Day — bands, cards and cute pens at the front.", "friendship-day", 7),
+    e(`${year}-08-15`, "Independence Day", "Tricolour craft, stickers, notebooks, school project supplies", "School project rush. Craft paper and stickers ready.", "independence-day", 7),
     e(L.rakhi, "Raksha Bandhan", "Rakhi gift wraps, cards, small return gifts, colour pens", "Rakhi week — gift corner visible at the front.", "rakhi", 7),
+
+    // —— September ——
+    e(`${year}-09-05`, "Teachers' Day", "Greeting cards, diaries, pens gift sets, return-gift packs", "Teachers' Day — gift sets and cards near the counter.", "teachers-day", 7),
+
+    // —— October / November ——
     e(`${year}-10-01`, "Exam season (Oct)", "Answer sheets, geometry, graph books, pens, highlighters", "School exams — exam packs on the counter.", "exams-oct", 10),
+    e(L.karva, "Karva Chauth", "Gift wraps, cards, fancy pens, small gift sets", "Evening gift traffic — wraps and cards ready.", "karva-chauth", 5),
     e(L.diwali, "Diwali", "Gift hampers, wrapping, diaries, art sets, decorative stationery", "Diwali hampers and gift wraps. Bundle slow toys with stationery.", "diwali", 14),
+    e(L.bhaiDooj, "Bhai Dooj", "Sibling cards, small gift packs, wrapping", "Post-Diwali sibling gifts — cards and wraps.", "bhai-dooj", 3),
+    e(`${year}-11-14`, "Children's Day", "Kids colour packs, stickers, fun notebooks, crayons, return gifts", "Children's Day — kids stationery and return gifts face-out.", "childrens-day", 7),
+    e(L.guruNanak, "Guru Nanak Jayanti", "Greeting cards, gift wraps, kids colour packs, return gifts", "Gurpurab — cards and small gift stationery ready for walk-ins.", "guru-nanak-jayanti", 7),
+
+    // —— December ——
+    e(`${year}-12-01`, "Christmas prep", "Christmas cards, wrapping, stickers, gift bags, diaries", "Start Christmas display. Cards and wraps sell early.", "christmas-prep", 10),
     e(`${year}-12-15`, "New Year planners", "Planners, diaries, calendars, desk organisers", "New Year — diaries and planners face-out near billing.", "new-year-planners", 14),
-    e(`${year}-02-01`, "Exam season (Feb–Mar)", "Exam pads, blue/black pens, geometry, rough notebooks", "Board / school exams. Keep pens and pads fully stocked.", "exams-feb", 10),
-    e(L.holi, "Holi", "Art / craft leftovers clearance, return gifts", "Light festive traffic — good day for a small clearance offer.", "holi", 5),
+    e(`${year}-12-25`, "Christmas", "Christmas cards, wrapping, stickers, gift pens, photo albums", "Christmas Day — gift stationery and wraps at the front.", "christmas", 7),
+    e(`${year}-12-31`, "New Year Eve", "Last diaries, calendars, party cards, gift pens", "Clear remaining planners with a small offer.", "new-year-eve", 3),
   ];
+
+  return pack.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }

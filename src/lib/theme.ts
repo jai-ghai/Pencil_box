@@ -1,7 +1,7 @@
 import { theme as antTheme, type ThemeConfig } from "antd";
 
-/** Brand colours taken from the shop poster. */
-export const BRAND = { navy: "#12296b", navyDeep: "#0b1d52", sun: "#ffd500" } as const;
+/** Brand colours — poster navy + warmer gold accent for staff screens. */
+export const BRAND = { navy: "#0f2a5c", navyDeep: "#081936", sun: "#f5c518", teal: "#0d9488" } as const;
 
 /**
  * One theme for the whole app (Ant Design tokens), light and dark.
@@ -27,10 +27,10 @@ export function buildTheme(opts: { dark: boolean; reduceMotion: boolean; accent:
       colorSuccess: dark ? "#4ade80" : "#15803d",
       colorWarning: dark ? "#fbbf24" : "#d97706",
       colorError: dark ? "#f87171" : "#b42318",
-      colorBgBase: dark ? "#0a1124" : "#ffffff",
-      colorBgLayout: dark ? "#0a1124" : "#f2f5fb",
-      colorBgContainer: dark ? "#101a36" : "#ffffff",
-      colorTextBase: dark ? "#e8ecf6" : "#101828",
+      colorBgBase: dark ? "#070f1f" : "#ffffff",
+      colorBgLayout: dark ? "#070f1f" : "#eef2f7",
+      colorBgContainer: dark ? "#0e1730" : "#ffffff",
+      colorTextBase: dark ? "#e8ecf6" : "#0f172a",
       fontFamily: 'var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", "Nirmala UI", sans-serif',
       fontSize: 15,
       borderRadius: 10,
