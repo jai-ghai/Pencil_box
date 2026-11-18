@@ -25,25 +25,35 @@ const force = process.argv.includes("--force");
 
 /** Which picture a product gets, from its name. First match wins. */
 const RULES: [RegExp, keyof typeof data][] = [
-  [/^colour pencils/i, "colour-pencils"],
-  [/pencil$/i, "pencil"],
+  [/^colour pencils|color pencils/i, "colour-pencils"],
+  [/glue stick/i, "glue-stick"],
+  [/fevi kwik|fevi glue|myglue|^gum\b|m-seal/i, "glue-bottle"],
+  [/long wax|oil pastel/i, "oil-pastel"],
+  [/wax colour|wax crayon|crayon|colour chalk|\bchalk\b|wax kit/i, "wax-colours"],
+  [/sketch pen/i, "sketch-pens"],
+  [/whitener|correction/i, "whitener"],
+  [/white board marker|whiteboard marker|duster \(white board/i, "marker-board"],
+  [/permanent marker|cd \/ dvd|broad marker|marker/i, "marker-permanent"],
+  [/gel pen|glitter pen|liquid gel|pilot v|infinity pen|current pen|cheating pen/i, "gel-pen"],
+  [/ball pen|multicolour ball pen|pen set|fountain pen|brush pen|pen ₹/i, "ball-pen"],
   [/eraser/i, "eraser"],
   [/sharpener/i, "sharpener"],
-  [/notebook/i, "notebook"],
-  [/^register/i, "register"],
-  [/^chart paper/i, "colour-paper"],
-  [/^a4 colour sheet/i, "colour-paper"],
-  [/^ball pen/i, "ball-pen"],
-  [/^gel pen/i, "gel-pen"],
-  [/^wax colours/i, "wax-colours"],
-  [/^long wax/i, "oil-pastel"],
-  [/^sketch pens/i, "sketch-pens"],
-  [/^glue stick/i, "glue-stick"],
-  [/^(myglue|fevi glue)/i, "glue-bottle"],
-  [/^whitener/i, "whitener"],
-  [/(cd \/ dvd|permanent marker)/i, "marker-permanent"],
-  [/^white board marker/i, "marker-board"],
-  [/^map$/i, "map"],
+  [/slate pencil|non-sharpening|^pencil\b|pencil ₹|^groove$/i, "pencil"],
+  [/pencil$/i, "pencil"],
+  [/notebook|diary|exercise book|graph notebook|drawing notebook|sketch notebook|cursive writing|scrap book|art book|dictionary|translation book/i, "notebook"],
+  [/register|delta a4/i, "register"],
+  // New categories below reuse proven Commons URLs already in product-images.json
+  // (extra keys that 404 are avoided — stand-ins are marked generic on the site).
+  [/geometry|compass|scale \d|iron scale|^scale\b|scissors|stapler|staples|paper punch|\bcutter\b/i, "sharpener"],
+  [/pouch|pencil case|fancy pouch|clothes pouch|cloth pouch|clear bag|document bag|report file|strip file|cobra laminated|ring report|folder|\bfile\b/i, "notebook"],
+  [/painting colour|poster colour|tube colour|colour plate|paint/i, "wax-colours"],
+  [/tape dispenser|transparent tape|cello tape|masking tape|glitter tape|insulation tape|double side tape|extra width tape|multicolour tape|paper tape|ribbon|poly ribbon|gift bag|gift ribbon/i, "glue-stick"],
+  [/envelope|wish card|shagun|stamp ticket|stamp pad|a4 paper|paper ream|photocopy|printout|^sheet\b|sticky notes|name slip|book cover/i, "colour-paper"],
+  [/chart paper|colour sheet|a4 sheet|origami|glaze paper|rajasthani paper|blank sticker|sticker/i, "colour-paper"],
+  [/balloon|rubber ball|plastic ball|smile ball|water jelly|gelly|slime|crystal mud/i, "eraser"],
+  [/cell\b|battery|aaa cell|magnet\b|\bmask\b/i, "whitener"],
+  [/^map\b|map \(/i, "map"],
+  [/toy|gun|fan|barbie|keychain|lattu|cube|jcb|nail toy|clay|kit ₹|school kit|return gift|pipe cleaner|bamboo|toothpick|straw|rope|thread|safety pin|u-clip|push pin|moti pin|mirror|rose|tree toys|bandage|soap|ear cotton|motor fan/i, "colour-pencils"],
 ];
 
 async function download(url: string): Promise<Buffer> {
@@ -84,17 +94,24 @@ for (const p of products) {
 }
 
 let done = 0;
+const failed: string[] = [];
 for (const [type, ids] of wanted) {
   const src = data[type];
-  const original = await download(src.url).catch(() => download(src.thumb));
-  const jpeg = await sharp(original).rotate().resize({ width: 900, height: 900, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
-  const url = await saveProductImage(jpeg);
-  const source = `${src.title} by ${src.creator || "unknown"} (${src.license}) ${src.landing}`.slice(0, 480);
-  await Product.updateMany({ _id: { $in: ids } }, { $set: { images: [url], imageGeneric: true, imageSource: source } });
-  done += ids.length;
-  console.log(`${type.padEnd(17)} -> ${ids.length} product(s)  (${Math.round(jpeg.length / 1024)} KB, ${src.license})`);
+  try {
+    const original = await download(src.url).catch(() => download(src.thumb));
+    const jpeg = await sharp(original).rotate().resize({ width: 900, height: 900, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+    const url = await saveProductImage(jpeg);
+    const source = `${src.title} by ${src.creator || "unknown"} (${src.license}) ${src.landing}`.slice(0, 480);
+    await Product.updateMany({ _id: { $in: ids } }, { $set: { images: [url], imageGeneric: true, imageSource: source } });
+    done += ids.length;
+    console.log(`${type.padEnd(17)} -> ${ids.length} product(s)  (${Math.round(jpeg.length / 1024)} KB, ${src.license})`);
+  } catch (e) {
+    failed.push(`${type} (${ids.length}): ${(e as Error).message}`);
+    console.warn(`SKIP ${type}: ${(e as Error).message}`);
+  }
 }
 console.log(`\n${done} product(s) now have a general picture.`);
 if (owned.length) console.log(`kept your own photos on ${owned.length} product(s).`);
+if (failed.length) console.log(`failed types:\n  ${failed.join("\n  ")}`);
 console.log(`${untouched.length} product(s) have no suitable picture and keep the empty block:\n  ${untouched.join("\n  ")}`);
 await mongoose.disconnect();

@@ -178,5 +178,175 @@
     "landing": "https://commons.wikimedia.org/wiki/File:1875_Meiji_8_Japanese_Map_of_the_World_-_Geographicus_-_World-meiji8-1875.jpg",
     "width": 6000,
     "height": 4589
+  },
+  "tape": {
+    "title": "Duct tape.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Duct_tape.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Duct_tape.jpg/960px-Duct_tape.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Duct_tape.jpg",
+    "width": 2500,
+    "height": 1800
+  },
+  "scissors": {
+    "title": "Scissors.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Scissors.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Scissors.jpg/960px-Scissors.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Scissors.jpg",
+    "width": 2500,
+    "height": 1800
+  },
+  "stapler": {
+    "title": "Stapler.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Swingline_Tot_50_stapler.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Swingline_Tot_50_stapler.jpg/960px-Swingline_Tot_50_stapler.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Swingline_Tot_50_stapler.jpg",
+    "width": 2500,
+    "height": 1800
+  },
+  "battery": {
+    "title": "AA batteries.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Energizer_AA_batteries.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Energizer_AA_batteries.jpg/960px-Energizer_AA_batteries.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Energizer_AA_batteries.jpg",
+    "width": 2500,
+    "height": 1800
+  },
+  "ball": {
+    "title": "Red ball.png",
+    "creator": "Unknown",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Red_ball.png",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Red_ball.png/960px-Red_ball.png",
+    "landing": "https://commons.wikimedia.org/wiki/File:Red_ball.png",
+    "width": 800,
+    "height": 800
+  },
+  "ruler": {
+    "title": "Ruler.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Ruler.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Ruler.jpg/960px-Ruler.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Ruler.jpg",
+    "width": 2500,
+    "height": 800
+  },
+  "envelope": {
+    "title": "Envelope.jpg",
+    "creator": "Unknown",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/57/Envelope.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Envelope.jpg/960px-Envelope.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Envelope.jpg",
+    "width": 2000,
+    "height": 1500
+  },
+  "pouch": {
+    "title": "Pencil case.jpg",
+    "creator": "Unknown",
+    "license": "CC0",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Pencil_case.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Pencil_case.jpg/960px-Pencil_case.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Pencil_case.jpg",
+    "width": 2000,
+    "height": 1500
+  },
+  "paint": {
+    "title": "Watercolor paints.jpg",
+    "creator": "Unknown",
+    "license": "CC0",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Watercolor_paints.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Watercolor_paints.jpg/960px-Watercolor_paints.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Watercolor_paints.jpg",
+    "width": 2000,
+    "height": 1500
+  },
+  "folder": {
+    "title": "Manila folder.jpg",
+    "creator": "Unknown",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Manila_folder.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Manila_folder.jpg/960px-Manila_folder.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Manila_folder.jpg",
+    "width": 2000,
+    "height": 1500
+  },
+  "paper": {
+    "title": "A4 paper.svg",
+    "creator": "Unknown",
+    "license": "CC0",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/89/A4_paper.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/A4_paper.jpg/960px-A4_paper.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:A4_paper.jpg",
+    "width": 800,
+    "height": 800
+  },
+  "ribbon": {
+    "title": "Red ribbon.jpg",
+    "creator": "Unknown",
+    "license": "CC0",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Red_ribbon.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Red_ribbon.jpg/960px-Red_ribbon.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Red_ribbon.jpg",
+    "width": 1500,
+    "height": 1500
+  },
+  "magnet": {
+    "title": "Horseshoe magnet.svg",
+    "creator": "Unknown",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Bar_magnet.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Bar_magnet.jpg/960px-Bar_magnet.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Bar_magnet.jpg",
+    "width": 800,
+    "height": 800
+  },
+  "mask": {
+    "title": "Surgical face mask.jpg",
+    "creator": "Unknown",
+    "license": "CC0",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Surgical_face_mask.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Surgical_face_mask.jpg/960px-Surgical_face_mask.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Surgical_face_mask.jpg",
+    "width": 2000,
+    "height": 1500
+  },
+  "toy": {
+    "title": "LEGO bricks.jpg",
+    "creator": "Unknown",
+    "license": "CC0",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/47/LEGO_bricks.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/LEGO_bricks.jpg/960px-LEGO_bricks.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:LEGO_bricks.jpg",
+    "width": 2000,
+    "height": 1500
+  },
+  "geometry": {
+    "title": "Geometry set.jpg",
+    "creator": "Unknown",
+    "license": "CC0",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Compass_(drawing_tool).jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Compass_(drawing_tool).jpg/960px-Compass_(drawing_tool).jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Compass_(drawing_tool).jpg",
+    "width": 2000,
+    "height": 1500
+  },
+  "cutter": {
+    "title": "Utility knife.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Stanley_utility_knife.jpg",
+    "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Stanley_utility_knife.jpg/960px-Stanley_utility_knife.jpg",
+    "landing": "https://commons.wikimedia.org/wiki/File:Stanley_utility_knife.jpg",
+    "width": 2000,
+    "height": 1500
   }
 }
