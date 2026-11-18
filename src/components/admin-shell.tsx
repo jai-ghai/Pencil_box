@@ -25,7 +25,7 @@ import {
   TeamOutlined,
   HomeOutlined,
 } from "@ant-design/icons";
-import { AdminAlerts } from "@/components/admin-alerts";
+import { AdminAlerts, clearAdminAlertDismiss } from "@/components/admin-alerts";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "@/components/wordmark";
 import { ADMIN_NAV_GROUPS, matchAdminNav, type AdminNavItem, type NavPerm } from "@/lib/admin-nav";
@@ -77,6 +77,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     ADMIN_NAV_GROUPS.flatMap((g) => g.items).find((n) => canOpen(me, n.perm))?.href ?? "/admin";
 
   async function signOut() {
+    clearAdminAlertDismiss(me?.username);
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
   }
@@ -97,7 +98,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {desktop && (
         <aside
           className="sticky top-0 flex h-[100dvh] w-[260px] shrink-0 flex-col"
-          style={{ background: BRAND.navyDeep, borderRight: `1px solid rgba(245,197,24,0.14)` }}
+          style={{ background: "var(--pb-chrome-deep)", borderRight: "1px solid rgba(236,194,51,0.16)" }}
         >
           <div className="flex h-14 shrink-0 items-center px-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
             <Link href={homeHref} aria-label="Pencil Box admin home">
@@ -108,12 +109,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </aside>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col" style={{ background: "var(--pb-bg)" }}>
         <header
           className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 px-3 md:px-5"
           style={{
-            background: BRAND.navy,
-            borderBottom: `1px solid rgba(245,197,24,0.18)`,
+            background: "var(--pb-chrome)",
+            borderBottom: "1px solid rgba(236,194,51,0.2)",
           }}
         >
           {!desktop && (
@@ -157,9 +158,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           size={300}
           title={<Wordmark size={18} />}
           styles={{
-            header: { background: BRAND.navyDeep, borderBottom: "1px solid rgba(255,255,255,0.08)" },
-            body: { background: BRAND.navyDeep, padding: "12px 8px 16px" },
-            wrapper: { background: BRAND.navyDeep },
+            header: { background: "var(--pb-chrome-deep)", borderBottom: "1px solid rgba(255,255,255,0.08)" },
+            body: { background: "var(--pb-chrome-deep)", padding: "12px 8px 16px" },
+            wrapper: { background: "var(--pb-chrome-deep)" },
           }}
           closeIcon={<span style={{ color: "#fff", fontSize: 18 }}>×</span>}
         >

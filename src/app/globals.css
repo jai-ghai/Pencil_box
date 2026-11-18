@@ -3,17 +3,30 @@
 @import "tailwindcss";
 
 :root {
-  --pb-navy: #0f2a5c;
-  --pb-navy-deep: #081936;
-  --pb-sun: #f5c518;
-  --pb-teal: #0d9488;
-  --pb-bg: #eef2f7;
+  --pb-navy: #153a7a;
+  --pb-navy-deep: #0a1628;
+  --pb-sun: #ecc233;
+  --pb-sun-soft: #f6e7a0;
+  --pb-teal: #0f766e;
+  --pb-ink: #0c1222;
+  --pb-mist: #f0f3f8;
+  --pb-slate: #141c2e;
+  --pb-slate-lift: #1a2438;
+  --pb-bg: var(--pb-mist);
+  --pb-chrome: var(--pb-navy);
+  --pb-chrome-deep: var(--pb-navy-deep);
+  --pb-alert: #fff8e8;
+  --pb-alert-border: rgba(196, 122, 10, 0.28);
+  --pb-alert-text: #7a4a08;
   color-scheme: light;
 }
 
 /* The light/dark choice sets data-theme on <html> before the page paints (see the script in layout.tsx) */
 html[data-theme="dark"] {
-  --pb-bg: #070f1f;
+  --pb-bg: var(--pb-navy-deep);
+  --pb-alert: #2a2210;
+  --pb-alert-border: rgba(236, 194, 51, 0.28);
+  --pb-alert-text: #f6e7a0;
   color-scheme: dark;
 }
 
@@ -23,9 +36,39 @@ html {
 
 body {
   background: var(--pb-bg);
+  color: var(--pb-ink);
   font-family: var(--font-geist-sans), system-ui, "Nirmala UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html[data-theme="dark"] body {
+  color: #e8eef8;
+}
+
+/* Compact shop reminder strip */
+.pb-alert-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--pb-alert);
+  border: 1px solid var(--pb-alert-border);
+  color: var(--pb-alert-text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+.pb-alert-strip strong {
+  font-weight: 700;
+}
+.pb-alert-strip .pb-alert-main {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Shop calendar: taller day cells that scroll when a day has many events */
