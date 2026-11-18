@@ -5,6 +5,7 @@ import { Alert, App, Button, Card, Checkbox, Drawer, Flex, Form, Grid, Input, Re
 import type { TableColumnsType } from "antd";
 import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import { api } from "@/lib/client";
+import { ADMIN_NAV_GROUPS } from "@/lib/admin-nav";
 import { ACTION_PERMS, DEFAULT_ADMIN_PERMS, PAGE_PERMS, type Role } from "@/lib/permissions";
 import { formatIST } from "@/lib/time";
 import { useMe } from "@/lib/use-me";
@@ -184,7 +185,24 @@ export default function UsersPage() {
           {role === "admin" && (
             <>
               <Form.Item label="Pages this admin can open" name="permissions" style={{ marginBottom: 8 }}>
-                <Checkbox.Group style={{ display: "flex", flexDirection: "column", gap: 6 }} options={PAGE_PERMS.map((p) => ({ value: p.key, label: p.label }))} />
+                <Checkbox.Group style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {ADMIN_NAV_GROUPS.map((g) => {
+                    const opts = PAGE_PERMS.filter((p) => g.items.some((i) => i.perm === p.key));
+                    if (!opts.length) return null;
+                    return (
+                      <div key={g.id}>
+                        <div className="mb-1 text-[11px] font-bold uppercase tracking-wide opacity-60">{g.label}</div>
+                        <div className="flex flex-col gap-1">
+                          {opts.map((p) => (
+                            <Checkbox key={p.key} value={p.key}>
+                              {p.label}
+                            </Checkbox>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </Checkbox.Group>
               </Form.Item>
               <Form.Item label="Extra actions this admin may do" name="permissions" style={{ marginBottom: 0 }} extra="Without these, they can look but not change.">
                 <Checkbox.Group style={{ display: "flex", flexDirection: "column", gap: 6 }} options={ACTION_PERMS.map((p) => ({ value: p.key, label: p.label }))} />

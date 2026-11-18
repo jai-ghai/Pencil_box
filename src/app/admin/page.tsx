@@ -12,23 +12,15 @@ import {
   Typography,
   theme,
 } from "antd";
-import {
-  CalendarOutlined,
-  BookOutlined,
-  WalletOutlined,
-  CheckSquareOutlined,
-  ShoppingOutlined,
-  InboxOutlined,
-  RiseOutlined,
-  PlusOutlined,
-  ArrowRightOutlined,
-} from "@ant-design/icons";
+import { ArrowRightOutlined } from "@ant-design/icons";
 import { api, inr } from "@/lib/client";
 import type { CapitalSummary } from "@/lib/capital";
 import { TYPE_LABEL, type EventType } from "@/lib/shop-calendar";
+import { ADMIN_NAV_GROUPS } from "@/lib/admin-nav";
 import { can, useMe } from "@/lib/use-me";
 import { BRAND } from "@/lib/theme";
 import { istDate } from "@/lib/reports";
+import type { Perm } from "@/lib/permissions";
 
 interface Dash {
   today: { bills: number; total: number; cash: number; upi: number; discount: number };
@@ -112,16 +104,10 @@ export default function Dashboard() {
     borderRadius: token.borderRadiusLG,
   } as const;
 
-  const actions = [
-    { href: "/admin/calendar", label: "Calendar", hint: "Festivals, rent, stock dates", icon: <CalendarOutlined />, perm: "calendar" as const },
-    { href: "/admin/daybook", label: "Daily book", hint: "Type today's sale", icon: <BookOutlined />, perm: "daybook" as const },
-    { href: "/admin/capital", label: "Capital", hint: "Money in and on the shelf", icon: <WalletOutlined />, perm: "capital" as const },
-    { href: "/admin/check", label: "Shop check", hint: "Walk the shelves", icon: <CheckSquareOutlined />, perm: "check" as const },
-    { href: "/admin/products", label: "Products", hint: "Add or edit items", icon: <ShoppingOutlined />, perm: "products" as const },
-    { href: "/admin/requests", label: "Requests", hint: "What customers asked for", icon: <InboxOutlined />, perm: "products" as const },
-    { href: "/admin/analytics", label: "Profit", hint: "How the month is going", icon: <RiseOutlined />, perm: "analytics" as const },
-    { href: "/admin/purchases", label: "Purchases", hint: "Stock you bought", icon: <PlusOutlined />, perm: "purchases" as const },
-  ].filter((a) => can(me, a.perm));
+  const jumpGroups = ADMIN_NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((n) => n.href !== "/admin" && n.perm !== "users" && can(me, n.perm as Perm)),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -333,32 +319,38 @@ export default function Dashboard() {
         </section>
       </div>
 
-      {/* Quick actions */}
-      {actions.length > 0 && (
-        <section>
-          <Typography.Title level={2} style={{ marginBottom: 12, fontSize: 16 }}>
+      {/* Jump to — same groups as the sidebar */}
+      {jumpGroups.length > 0 && (
+        <section className="flex flex-col gap-5">
+          <Typography.Title level={2} style={{ margin: 0, fontSize: 16 }}>
             Jump to
           </Typography.Title>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {actions.map((a) => (
-              <Link
-                key={a.href}
-                href={a.href}
-                className="group flex flex-col gap-1 p-4 transition-transform active:scale-[0.98]"
-                style={surface}
-              >
-                <span className="text-lg" style={{ color: token.colorPrimary }} aria-hidden>
-                  {a.icon}
-                </span>
-                <span className="font-semibold" style={{ color: token.colorText }}>
-                  {a.label}
-                </span>
-                <span className="text-sm" style={{ color: token.colorTextSecondary }}>
-                  {a.hint}
-                </span>
-              </Link>
-            ))}
-          </div>
+          {jumpGroups.map((g) => (
+            <div key={g.id}>
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: token.colorTextSecondary }}>
+                {g.label}
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {g.items.map((a) => (
+                  <Link
+                    key={a.href}
+                    href={a.href}
+                    className="flex flex-col gap-0.5 p-4 transition-transform active:scale-[0.98]"
+                    style={surface}
+                  >
+                    <span className="font-semibold" style={{ color: token.colorText }}>
+                      {a.label}
+                    </span>
+                    {a.hint && (
+                      <span className="text-sm" style={{ color: token.colorTextSecondary }}>
+                        {a.hint}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
