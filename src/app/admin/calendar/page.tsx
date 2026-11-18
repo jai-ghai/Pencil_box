@@ -186,7 +186,7 @@ export default function CalendarPage() {
       <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
         {/* Month grid — scrolls inside */}
         <section style={surface} className="flex min-h-[420px] flex-col overflow-hidden xl:min-h-[640px]">
-          <div className="pb-cal-scroll min-h-0 flex-1 overflow-auto p-2 md:p-3">
+          <div className="pb-cal-scroll pb-scroll-y min-h-0 flex-1 p-2 md:p-3">
             {!events && !err ? (
               <Skeleton active paragraph={{ rows: 10 }} />
             ) : (
@@ -215,7 +215,7 @@ export default function CalendarPage() {
                 Add
               </Button>
             </Flex>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+            <div className="pb-scroll-y min-h-0 flex-1 px-4 py-3">
               {dayEvents.length === 0 ? (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing on this day. Add a bill, stock note or festival reminder." />
               ) : (
@@ -234,7 +234,7 @@ export default function CalendarPage() {
                 This month ({monthEvents.length})
               </Typography.Title>
             </Flex>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+            <div className="pb-scroll-y min-h-0 flex-1 px-4 py-3">
               {monthEvents.length === 0 ? (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}

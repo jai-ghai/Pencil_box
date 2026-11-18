@@ -105,7 +105,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Wordmark size={20} />
             </Link>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3">{nav}</div>
+          <div className="pb-scroll-y min-h-0 flex-1 px-2 py-3">{nav}</div>
         </aside>
       )}
 

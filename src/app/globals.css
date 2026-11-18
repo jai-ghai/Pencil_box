@@ -122,6 +122,20 @@ html[data-theme="dark"] body {
   display: none;
 }
 
+/* Vertical scroll without a visible bar (sidebar, calendar panels, etc.) */
+.pb-scroll-y {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge */
+}
+.pb-scroll-y::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome / Safari */
+}
+
 /* Keyboard hint keys on the billing screen */
 kbd {
   font-family: var(--font-geist-mono), monospace;
