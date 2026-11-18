@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, App, Button, Card, Col, Drawer, Empty, Flex, Form, Grid, Image, Input, InputNumber, Popconfirm, Row, Select, Switch, Table, Tag, Typography, Upload } from "antd";
 import type { TableColumnsType, UploadFile } from "antd";
-import { CopyOutlined, DeleteOutlined, PictureOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { CopyOutlined, DeleteOutlined, PictureOutlined, PlusOutlined, SearchOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import { api, inr, stripBrand } from "@/lib/client";
 import { can, useMe } from "@/lib/use-me";
+import { QuickAddModal } from "@/components/quick-add-modal";
 
 interface Opt { _id: string; name?: string; name_en?: string; parentId?: string | null }
 interface VariantDoc { _id: string; label: string; shortCode?: string; sellPrice: number; costPrice: number; packSize: number; reorderLevel: number; quickTap: boolean; trackStock?: boolean; stockOnHand: number }
@@ -62,6 +63,7 @@ export default function Products() {
   const [images, setImages] = useState<string[]>([]);
   const [generic, setGeneric] = useState(false); // the picture is a stand-in from the internet
   const [saving, setSaving] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
 
   const loadList = useCallback(async (search = "", arch = false) => {
     const d = await api<{ products: ProductDoc[] }>(`/api/admin/products?q=${encodeURIComponent(search)}${arch ? "&archived=1" : ""}`);
@@ -211,13 +213,29 @@ export default function Products() {
         <Typography.Title level={3} style={{ margin: 0 }}>Products</Typography.Title>
         <Flex gap={12} align="center" wrap>
           <Flex gap={8} align="center"><Switch checked={archived} onChange={(v) => (setList(null), setArchived(v), loadList(q, v))} aria-label="Show archived products" /><Typography.Text>Show archived</Typography.Text></Flex>
-          {!archived && <Button type="primary" icon={<PlusOutlined />} onClick={startNew}>Add product</Button>}
+          {!archived && (
+            <>
+              <Button icon={<ThunderboltOutlined />} onClick={() => setQuickOpen(true)}>Quick add</Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={startNew}>Add product</Button>
+            </>
+          )}
         </Flex>
       </Flex>
       <Input.Search placeholder="Search products" allowClear enterButton={<SearchOutlined />} value={q} onChange={(e) => setQ(e.target.value)} onSearch={(v) => loadList(v, archived)} style={{ maxWidth: 420 }} />
       <Card styles={{ body: { padding: 0 } }}>
         <Table<ProductDoc> rowKey="_id" size="middle" loading={!list} columns={columns} dataSource={list ?? []} pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No products yet. Add one or import a CSV." /> }} />
       </Card>
+
+      <QuickAddModal
+        open={quickOpen}
+        brands={brands.map((b) => b.name ?? "").filter(Boolean)}
+        onClose={() => setQuickOpen(false)}
+        onSaved={async () => {
+          setQuickOpen(false);
+          await loadList(q, archived);
+        }}
+      />
+
 
       <Drawer
         open={editing !== null}

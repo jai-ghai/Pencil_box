@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Alert, Card, Col, Empty, Row, Skeleton, Statistic, Table, Typography } from "antd";
-import { api } from "@/lib/client";
+import { Alert, Button, Card, Col, Empty, Flex, Progress, Row, Skeleton, Statistic, Table, Typography } from "antd";
+import { api, inr } from "@/lib/client";
+import type { CapitalSummary } from "@/lib/capital";
 
 interface Dash {
   today: { bills: number; total: number; cash: number; upi: number; discount: number };
@@ -16,9 +17,14 @@ const rupees = (paise: number) => paise / 100;
 
 export default function Dashboard() {
   const [d, setD] = useState<Dash | null>(null);
+  const [cap, setCap] = useState<CapitalSummary | null | undefined>(undefined); // undefined = still loading; null = no access / failed quietly
   const [err, setErr] = useState("");
   useEffect(() => {
     api<Dash>("/api/admin/dashboard").then(setD).catch((e: Error) => setErr(e.message));
+    // Capital is optional on the home page: if the person has no permission, just hide the card.
+    api<CapitalSummary>("/api/admin/capital")
+      .then(setCap)
+      .catch(() => setCap(null));
   }, []);
 
   if (err) return <Alert type="error" showIcon title={err} />;
@@ -45,6 +51,10 @@ export default function Dashboard() {
           </Col>
         ))}
       </Row>
+
+      {cap === undefined && <Card><Skeleton active paragraph={{ rows: 2 }} /></Card>}
+      {cap && <CapitalCard data={cap} />}
+
       <Card title="Order today (at or below reorder level)" styles={{ body: { padding: 0 } }}>
         <Table
           rowKey="id"
@@ -60,5 +70,42 @@ export default function Dashboard() {
         />
       </Card>
     </div>
+  );
+}
+
+function CapitalCard({ data }: { data: CapitalSummary }) {
+  const unset = data.capitalStart <= 0;
+  const pct = Math.max(0, Math.min(100, data.recoveredPct ?? 0));
+  return (
+    <Card
+      title="Since you started"
+      extra={<Link href="/admin/capital"><Button type="link" style={{ padding: 0 }}>Open Capital</Button></Link>}
+    >
+      {unset ? (
+        <Flex vertical gap={8}>
+          <Typography.Text>Set the capital you put into the shop (for example ₹2,00,000) to see how much of it you have got back.</Typography.Text>
+          <Link href="/admin/capital"><Button type="primary">Set capital</Button></Link>
+        </Flex>
+      ) : (
+        <Flex vertical gap={12}>
+          <Row gutter={[12, 12]}>
+            <Col xs={12} md={8}><Statistic title="Capital" value={rupees(data.capitalStart)} prefix="₹" precision={data.capitalStart % 100 ? 2 : 0} /></Col>
+            <Col xs={12} md={8}><Statistic title="Cash recovered" value={rupees(data.cashRecovered)} prefix="₹" precision={data.cashRecovered % 100 ? 2 : 0} styles={{ content: { color: data.cashRecovered < 0 ? "#b42318" : undefined } }} /></Col>
+            <Col xs={12} md={8}><Statistic title="On the shelf" value={rupees(data.shelfValue)} prefix="₹" precision={data.shelfValue % 100 ? 2 : 0} /></Col>
+          </Row>
+          <div>
+            <Progress percent={pct} status={pct >= 100 ? "success" : "active"} format={() => (data.recoveredPct !== null ? `${data.recoveredPct}%` : "—")} aria-label="Cash recovered against capital" />
+            <Typography.Text type="secondary">
+              {inr(data.cashRecovered)} of {inr(data.capitalStart)} back in cash
+              {data.monthsToPayback !== null && data.monthsToPayback > 0 && ` · about ${data.monthsToPayback} month${data.monthsToPayback === 1 ? "" : "s"} to finish at this rate`}
+              {data.monthsToPayback === 0 && " · capital already recovered"}
+            </Typography.Text>
+          </div>
+          {data.deadStockValue > 0 && (
+            <Typography.Text type="danger">₹{rupees(data.deadStockValue).toLocaleString("en-IN")} stuck on shelves with no sale in {data.deadStockDays} days.</Typography.Text>
+          )}
+        </Flex>
+      )}
+    </Card>
   );
 }

@@ -266,3 +266,75 @@ const itemRequestSchema = new Schema(
   opts,
 );
 export const ItemRequest = model("ItemRequest", itemRequestSchema);
+
+/* ---------- Daily book: totals typed in by hand (no billing needed) ---------- */
+/** One row per India-time day: what was sold that day, typed in by the owner. `_id` is "YYYY-MM-DD". */
+const daySalesSchema = new Schema(
+  {
+    _id: { type: String },
+    /** integer paise */
+    cash: { type: Number, default: 0, min: 0 },
+    upi: { type: Number, default: 0, min: 0 },
+    note: { type: String, trim: true, maxlength: 300 },
+    /** photos of the day (WhatsApp screenshots, new-item requests); Cloudinary or /uploads URLs */
+    photos: { type: [String], default: [] },
+    by: String,
+  },
+  opts,
+);
+export const DaySales = model("DaySales", daySalesSchema);
+
+export const COST_KINDS = ["purchase", "expense"] as const;
+export type CostKind = (typeof COST_KINDS)[number];
+/** Money going out on a day. "purchase" = stock bought; "expense" = running costs (rent, power, helper pay). */
+const dayCostSchema = new Schema(
+  {
+    date: { type: String, required: true, index: true },
+    kind: { type: String, enum: COST_KINDS, required: true },
+    /** integer paise */
+    amount: { type: Number, required: true, min: 1 },
+    /** wholesaler for a purchase, or what the expense was for */
+    party: { type: String, trim: true, maxlength: 80 },
+    note: { type: String, trim: true, maxlength: 300 },
+    by: String,
+  },
+  opts,
+);
+export const DayCost = model("DayCost", dayCostSchema);
+
+/* ---------- Shop check: walk the shelves, tick what is there, cross what is missing ---------- */
+export const CHECK_STATUSES = ["ok", "missing"] as const;
+const stockCheckSchema = new Schema(
+  {
+    variantId: { type: Schema.Types.ObjectId, ref: "Variant", required: true, unique: true },
+    status: { type: String, enum: CHECK_STATUSES, required: true },
+    /** how many to buy; only meaningful while status is "missing" (the buy list) */
+    needQty: { type: Number, default: 1, min: 1 },
+    checkedAt: { type: Date, default: Date.now, index: true },
+    checkedBy: String,
+  },
+  { timestamps: false },
+);
+export const StockCheck = model("StockCheck", stockCheckSchema);
+
+/* ---------- Shop calendar: festivals, bills, milestones, stock reminders ---------- */
+export const SHOP_EVENT_TYPES = ["milestone", "bill", "stock", "season", "note"] as const;
+const shopEventSchema = new Schema(
+  {
+    /** India-time YYYY-MM-DD */
+    date: { type: String, required: true, index: true, match: /^\d{4}-\d{2}-\d{2}$/ },
+    title: { type: String, required: true, trim: true, maxlength: 120 },
+    type: { type: String, enum: SHOP_EVENT_TYPES, required: true, index: true },
+    note: { type: String, trim: true, maxlength: 500 },
+    /** what to stock or put on offer (especially for season events) */
+    itemsHint: { type: String, trim: true, maxlength: 400 },
+    /** days before `date` to start showing the top alert */
+    remindDaysBefore: { type: Number, default: 1, min: 0, max: 30 },
+    /** idempotent seed key so seasonal/bill packs are not duplicated */
+    templateKey: { type: String, trim: true, maxlength: 80, index: true, sparse: true },
+    by: String,
+  },
+  opts,
+);
+shopEventSchema.index({ templateKey: 1 }, { unique: true, partialFilterExpression: { templateKey: { $type: "string" } } });
+export const ShopEvent = model("ShopEvent", shopEventSchema);

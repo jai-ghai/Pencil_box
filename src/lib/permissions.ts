@@ -9,6 +9,11 @@ export type Role = "superadmin" | "admin" | "cashier";
 
 export const PAGE_PERMS = [
   { key: "dashboard", label: "Dashboard", href: "/admin" },
+  { key: "daybook", label: "Daily book", href: "/admin/daybook" },
+  { key: "analytics", label: "Profit", href: "/admin/analytics" },
+  { key: "capital", label: "Capital", href: "/admin/capital" },
+  { key: "calendar", label: "Calendar", href: "/admin/calendar" },
+  { key: "check", label: "Shop check", href: "/admin/check" },
   { key: "orders", label: "Orders", href: "/admin/orders" },
   { key: "reports", label: "Reports", href: "/admin/reports" },
   { key: "products", label: "Products", href: "/admin/products" },

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button, Drawer, Flex, Grid, Menu, Result, Skeleton, Tooltip, theme } from "antd";
 import type { MenuProps } from "antd";
 import { LogoutOutlined, MenuOutlined } from "@ant-design/icons";
+import { AdminAlerts } from "@/components/admin-alerts";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "@/components/wordmark";
 import { PAGE_PERMS, type Perm } from "@/lib/permissions";
@@ -91,6 +92,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </Drawer>
 
+      {me && !blocked && <AdminAlerts />}
       <main className="mx-auto w-full max-w-7xl flex-1 p-4">
         {!me && <Skeleton active paragraph={{ rows: 6 }} />}
         {blocked && (

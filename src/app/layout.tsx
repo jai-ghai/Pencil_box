@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { PwaBootstrap } from "@/components/pwa";
 import { Providers } from "./providers";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -12,9 +13,24 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "Pencil Box",
   description: "Stationery, gifts, printing and photocopy",
+  applicationName: "Pencil Box",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Pencil Box",
+  },
+  formatDetection: { telephone: false },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#12296b" };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#12296b",
+  viewportFit: "cover",
+};
 
 /** Runs before the first paint so the page never flashes the wrong theme. Light is the default. */
 const THEME_SCRIPT = `try{document.documentElement.dataset.theme=localStorage.getItem('pb_theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}`;
@@ -28,7 +44,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {/* Suspense: Ant Design's provider tree reads Math.random(), which Next.js 16 only allows at request time */}
         <Suspense fallback={null}>
-          <Providers>{children}</Providers>
+          <Providers>
+            {children}
+            <PwaBootstrap />
+          </Providers>
         </Suspense>
         <Suspense fallback={null}>
           <Analytics />
