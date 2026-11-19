@@ -145,8 +145,8 @@ export default function CalendarPage() {
   const seedMenu: MenuProps = {
     items: [
       { key: "seasonal", label: "Load seasonal pack", onClick: () => void seedSeasonal() },
-      { key: "rent", label: "Add rent (monthly)", onClick: () => void seedBill("Shop rent", 5) },
-      { key: "electricity", label: "Add electricity (monthly)", onClick: () => void seedBill("Electricity bill", 10) },
+      { key: "rent", label: "Add rent (monthly)", onClick: () => void seedBill("Shop rent", 1) },
+      { key: "electricity", label: "Add electricity (monthly)", onClick: () => void seedBill("Electricity bill", 1) },
     ],
   };
 
@@ -182,10 +182,10 @@ export default function CalendarPage() {
             <Button loading={seedBusy} onClick={seedSeasonal} style={{ borderColor: BRAND.navy, color: BRAND.navy }}>
               Load seasonal pack
             </Button>
-            <Button loading={seedBusy} onClick={() => seedBill("Shop rent", 5)}>
+            <Button loading={seedBusy} onClick={() => seedBill("Shop rent", 1)}>
               Add rent (monthly)
             </Button>
-            <Button loading={seedBusy} onClick={() => seedBill("Electricity bill", 10)}>
+            <Button loading={seedBusy} onClick={() => seedBill("Electricity bill", 1)}>
               Add electricity (monthly)
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
