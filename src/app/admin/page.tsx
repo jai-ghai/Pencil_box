@@ -7,14 +7,12 @@ import {
   Button,
   Empty,
   Flex,
-  Progress,
   Skeleton,
   Typography,
   theme,
 } from "antd";
 import { ArrowRightOutlined } from "@ant-design/icons";
 import { api, inr } from "@/lib/client";
-import type { CapitalSummary } from "@/lib/capital";
 import { TYPE_LABEL } from "@/lib/shop-calendar";
 import { ADMIN_NAV_GROUPS } from "@/lib/admin-nav";
 import { can, useMe } from "@/lib/use-me";
@@ -53,7 +51,6 @@ export default function Dashboard() {
   const me = useMe();
   const today = istDate(new Date());
   const [d, setD] = useState<Dash | null>(null);
-  const [cap, setCap] = useState<CapitalSummary | null | undefined>(undefined);
   const [err, setErr] = useState("");
 
   useEffect(() => {
@@ -66,12 +63,6 @@ export default function Dashboard() {
       })
       .catch((e: Error) => live && setErr(e.message));
 
-    if (can(me, "capital")) {
-      api<CapitalSummary>("/api/admin/capital")
-        .then((c) => live && setCap(c))
-        .catch(() => live && setCap(null));
-    }
-
     return () => {
       live = false;
     };
@@ -79,7 +70,6 @@ export default function Dashboard() {
 
   const fetchedAlerts = useCalendarAlerts(can(me, "calendar"));
   const alertList = can(me, "calendar") ? fetchedAlerts : [];
-  const capital = can(me, "capital") ? cap : null;
 
   if (err) return <Alert type="error" showIcon title={err} />;
   if (!d) return <Skeleton active paragraph={{ rows: 10 }} />;
@@ -126,7 +116,7 @@ export default function Dashboard() {
               {dayLong(today)}
             </h1>
             <p className="mt-2 max-w-[42ch] text-pretty text-sm md:text-base" style={{ color: "rgba(255,255,255,0.78)" }}>
-              Festivals, bills, and stock reminders first — then capital and the day&apos;s numbers.
+              Festivals, bills, and stock reminders first — then the day&apos;s numbers.
             </p>
           </div>
           <Flex gap={8} wrap className="relative z-[1]">
@@ -222,61 +212,8 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Money: capital + day pulse */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <section style={surface} className="flex flex-col overflow-hidden">
-          <Flex justify="space-between" align="center" className="border-b px-4 py-3 md:px-5" style={{ borderColor: token.colorBorderSecondary }}>
-            <Typography.Title level={2} style={{ margin: 0, fontSize: 16 }}>
-              Capital
-            </Typography.Title>
-            {can(me, "capital") && (
-              <Link href="/admin/capital" className="text-sm font-semibold" style={{ color: token.colorPrimary }}>
-                Details <ArrowRightOutlined />
-              </Link>
-            )}
-          </Flex>
-          <div className="flex flex-1 flex-col gap-3 px-4 py-4 md:px-5">
-            {!can(me, "capital") ? (
-              <Typography.Text type="secondary">Capital permission is off for this login.</Typography.Text>
-            ) : capital === undefined ? (
-              <Skeleton active paragraph={{ rows: 3 }} title={false} />
-            ) : !capital || capital.capitalStart <= 0 ? (
-              <Flex vertical gap={10}>
-                <Typography.Text type="secondary">
-                  Set what you put into the shop to see how much cash is back versus still on the shelf.
-                </Typography.Text>
-                <Button type="primary" href="/admin/capital">
-                  Set capital
-                </Button>
-              </Flex>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <Metric label="Cash recovered" value={inr(capital.cashRecovered)} warn={capital.cashRecovered < 0} />
-                  <Metric label="On the shelf" value={inr(capital.shelfValue)} />
-                </div>
-                <div>
-                  <Progress
-                    percent={Math.max(0, Math.min(100, capital.recoveredPct ?? 0))}
-                    status={(capital.recoveredPct ?? 0) >= 100 ? "success" : "active"}
-                    format={() => (capital.recoveredPct !== null ? `${capital.recoveredPct}%` : "—")}
-                    aria-label="Cash recovered against capital"
-                  />
-                  <Typography.Text type="secondary" className="text-sm">
-                    {inr(capital.cashRecovered)} of {inr(capital.capitalStart)} back
-                    {capital.monthsToPayback !== null && capital.monthsToPayback > 0 && ` · ~${capital.monthsToPayback} mo left at this rate`}
-                    {capital.monthsToPayback === 0 && " · capital recovered"}
-                  </Typography.Text>
-                </div>
-                {capital.deadStockValue > 0 && (
-                  <Typography.Text type="danger" className="text-sm">
-                    {inr(capital.deadStockValue)} stuck with no sale in {capital.deadStockDays} days.
-                  </Typography.Text>
-                )}
-              </>
-            )}
-          </div>
-        </section>
+      {/* Money: today at a glance */}
+      <div className="grid gap-4">
 
         <section style={surface} className="overflow-hidden">
           <Flex justify="space-between" align="center" className="border-b px-4 py-3 md:px-5" style={{ borderColor: token.colorBorderSecondary }}>
