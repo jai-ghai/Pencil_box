@@ -7,8 +7,10 @@ import {
   Badge,
   Button,
   Calendar,
+  Dropdown,
   Empty,
   Flex,
+  Grid,
   Input,
   Modal,
   Popconfirm,
@@ -18,8 +20,8 @@ import {
   Typography,
   theme,
 } from "antd";
-import type { CalendarProps } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import type { CalendarProps, MenuProps } from "antd";
+import { DeleteOutlined, MoreOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { api } from "@/lib/client";
 import { istDate } from "@/lib/reports";
@@ -56,6 +58,9 @@ const TYPE_COLOR: Record<EventType, string> = {
 export default function CalendarPage() {
   const { message } = App.useApp();
   const { token } = theme.useToken();
+  const screens = Grid.useBreakpoint();
+  /** Phone / narrow: compact month + dots; md+ can show title chips. */
+  const compact = !screens.md;
   const today = istDate(new Date());
   const [cursor, setCursor] = useState(() => dayjs(today));
   const [selected, setSelected] = useState(today);
@@ -137,15 +142,43 @@ export default function CalendarPage() {
     }
   }
 
+  const seedMenu: MenuProps = {
+    items: [
+      { key: "seasonal", label: "Load seasonal pack", onClick: () => void seedSeasonal() },
+      { key: "rent", label: "Add rent (monthly)", onClick: () => void seedBill("Shop rent", 5) },
+      { key: "electricity", label: "Add electricity (monthly)", onClick: () => void seedBill("Electricity bill", 10) },
+    ],
+  };
+
   const cellRender: CalendarProps<Dayjs>["cellRender"] = (value, info) => {
     if (info.type !== "date") return info.originNode;
     const key = value.format("YYYY-MM-DD");
     const list = byDate.get(key) ?? [];
-    if (!list.length) return <div className="pb-cal-cell" />;
+    if (!list.length) {
+      return compact ? <div className="pb-cal-dots" aria-hidden /> : <div className="pb-cal-cell" />;
+    }
+
+    if (compact) {
+      const types = [...new Set(list.map((e) => e.type))];
+      return (
+        <div className="pb-cal-dots" title={list.map((e) => e.title).join(", ")}>
+          {types.slice(0, 5).map((t) => (
+            <span key={t} className="pb-cal-dot" style={{ background: TYPE_COLOR[t] }} />
+          ))}
+          {list.length > 1 && <span className="pb-cal-dot-count">{list.length}</span>}
+        </div>
+      );
+    }
+
     return (
       <div className="pb-cal-cell">
         {list.slice(0, 4).map((e) => (
-          <div key={e.id} className="pb-cal-chip" style={{ background: `${TYPE_COLOR[e.type]}22`, color: TYPE_COLOR[e.type], borderColor: `${TYPE_COLOR[e.type]}55` }} title={e.title}>
+          <div
+            key={e.id}
+            className="pb-cal-chip"
+            style={{ background: `${TYPE_COLOR[e.type]}22`, color: TYPE_COLOR[e.type], borderColor: `${TYPE_COLOR[e.type]}55` }}
+            title={e.title}
+          >
             {e.title}
           </div>
         ))}
@@ -155,43 +188,59 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="flex min-h-0 flex-col gap-4">
-      <Flex justify="space-between" align="flex-start" gap={12} wrap>
-        <div>
-          <Typography.Title level={2} style={{ margin: 0, fontSize: 22 }}>
+    <div className="pb-cal-page flex min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden">
+      <Flex justify="space-between" align="flex-start" gap={12} wrap className="min-w-0">
+        <div className="min-w-0">
+          <Typography.Title level={2} style={{ margin: 0, fontSize: compact ? 20 : 22 }}>
             Shop calendar
           </Typography.Title>
-          <Typography.Text type="secondary">
+          <Typography.Text type="secondary" className={compact ? "text-sm" : undefined}>
             Festivals, Valentine week, Gurpurab, rent and stock dates — reminders show at the top of admin.
           </Typography.Text>
         </div>
-        <Flex gap={8} wrap>
-          <Button loading={seedBusy} onClick={seedSeasonal} style={{ borderColor: BRAND.navy, color: BRAND.navy }}>
-            Load seasonal pack
-          </Button>
-          <Button loading={seedBusy} onClick={() => seedBill("Shop rent", 5)}>
-            Add rent (monthly)
-          </Button>
-          <Button loading={seedBusy} onClick={() => seedBill("Electricity bill", 10)}>
-            Add electricity (monthly)
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
-            Add for {dayLabel(selected)}
-          </Button>
-        </Flex>
+        {compact ? (
+          <Flex gap={8} wrap className="w-full min-w-0">
+            <Button type="primary" icon={<PlusOutlined />} block onClick={() => setAddOpen(true)}>
+              Add for {dayLabel(selected)}
+            </Button>
+            <Dropdown menu={seedMenu} trigger={["click"]} disabled={seedBusy}>
+              <Button block icon={<MoreOutlined />} loading={seedBusy}>
+                Seasonal & bills
+              </Button>
+            </Dropdown>
+          </Flex>
+        ) : (
+          <Flex gap={8} wrap>
+            <Button loading={seedBusy} onClick={seedSeasonal} style={{ borderColor: BRAND.navy, color: BRAND.navy }}>
+              Load seasonal pack
+            </Button>
+            <Button loading={seedBusy} onClick={() => seedBill("Shop rent", 5)}>
+              Add rent (monthly)
+            </Button>
+            <Button loading={seedBusy} onClick={() => seedBill("Electricity bill", 10)}>
+              Add electricity (monthly)
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
+              Add for {dayLabel(selected)}
+            </Button>
+          </Flex>
+        )}
       </Flex>
 
       {err && <Alert type="error" showIcon title={err} />}
 
-      <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
-        {/* Month grid — scrolls inside */}
-        <section style={surface} className="flex min-h-[420px] flex-col overflow-hidden xl:min-h-[640px]">
-          <div className="pb-cal-scroll pb-scroll-y min-h-0 flex-1 p-2 md:p-3">
+      <div className="grid min-h-0 min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
+        {/* Month grid — compact dots on phone; chips on md+ */}
+        <section
+          style={surface}
+          className={`flex min-w-0 flex-col overflow-hidden ${compact ? "min-h-0" : "min-h-[420px] xl:min-h-[640px]"}`}
+        >
+          <div className={`pb-cal-scroll pb-scroll-y min-h-0 min-w-0 flex-1 ${compact ? "p-1.5" : "p-2 md:p-3"}`}>
             {!events && !err ? (
-              <Skeleton active paragraph={{ rows: 10 }} />
+              <Skeleton active paragraph={{ rows: compact ? 6 : 10 }} />
             ) : (
               <Calendar
-                fullscreen
+                fullscreen={!compact}
                 value={cursor}
                 onSelect={(d) => {
                   setCursor(d);
@@ -204,18 +253,25 @@ export default function CalendarPage() {
           </div>
         </section>
 
-        {/* Day + month agenda — independently scrollable */}
-        <div className="flex min-h-0 flex-col gap-4 xl:max-h-[calc(100dvh-11rem)]">
+        {/* Day + month agenda — primary readable content on phone */}
+        <div className="flex min-h-0 min-w-0 flex-col gap-4 xl:max-h-[calc(100dvh-11rem)]">
           <section style={surface} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <Flex justify="space-between" align="center" className="shrink-0 border-b px-4 py-3" style={{ borderColor: token.colorBorderSecondary }}>
-              <Typography.Title level={3} style={{ margin: 0, fontSize: 16 }}>
+            <Flex
+              justify="space-between"
+              align="center"
+              gap={8}
+              wrap
+              className="shrink-0 border-b px-3 py-3 sm:px-4"
+              style={{ borderColor: token.colorBorderSecondary }}
+            >
+              <Typography.Title level={3} style={{ margin: 0, fontSize: 16 }} className="min-w-0 truncate">
                 {dayLabel(selected)}
               </Typography.Title>
               <Button size="small" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>
                 Add
               </Button>
             </Flex>
-            <div className="pb-scroll-y min-h-0 flex-1 px-4 py-3">
+            <div className="pb-scroll-y min-h-0 flex-1 px-3 py-3 sm:px-4">
               {dayEvents.length === 0 ? (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing on this day. Add a bill, stock note or festival reminder." />
               ) : (
@@ -229,12 +285,17 @@ export default function CalendarPage() {
           </section>
 
           <section style={surface} className="flex min-h-[200px] flex-[1.2] flex-col overflow-hidden">
-            <Flex justify="space-between" align="center" className="shrink-0 border-b px-4 py-3" style={{ borderColor: token.colorBorderSecondary }}>
+            <Flex
+              justify="space-between"
+              align="center"
+              className="shrink-0 border-b px-3 py-3 sm:px-4"
+              style={{ borderColor: token.colorBorderSecondary }}
+            >
               <Typography.Title level={3} style={{ margin: 0, fontSize: 16 }}>
                 This month ({monthEvents.length})
               </Typography.Title>
             </Flex>
-            <div className="pb-scroll-y min-h-0 flex-1 px-4 py-3">
+            <div className="pb-scroll-y min-h-0 flex-1 px-3 py-3 sm:px-4">
               {monthEvents.length === 0 ? (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -282,9 +343,21 @@ export default function CalendarPage() {
             </div>
           </section>
 
-          <section style={surface} className="shrink-0 px-4 py-3">
+          <section style={surface} className="shrink-0 px-3 py-3 sm:px-4">
             <Typography.Paragraph style={{ margin: 0 }} type="secondary" className="text-sm">
-              Tap <strong>Load seasonal pack</strong> once per year (again after updates) for Rose Day, Valentine&apos;s, Guru Nanak Jayanti, Children&apos;s Day, Diwali, Friendship Day and more — each with what to stock. Scroll the month grid and the lists on the right. Alerts appear at the top of admin on the day and in the remind window.
+              {compact ? (
+                <>
+                  Tap a day for its agenda below. Use <strong>Seasonal &amp; bills</strong> for festival packs, rent and
+                  electricity. Alerts appear at the top of admin on the day and in the remind window.
+                </>
+              ) : (
+                <>
+                  Tap <strong>Load seasonal pack</strong> once per year (again after updates) for Rose Day, Valentine&apos;s,
+                  Guru Nanak Jayanti, Children&apos;s Day, Diwali, Friendship Day and more — each with what to stock. Scroll
+                  the month grid and the lists on the right. Alerts appear at the top of admin on the day and in the remind
+                  window.
+                </>
+              )}
             </Typography.Paragraph>
           </section>
         </div>
@@ -293,6 +366,7 @@ export default function CalendarPage() {
       <AddEventModal
         open={addOpen}
         date={selected}
+        compact={compact}
         onClose={() => setAddOpen(false)}
         onSaved={() => {
           setAddOpen(false);
@@ -308,7 +382,7 @@ function EventRow({ e, onRemove }: { e: CalEvent; onRemove: (e: CalEvent) => voi
   return (
     <div style={{ borderBottom: `1px solid ${token.colorBorderSecondary}`, paddingBottom: 10 }}>
       <Flex justify="space-between" gap={8} align="start">
-        <div>
+        <div className="min-w-0 flex-1">
           <Typography.Text type="secondary" className="text-xs">
             {TYPE_LABEL[e.type]}
           </Typography.Text>
@@ -331,15 +405,37 @@ function EventRow({ e, onRemove }: { e: CalEvent; onRemove: (e: CalEvent) => voi
   );
 }
 
-function AddEventModal({ open, date, onClose, onSaved }: { open: boolean; date: string; onClose: () => void; onSaved: () => void }) {
+function AddEventModal({
+  open,
+  date,
+  compact,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  date: string;
+  compact: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   return (
-    <Modal open={open} title={`Add event — ${dayLabel(date)}`} onCancel={onClose} destroyOnHidden footer={null}>
-      <AddEventForm key={date} date={date} onSaved={onSaved} />
+    <Modal
+      open={open}
+      title={`Add event — ${dayLabel(date)}`}
+      onCancel={onClose}
+      destroyOnHidden
+      footer={null}
+      width={compact ? "100%" : 520}
+      centered
+      className="pb-cal-modal"
+      styles={compact ? { body: { paddingTop: 12 } } : undefined}
+    >
+      <AddEventForm key={date} date={date} compact={compact} onSaved={onSaved} />
     </Modal>
   );
 }
 
-function AddEventForm({ date, onSaved }: { date: string; onSaved: () => void }) {
+function AddEventForm({ date, compact, onSaved }: { date: string; compact: boolean; onSaved: () => void }) {
   const { message } = App.useApp();
   const [type, setType] = useState<EventType>("note");
   const [title, setTitle] = useState("");
@@ -375,15 +471,28 @@ function AddEventForm({ date, onSaved }: { date: string; onSaved: () => void }) 
     }
   }
 
+  const typeOptions = EVENT_TYPES.map((t) => ({ value: t, label: TYPE_LABEL[t].split(" ")[0] }));
+
   return (
-    <Flex vertical gap={12}>
-      <Segmented<EventType>
-        block
-        value={type}
-        onChange={setType}
-        options={EVENT_TYPES.map((t) => ({ value: t, label: TYPE_LABEL[t].split(" ")[0] }))}
-        aria-label="Event type"
-      />
+    <Flex vertical gap={12} className="min-w-0">
+      {compact ? (
+        <div>
+          <label htmlFor="cal-type" className="mb-1 block text-sm font-semibold">
+            Type
+          </label>
+          <Select
+            id="cal-type"
+            style={{ width: "100%" }}
+            size="large"
+            value={type}
+            onChange={setType}
+            options={EVENT_TYPES.map((t) => ({ value: t, label: TYPE_LABEL[t] }))}
+            aria-label="Event type"
+          />
+        </div>
+      ) : (
+        <Segmented<EventType> block value={type} onChange={setType} options={typeOptions} aria-label="Event type" />
+      )}
       <div>
         <label htmlFor="cal-title" className="mb-1 block text-sm font-semibold">
           Title
@@ -443,7 +552,7 @@ function AddEventForm({ date, onSaved }: { date: string; onSaved: () => void }) 
         </Typography.Text>
       )}
       <Flex justify="flex-end">
-        <Button type="primary" size="large" loading={busy} onClick={save}>
+        <Button type="primary" size="large" loading={busy} onClick={save} block={compact}>
           Save
         </Button>
       </Flex>

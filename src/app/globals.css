@@ -72,14 +72,30 @@ html[data-theme="dark"] body {
 }
 
 /* Shop calendar: taller day cells that scroll when a day has many events */
+.pb-cal-page {
+  max-width: 100%;
+}
 .pb-cal-scroll {
   -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 .pb-cal-scroll .ant-picker-calendar.ant-picker-calendar-full {
   background: transparent;
 }
 .pb-cal-scroll .ant-picker-panel {
   background: transparent;
+  max-width: 100%;
+}
+.pb-cal-scroll .ant-picker-calendar {
+  max-width: 100%;
+}
+.pb-cal-scroll .ant-picker-body {
+  padding-inline: 0 !important;
+}
+.pb-cal-scroll .ant-picker-content {
+  width: 100% !important;
+  table-layout: fixed;
 }
 .pb-cal-scroll .ant-picker-calendar-date-content {
   height: 5.5rem !important;
@@ -111,6 +127,61 @@ html[data-theme="dark"] body {
   font-size: 10px;
   opacity: 0.7;
   padding-inline: 2px;
+}
+
+/* Colored presence dots (phone / non-fullscreen month) */
+.pb-cal-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 10px;
+  padding: 1px 0 0;
+  max-width: 100%;
+}
+.pb-cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pb-cal-dot-count {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 700;
+  opacity: 0.75;
+  margin-inline-start: 1px;
+}
+
+/* Phone: compact calendar — no chip cells, no horizontal page scroll */
+@media (max-width: 767px) {
+  .pb-cal-scroll .ant-picker-calendar-date-content {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+  }
+  .pb-cal-scroll .ant-picker-cell {
+    padding: 1px 0 !important;
+  }
+  .pb-cal-scroll .ant-picker-calendar-date,
+  .pb-cal-scroll .ant-picker-cell-inner {
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+  .pb-cal-scroll .ant-picker-calendar-header {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding-inline: 4px !important;
+  }
+  .pb-cal-modal.ant-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
+  .pb-cal-modal .ant-modal-content {
+    max-width: 100%;
+  }
 }
 
 /* Hide the scrollbar on the horizontal rows (they still scroll by touch/trackpad) */
