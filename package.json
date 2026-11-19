@@ -20,7 +20,8 @@
     "add:offers": "tsx scripts/add-offers.ts",
     "add:kits": "tsx scripts/add-kits-and-drafts.ts",
     "images:distributor": "tsx scripts/set-distributor-images.ts",
-    "images:open": "tsx scripts/set-open-images.ts"
+    "images:open": "tsx scripts/set-open-images.ts",
+    "fix:pack-names": "tsx scripts/fix-pack-names.ts"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",

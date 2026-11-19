@@ -44,16 +44,11 @@ const RULES: [RegExp, keyof typeof data][] = [
   [/register|delta a4/i, "register"],
   // New categories below reuse proven Commons URLs already in product-images.json
   // (extra keys that 404 are avoided — stand-ins are marked generic on the site).
-  [/geometry|compass|scale \d|iron scale|^scale\b|scissors|stapler|staples|paper punch|\bcutter\b/i, "sharpener"],
-  [/pouch|pencil case|fancy pouch|clothes pouch|cloth pouch|clear bag|document bag|report file|strip file|cobra laminated|ring report|folder|\bfile\b/i, "notebook"],
-  [/painting colour|poster colour|tube colour|colour plate|paint/i, "wax-colours"],
-  [/tape dispenser|transparent tape|cello tape|masking tape|glitter tape|insulation tape|double side tape|extra width tape|multicolour tape|paper tape|ribbon|poly ribbon|gift bag|gift ribbon/i, "glue-stick"],
+  // Do NOT catch-all unrelated items onto pencil/eraser/glue/notebook photos —
+  // use scripts/fix-wrong-images.ts (Commons) for those categories instead.
   [/envelope|wish card|shagun|stamp ticket|stamp pad|a4 paper|paper ream|photocopy|printout|^sheet\b|sticky notes|name slip|book cover/i, "colour-paper"],
   [/chart paper|colour sheet|a4 sheet|origami|glaze paper|rajasthani paper|blank sticker|sticker/i, "colour-paper"],
-  [/balloon|rubber ball|plastic ball|smile ball|water jelly|gelly|slime|crystal mud/i, "eraser"],
-  [/cell\b|battery|aaa cell|magnet\b|\bmask\b/i, "whitener"],
   [/^map\b|map \(/i, "map"],
-  [/toy|gun|fan|barbie|keychain|lattu|cube|jcb|nail toy|clay|kit ₹|school kit|return gift|pipe cleaner|bamboo|toothpick|straw|rope|thread|safety pin|u-clip|push pin|moti pin|mirror|rose|tree toys|bandage|soap|ear cotton|motor fan/i, "colour-pencils"],
 ];
 
 async function download(url: string): Promise<Buffer> {
@@ -85,7 +80,7 @@ for (const p of products) {
     continue;
   }
   if (p.images.length > 0 && p.imageGeneric && !force) continue;
-  const rule = RULES.find(([re]) => re.test(p.name_en));
+  const rule = RULES.find(([re]) => re.test(p.name_en.trim()));
   if (!rule) {
     untouched.push(p.name_en);
     continue;
