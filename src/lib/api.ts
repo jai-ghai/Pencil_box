@@ -49,6 +49,8 @@ export function route(access: Access, fn: (req: Request, actor: Actor, ctx: Ctx)
       const user = await User.findById(session.uid).lean();
       const role = normalizeRole(user?.role);
       if (!user || !user.active || !role) throw new HttpError(401, "Not signed in");
+      // role/permission/password changes bump sessionVersion — cookies issued before that stop working
+      if ((user.sessionVersion ?? 0) !== (session.sv ?? 0)) throw new HttpError(401, "Please sign in again");
       const { roles, perm } = Array.isArray(access) ? { roles: access, perm: undefined } : access;
       const permissions = effectivePerms(role, user.permissions);
       if (roles && !roles.includes(role)) throw new HttpError(403, "Not allowed");
@@ -81,6 +83,7 @@ export function publicRoute(opts: { bucket: string; limit: number; windowMs?: nu
       const out = await fn(req);
       return out instanceof Response ? out : NextResponse.json(out);
     } catch (e) {
+      if (e instanceof HttpError) return NextResponse.json({ error: e.message }, { status: e.status });
       if (e instanceof SaleError) return NextResponse.json({ error: e.message }, { status: 400 });
       if (e instanceof ZodError) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
       console.error("Store API error:", e instanceof Error ? e.message : "unknown");

@@ -3,19 +3,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "antd";
 import { CloseOutlined, WarningFilled } from "@ant-design/icons";
-import { api } from "@/lib/client";
 import { can, useMe } from "@/lib/use-me";
-import { TYPE_LABEL, type EventType } from "@/lib/shop-calendar";
+import { useCalendarAlerts } from "@/lib/use-calendar-alerts";
+import { TYPE_LABEL } from "@/lib/shop-calendar";
 import { istDate } from "@/lib/reports";
-
-interface AlertEvent {
-  id: string;
-  date: string;
-  title: string;
-  type: EventType;
-  itemsHint?: string;
-  note?: string;
-}
 
 const dayLabel = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", {
@@ -69,19 +60,8 @@ export function clearAdminAlertDismiss(username?: string) {
 export function AdminAlerts() {
   const me = useMe();
   const today = istDate(new Date());
-  const [events, setEvents] = useState<AlertEvent[] | undefined>(undefined);
+  const events = useCalendarAlerts(can(me, "calendar"));
   const [, bump] = useState(0);
-
-  useEffect(() => {
-    if (!can(me, "calendar")) return;
-    let live = true;
-    api<{ events: AlertEvent[] }>("/api/admin/calendar/alerts")
-      .then((d) => live && setEvents(d.events))
-      .catch(() => live && setEvents([]));
-    return () => {
-      live = false;
-    };
-  }, [me]);
 
   const list = can(me, "calendar") ? events : [];
   const dismissed = !!me && readDismissed(me.username, today);

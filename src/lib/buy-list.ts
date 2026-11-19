@@ -9,6 +9,7 @@ import { z } from "zod";
 import { Brand, Category, ItemRequest, Product, StockCheck, Variant } from "./models";
 import { saveProduct, toPaise } from "./catalog";
 import { createPurchase } from "./purchases";
+import { withStockTransaction } from "./stock";
 import { parseQuickAdd, pickCategory } from "./quick-add";
 import { AppError } from "./errors";
 import { istDate } from "./reports";
@@ -107,6 +108,7 @@ async function ensureVariant(
 /**
  * Buy from the day's list (and optional extras): create missing products, record one Purchase,
  * mark linked request lines in_stock, and clear shop-check "missing" for those variants.
+ * Purchase + request/check updates commit in one transaction — no half-done buys.
  */
 export async function purchaseBuyList(input: BuyListPurchaseInput, by: string) {
   const brands = await Brand.find({}, "name").lean();
@@ -123,28 +125,31 @@ export async function purchaseBuyList(input: BuyListPurchaseInput, by: string) {
   }
 
   const purchaseDate = new Date(`${input.buyDate}T12:00:00+05:30`);
-  const purchase = await createPurchase(
-    {
-      supplierId: input.supplierId,
-      supplierName: input.supplierName,
-      invoiceNo: input.invoiceNo,
-      note: input.note || `Buy list ${input.buyDate}`,
-      date: purchaseDate,
-      lines: resolved.map((r) => ({ variantId: r.variantId, qty: r.qty, cost: r.cost, price: r.price })),
-    },
-    by,
-  );
-
-  const requestIds = resolved.map((r) => r.requestId).filter(Boolean) as string[];
-  if (requestIds.length) {
-    await ItemRequest.updateMany({ _id: { $in: requestIds } }, { $set: { status: "in_stock" } });
-  }
-  const variantIds = resolved.map((r) => r.variantId);
-  await StockCheck.updateMany({ variantId: { $in: variantIds }, status: "missing" }, { $set: { status: "ok", needQty: 1 } });
+  const result = await withStockTransaction(async (session) => {
+    const purchase = await createPurchase(
+      {
+        supplierId: input.supplierId,
+        supplierName: input.supplierName,
+        invoiceNo: input.invoiceNo,
+        note: input.note || `Buy list ${input.buyDate}`,
+        date: purchaseDate,
+        lines: resolved.map((r) => ({ variantId: r.variantId, qty: r.qty, cost: r.cost, price: r.price })),
+      },
+      by,
+      session,
+    );
+    const requestIds = resolved.map((r) => r.requestId).filter(Boolean) as string[];
+    if (requestIds.length) {
+      await ItemRequest.updateMany({ _id: { $in: requestIds } }, { $set: { status: "in_stock" } }, { session });
+    }
+    const variantIds = resolved.map((r) => r.variantId);
+    await StockCheck.updateMany({ variantId: { $in: variantIds }, status: "missing" }, { $set: { status: "ok", needQty: 1 } }, { session });
+    return { purchase, clearedRequests: requestIds.length };
+  });
 
   return {
-    purchase,
-    clearedRequests: requestIds.length,
+    purchase: result.purchase,
+    clearedRequests: result.clearedRequests,
     lines: resolved.length,
     totalPaise: resolved.reduce((s, r) => s + r.qty * toPaise(r.cost), 0),
   };

@@ -15,6 +15,7 @@ import {
   Checkbox,
   DatePicker,
   Drawer,
+  Grid,
   Empty,
   Flex,
   Image,
@@ -85,6 +86,8 @@ interface SupplierOpt {
   name: string;
 }
 
+import { theme as antTheme } from "antd";
+
 const SOURCE_TAG: Record<Source, { color: string; label: string }> = {
   customer: { color: "gold", label: "Customer" },
   admin: { color: "blue", label: "You added" },
@@ -92,9 +95,12 @@ const SOURCE_TAG: Record<Source, { color: string; label: string }> = {
 };
 
 export default function BuyListPage() {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const me = useMe();
   const canBuy = can(me, "purchases") || can(me, "purchases:edit");
+  const { token } = antTheme.useToken();
+  const screens = Grid.useBreakpoint();
+  const compact = !screens.md;
   const [date, setDate] = useState(() => dayjs());
   const [list, setList] = useState<Req[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -298,10 +304,20 @@ export default function BuyListPage() {
     for (const l of lines) {
       if (!l.name.trim()) return message.warning("Every line needs a name");
       if (!(l.price > 0)) return message.warning(`Add a selling price for "${l.name}"`);
-      if (l.needsPhoto && !l.imageUrl) {
-        const ok = window.confirm(`"${l.name}" has no photo. Save without a picture?`);
-        if (!ok) return;
-      }
+    }
+    const noPhoto = lines.filter((l) => l.needsPhoto && !l.imageUrl);
+    if (noPhoto.length) {
+      const ok = await new Promise<boolean>((resolve) =>
+        modal.confirm({
+          title: "Save without photos?",
+          content: `${noPhoto.length} item(s) have no photo: ${noPhoto.map((l) => l.name).join(", ")}. Add photos later from Products.`,
+          okText: "Save anyway",
+          cancelText: "Go back",
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        }),
+      );
+      if (!ok) return;
     }
     if (!supplierId && !supplierName.trim()) {
       message.warning("Choose or type a supplier");
@@ -373,6 +389,57 @@ export default function BuyListPage() {
         description="Customers fill the site form, or you add here. Tick lines → Record purchase. You can also add extra items in the purchase that were not on the list."
       />
 
+      {compact && list?.length ? (
+        <Flex vertical gap={8}>
+          {list.map((r) => {
+            const src = SOURCE_TAG[r.source] ?? SOURCE_TAG.customer;
+            return (
+              <Card key={r._id} size="small" styles={{ body: { padding: 12 } }}>
+                <Flex gap={10} align="start">
+                  <Checkbox
+                    checked={selected.includes(r._id)}
+                    onChange={(e) => setSelected((ids) => (e.target.checked ? [...ids, r._id] : ids.filter((x) => x !== r._id)))}
+                    aria-label={`Select ${r.name}`}
+                    className="mt-1"
+                  />
+                  {r.imageUrl && <Image src={r.imageUrl} alt="" width={44} height={44} style={{ objectFit: "cover", borderRadius: 8 }} />}
+                  <div className="min-w-0 flex-1">
+                    <Flex justify="space-between" gap={8} align="start">
+                      <div className="min-w-0">
+                        <div style={{ fontWeight: 600, textWrap: "pretty" }}>{r.name}</div>
+                        {r.known?.code && (
+                          <Typography.Text type="secondary" className="text-xs">
+                            In shop · {r.known.code} · stock {r.known.stockOnHand}
+                          </Typography.Text>
+                        )}
+                        {r.note && (
+                          <div>
+                            <Typography.Text type="secondary">{r.note}</Typography.Text>
+                          </div>
+                        )}
+                        {r.phone && (
+                          <Typography.Text type="secondary" className="text-xs">
+                            Phone {r.phone}
+                          </Typography.Text>
+                        )}
+                      </div>
+                      <Popconfirm title="Remove from buy list?" okText="Remove" okButtonProps={{ danger: true }} onConfirm={() => drop(r)}>
+                        <Button danger type="text" size="small" icon={<DeleteOutlined />} aria-label={`Remove ${r.name}`} />
+                      </Popconfirm>
+                    </Flex>
+                    <Flex gap={8} align="center" className="mt-2" wrap>
+                      <Tag color={src.color} style={{ margin: 0 }}>{src.label}</Tag>
+                      <Typography.Text type="secondary" className="text-xs tabular-nums">
+                        Qty {r.qty}
+                      </Typography.Text>
+                    </Flex>
+                  </div>
+                </Flex>
+              </Card>
+            );
+          })}
+        </Flex>
+      ) : (
       <Card styles={{ body: { padding: 0 } }}>
         <Table<Req>
           rowKey="_id"
@@ -394,6 +461,19 @@ export default function BuyListPage() {
           }}
         />
       </Card>
+      )}
+      {compact && list && list.length === 0 && (
+        <Card>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <span>
+                Nothing for {date.format("DD MMM")}. Tap <strong>Add to list</strong> or wait for a customer ask.
+              </span>
+            }
+          />
+        </Card>
+      )}
 
       <AddToListModal
         open={addOpen}
@@ -411,11 +491,6 @@ export default function BuyListPage() {
         title={`Purchase — ${date.format("DD MMM YYYY")}`}
         width={Math.min(560, typeof window !== "undefined" ? window.innerWidth : 560)}
         destroyOnHidden
-        extra={
-          <Button type="primary" loading={saving} onClick={savePurchase}>
-            Save purchase · ₹{total.toFixed(0)}
-          </Button>
-        }
       >
         <Flex vertical gap={12}>
           <Typography.Text type="secondary">
@@ -514,6 +589,20 @@ export default function BuyListPage() {
               Type a new name and press Add if it is not in the shop yet — it will be created with your prices.
             </Typography.Paragraph>
           </Card>
+
+          <div
+            className="sticky -mx-6 -mb-6 mt-2 px-6 py-3"
+            style={{
+              bottom: 0,
+              paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))",
+              background: token.colorBgContainer,
+              borderTop: `1px solid ${token.colorBorderSecondary}`,
+            }}
+          >
+            <Button type="primary" size="large" block loading={saving} onClick={savePurchase}>
+              Save purchase · ₹{total.toFixed(0)}
+            </Button>
+          </div>
         </Flex>
       </Drawer>
     </div>

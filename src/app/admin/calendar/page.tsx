@@ -74,7 +74,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     let live = true;
-    setEvents(null);
+    // keep the previous month on screen while the next one loads — no full blank flash
     api<{ events: CalEvent[] }>(`/api/admin/calendar?month=${month}`)
       .then((d) => live && (setErr(""), setEvents(d.events)))
       .catch((e: Error) => live && setErr(e.message));

@@ -464,7 +464,7 @@ function StorefrontInner() {
 
       {/* sticky cart bar */}
       {cartCount > 0 && !sheet && (
-        <div className="fixed inset-x-0 bottom-0 z-30 p-3">
+        <div className="fixed inset-x-0 bottom-0 z-30 p-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))" }}>
           <Flex align="center" justify="space-between" gap={12} className="mx-auto max-w-xl rounded-[14px] px-4 py-3" style={{ background: BRAND.navy, boxShadow: "0 8px 24px rgba(11,29,82,0.35)" }}>
             <span className="text-sm font-semibold text-white">{cartCount} {t("items")} · {hasRange ? `${t("fromPrice")} ` : ""}{inr(total)}</span>
             <Button type="primary" onClick={() => setSheet(true)}>{t("cart")}</Button>

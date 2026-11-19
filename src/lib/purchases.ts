@@ -1,3 +1,4 @@
+import type { ClientSession } from "mongoose";
 import { Product, Purchase, Supplier, Variant } from "./models";
 import { escapeRegex } from "./search";
 import { recordMovement, withStockTransaction } from "./stock";
@@ -106,8 +107,9 @@ export interface NewPurchase {
 /**
  * Record stock bought from a supplier: one purchase record, one ledger row per item (stock goes up),
  * and the item's cost price (and selling price, if given) is brought in line with this bill.
+ * Pass `session` to join an outer transaction (e.g. buy list), otherwise one is created.
  */
-export async function createPurchase(input: NewPurchase, by: string) {
+export async function createPurchase(input: NewPurchase, by: string, outerSession?: ClientSession) {
   if (!input.lines.length) throw new AppError("Add at least one item");
   const seen = new Set<string>();
   for (const l of input.lines) {
@@ -117,13 +119,32 @@ export async function createPurchase(input: NewPurchase, by: string) {
     if (!Number.isFinite(l.cost) || l.cost < 0) throw new AppError("Cost cannot be negative");
   }
 
-  let supplier = input.supplierId ? await Supplier.findById(input.supplierId) : null;
-  const name = input.supplierName?.trim();
-  if (!supplier && name) supplier = (await Supplier.findOne({ name: new RegExp(`^${escapeRegex(name)}$`, "i") })) ?? (await Supplier.create({ name }));
-  if (!supplier) throw new AppError("Choose a supplier or type a new supplier name");
+  const run = async (session: ClientSession) => {
+    let supplier = input.supplierId ? await Supplier.findById(input.supplierId, null, { session }) : null;
+    const name = input.supplierName?.trim();
+    if (!supplier && name)
+      supplier =
+        (await Supplier.findOne({ name: new RegExp(`^${escapeRegex(name)}$`, "i") }, null, { session })) ??
+        (await Supplier.create([{ name }], { session }))[0];
+    if (!supplier) throw new AppError("Choose a supplier or type a new supplier name");
+    return { supplier, session };
+  };
 
-  const variants = await Variant.find({ _id: { $in: input.lines.map((l) => l.variantId) } }).lean();
-  const products = await Product.find({ _id: { $in: variants.map((v) => v.productId) } }, "name_en").lean();
+  if (outerSession) {
+    const { supplier } = await run(outerSession);
+    return createPurchaseWithSupplier(input, supplier, by, outerSession);
+  }
+  const result = await withStockTransaction(async (session) => {
+    const { supplier } = await run(session);
+    return createPurchaseWithSupplier(input, supplier, by, session);
+  });
+  await audit(by, "purchase.create", "purchase", `New purchase from ${result.supplierName}: ${result.itemCount} items, total ${result.total / 100}`, { entityId: result.purchaseId });
+  return Purchase.findById(result.purchaseId).populate("supplierId", "name").lean();
+}
+
+async function createPurchaseWithSupplier(input: NewPurchase, supplier: { _id: unknown; name: string }, by: string, session: ClientSession) {
+  const variants = await Variant.find({ _id: { $in: input.lines.map((l) => l.variantId) } }, null, { session }).lean();
+  const products = await Product.find({ _id: { $in: variants.map((v) => v.productId) } }, "name_en", { session }).lean();
   const vById = new Map(variants.map((v) => [String(v._id), v]));
   const pName = new Map(products.map((p) => [String(p._id), p.name_en]));
   const items = input.lines.map((l) => {
@@ -134,20 +155,19 @@ export async function createPurchase(input: NewPurchase, by: string) {
   });
   const total = items.reduce((s, i) => s + i.lineTotal, 0);
 
-  const purchaseId = await withStockTransaction(async (session) => {
-    const [purchase] = await Purchase.create([{ supplierId: supplier._id, invoiceNo: input.invoiceNo?.trim() || undefined, note: input.note?.trim() || undefined, items, total, date: input.date ?? new Date() }], { session });
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      await recordMovement({ variantId: String(it.variantId), type: "PURCHASE", qty: it.qty, unitCost: it.unitCost, refId: purchase._id, note: "Purchase", by }, session);
-      const set: Record<string, number> = {};
-      if (it.unitCost !== vById.get(String(it.variantId))!.costPrice) set.costPrice = it.unitCost;
-      const price = input.lines[i].price;
-      if (price !== undefined && toPaise(price) !== vById.get(String(it.variantId))!.sellPrice) set.sellPrice = toPaise(price);
-      if (Object.keys(set).length) await Variant.updateOne({ _id: it.variantId }, { $set: set }, { session });
-    }
-    return String(purchase._id);
-  });
-  await Variant.updateMany({ _id: { $in: items.map((x) => x.variantId) }, $expr: { $lt: ["$maxPrice", "$sellPrice"] } }, { $unset: { maxPrice: "" } });
-  await audit(by, "purchase.create", "purchase", `New purchase from ${supplier.name}: ${items.length} items, total ${total / 100}`, { entityId: purchaseId });
-  return Purchase.findById(purchaseId).populate("supplierId", "name").lean();
+  const [purchase] = await Purchase.create(
+    [{ supplierId: supplier._id, invoiceNo: input.invoiceNo?.trim() || undefined, note: input.note?.trim() || undefined, items, total, date: input.date ?? new Date() }],
+    { session },
+  );
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    await recordMovement({ variantId: String(it.variantId), type: "PURCHASE", qty: it.qty, unitCost: it.unitCost, refId: purchase._id, note: "Purchase", by }, session);
+    const set: Record<string, number> = {};
+    if (it.unitCost !== vById.get(String(it.variantId))!.costPrice) set.costPrice = it.unitCost;
+    const price = input.lines[i].price;
+    if (price !== undefined && toPaise(price) !== vById.get(String(it.variantId))!.sellPrice) set.sellPrice = toPaise(price);
+    if (Object.keys(set).length) await Variant.updateOne({ _id: it.variantId }, { $set: set }, { session });
+  }
+  await Variant.updateMany({ _id: { $in: items.map((x) => x.variantId) }, $expr: { $lt: ["$maxPrice", "$sellPrice"] } }, { $unset: { maxPrice: "" } }, { session });
+  return { purchaseId: String(purchase._id), supplierName: supplier.name, total, itemCount: items.length };
 }

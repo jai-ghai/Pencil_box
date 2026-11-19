@@ -27,12 +27,19 @@ export function PwaBootstrap() {
     const ok = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
     if (ok) navigator.serviceWorker.register("/sw.js").catch(() => {});
 
-    const onBip = (e: Event) => {
+    const onBip = async (e: Event) => {
       e.preventDefault();
       try {
         if (localStorage.getItem(DISMISS_KEY) === "1") return;
       } catch {
         /* private mode */
+      }
+      // Signed-in staff already have the app on their phone — don't nag them on the storefront.
+      try {
+        const me = await fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null));
+        if (me?.role) return;
+      } catch {
+        /* signed out */
       }
       setDeferred(e as BeforeInstallPromptEvent);
       setShow(true);
@@ -70,7 +77,7 @@ export function PwaBootstrap() {
     <div
       role="region"
       aria-label="Install Pencil Box"
-      style={{ position: "fixed", left: 12, right: 12, bottom: 12, zIndex: 1000, background: BRAND.navy, color: "#fff", borderRadius: 14, padding: "12px 14px", boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
+        style={{ position: "fixed", left: 12, right: 12, bottom: "max(12px, env(safe-area-inset-bottom, 0px))", zIndex: 1000, background: BRAND.navy, color: "#fff", borderRadius: 14, padding: "12px 14px", boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
     >
       <Flex align="center" gap={12} justify="space-between" wrap>
         <div style={{ flex: "1 1 180px" }}>

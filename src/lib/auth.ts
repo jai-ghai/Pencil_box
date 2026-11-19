@@ -10,6 +10,8 @@ export interface Session {
   uid: string;
   username: string;
   role: Role;
+  /** must match the user's sessionVersion in the DB, or the cookie is stale */
+  sv?: number;
 }
 
 function secretKey(): Uint8Array {
@@ -19,7 +21,7 @@ function secretKey(): Uint8Array {
 }
 
 export async function createSessionToken(s: Session): Promise<string> {
-  return new SignJWT({ username: s.username, role: s.role })
+  return new SignJWT({ username: s.username, role: s.role, sv: s.sv ?? 0 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(s.uid)
     .setIssuedAt()
@@ -37,7 +39,7 @@ export async function verifySessionToken(token: string | undefined): Promise<Ses
     const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"] });
     const role = normalizeRole(payload.role);
     if (!payload.sub || !role) return null;
-    return { uid: payload.sub, username: String(payload.username), role };
+    return { uid: payload.sub, username: String(payload.username), role, sv: typeof payload.sv === "number" ? payload.sv : 0 };
   } catch {
     return null;
   }

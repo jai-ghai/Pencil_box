@@ -15,6 +15,8 @@ const userSchema = new Schema(
     /** page and action permissions for an admin (the super admin always has all of them) */
     permissions: { type: [String], default: [] },
     active: { type: Boolean, default: true },
+    /** bumped on role/permission/password change so old session cookies stop working */
+    sessionVersion: { type: Number, default: 0 },
   },
   opts,
 );
@@ -80,7 +82,7 @@ const variantSchema = new Schema(
     productId: { type: Schema.Types.ObjectId, ref: "Product", required: true, index: true },
     label: { type: String, default: "", trim: true },
     /** short typed code for fast POS search, e.g. "dpn" */
-    shortCode: { type: String, lowercase: true, trim: true, index: true },
+    shortCode: { type: String, lowercase: true, trim: true },
     aliases: { type: [String], default: [] },
     /** stored as a lower-cased search string: product name + brand + label + aliases + shortCode */
     searchText: { type: String, default: "", index: true },
@@ -105,6 +107,7 @@ const variantSchema = new Schema(
   },
   opts,
 );
+variantSchema.index({ shortCode: 1 }, { unique: true, sparse: true });
 export const Variant = model("Variant", variantSchema);
 
 /* ---------- Suppliers & purchases ---------- */
@@ -150,6 +153,7 @@ const stockMovementSchema = new Schema(
   },
   { timestamps: false },
 );
+stockMovementSchema.index({ variantId: 1, at: -1 });
 export const StockMovement = model("StockMovement", stockMovementSchema);
 
 /* ---------- Offers ---------- */
@@ -220,6 +224,7 @@ const saleSchema = new Schema(
   },
   { timestamps: false },
 );
+saleSchema.index({ voided: 1, at: -1 });
 export const Sale = model("Sale", saleSchema);
 
 /** Monotonic counters, e.g. bill numbers */
@@ -310,6 +315,7 @@ const dayCostSchema = new Schema(
   },
   opts,
 );
+dayCostSchema.index({ date: 1, createdAt: -1 });
 export const DayCost = model("DayCost", dayCostSchema);
 
 /* ---------- Shop check: walk the shelves, tick what is there, cross what is missing ---------- */
@@ -341,7 +347,7 @@ const shopEventSchema = new Schema(
     /** days before `date` to start showing the top alert */
     remindDaysBefore: { type: Number, default: 1, min: 0, max: 30 },
     /** idempotent seed key so seasonal/bill packs are not duplicated */
-    templateKey: { type: String, trim: true, maxlength: 80, index: true, sparse: true },
+    templateKey: { type: String, trim: true, maxlength: 80 },
     by: String,
   },
   opts,

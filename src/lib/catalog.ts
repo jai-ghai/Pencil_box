@@ -61,7 +61,10 @@ export const productInput = z.object({
   internalNote: z.string().max(500).optional(),
   imageGeneric: z.boolean().optional(),
   supplierId: z.string().length(24).optional().or(z.literal("")),
-  images: z.array(z.string().max(300)).max(8).default([]),
+  images: z
+    .array(z.string().max(300).refine((u) => u.startsWith("/uploads/") || /^https:\/\//i.test(u), "Bad image URL"))
+    .max(8)
+    .default([]),
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
   tags: z.array(z.string().max(40)).max(20).default([]),
   active: z.boolean().default(true),

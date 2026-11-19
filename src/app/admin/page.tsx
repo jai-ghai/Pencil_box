@@ -15,9 +15,10 @@ import {
 import { ArrowRightOutlined } from "@ant-design/icons";
 import { api, inr } from "@/lib/client";
 import type { CapitalSummary } from "@/lib/capital";
-import { TYPE_LABEL, type EventType } from "@/lib/shop-calendar";
+import { TYPE_LABEL } from "@/lib/shop-calendar";
 import { ADMIN_NAV_GROUPS } from "@/lib/admin-nav";
 import { can, useMe } from "@/lib/use-me";
+import { useCalendarAlerts } from "@/lib/use-calendar-alerts";
 import { BRAND } from "@/lib/theme";
 import { istDate } from "@/lib/reports";
 import type { Perm } from "@/lib/permissions";
@@ -27,15 +28,6 @@ interface Dash {
   lowStock: { id: string; name: string; stockOnHand: number; reorderLevel: number }[];
   products: number;
   ledgerDrift: number;
-}
-
-interface AlertEvent {
-  id: string;
-  date: string;
-  title: string;
-  type: EventType;
-  itemsHint?: string;
-  note?: string;
 }
 
 const rupees = (paise: number) => paise / 100;
@@ -62,7 +54,6 @@ export default function Dashboard() {
   const today = istDate(new Date());
   const [d, setD] = useState<Dash | null>(null);
   const [cap, setCap] = useState<CapitalSummary | null | undefined>(undefined);
-  const [alerts, setAlerts] = useState<AlertEvent[] | null | undefined>(undefined);
   const [err, setErr] = useState("");
 
   useEffect(() => {
@@ -81,18 +72,13 @@ export default function Dashboard() {
         .catch(() => live && setCap(null));
     }
 
-    if (can(me, "calendar")) {
-      api<{ events: AlertEvent[] }>("/api/admin/calendar/alerts")
-        .then((r) => live && setAlerts(r.events))
-        .catch(() => live && setAlerts([]));
-    }
-
     return () => {
       live = false;
     };
   }, [me]);
 
-  const alertList = can(me, "calendar") ? alerts : [];
+  const fetchedAlerts = useCalendarAlerts(can(me, "calendar"));
+  const alertList = can(me, "calendar") ? fetchedAlerts : [];
   const capital = can(me, "capital") ? cap : null;
 
   if (err) return <Alert type="error" showIcon title={err} />;

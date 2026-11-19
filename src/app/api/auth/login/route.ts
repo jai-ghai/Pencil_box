@@ -32,6 +32,6 @@ export async function POST(req: Request) {
   }
   fails.delete(key);
   const role = normalizeRole(user.role) ?? "cashier"; // old accounts called "owner" are now super admins
-  await setSessionCookie({ uid: String(user._id), username: user.username, role });
+  await setSessionCookie({ uid: String(user._id), username: user.username, role, sv: user.sessionVersion ?? 0 });
   return NextResponse.json({ ok: true, role });
 }

@@ -50,6 +50,8 @@ export const PATCH = route(SUPER, async (req, actor, ctx) => {
     changes.push("password reset");
   }
   if (!changes.length) return { user: publicUser(user) };
+  // access changed: every session cookie this person holds stops working on the next API call
+  user.sessionVersion = (user.sessionVersion ?? 0) + 1;
   await user.save();
   await audit(actor.username, "user.update", "user", `"${user.username}": ${changes.join(", ")}`, { entityId: id, meta: { permissions: user.permissions } });
   return { user: publicUser(user) };

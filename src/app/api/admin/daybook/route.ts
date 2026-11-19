@@ -3,6 +3,7 @@ import { route, can, HttpError } from "@/lib/api";
 import { audit } from "@/lib/audit";
 import { DayCost, DaySales, COST_KINDS } from "@/lib/models";
 import { loadBillDays } from "@/lib/daybook-data";
+import { withStockTransaction } from "@/lib/stock";
 import { addDays, istDate } from "@/lib/reports";
 
 const MAX_PAISE = 100_000_000_00; // Rs 10 crore: far above any real day, stops typing mistakes
@@ -111,25 +112,31 @@ export const POST = route(can("daybook"), async (req, actor) => {
     const hasSales = b.cash !== undefined || b.upi !== undefined;
     if (!hasSales && !b.costs.length && !b.photo) throw new HttpError(400, "Nothing to save");
 
-    if (hasSales || b.note !== undefined || b.photo) {
-      const $set: Record<string, unknown> = { by: actor.username };
-      if (hasSales) {
-        $set.cash = b.cash ?? 0;
-        $set.upi = b.upi ?? 0;
+    // Sales upsert + cost inserts commit together — a crash cannot save one without the other.
+    await withStockTransaction(async (session) => {
+      if (hasSales || b.note !== undefined || b.photo) {
+        const $set: Record<string, unknown> = { by: actor.username };
+        if (hasSales) {
+          $set.cash = b.cash ?? 0;
+          $set.upi = b.upi ?? 0;
+        }
+        if (b.note !== undefined) $set.note = b.note;
+        const update: Record<string, unknown> = { $set };
+        if (b.photo) update.$addToSet = { photos: b.photo };
+        // If only a photo is being added and the day has no sales row yet, seed cash/upi at 0.
+        if (!hasSales && b.photo) {
+          await DaySales.updateOne({ _id: b.date }, { ...update, $setOnInsert: { cash: 0, upi: 0 } }, { upsert: true, session });
+        } else {
+          await DaySales.updateOne({ _id: b.date }, update, { upsert: true, session });
+        }
       }
-      if (b.note !== undefined) $set.note = b.note;
-      const update: Record<string, unknown> = { $set };
-      if (b.photo) update.$addToSet = { photos: b.photo };
-      // If only a photo is being added and the day has no sales row yet, seed cash/upi at 0.
-      if (!hasSales && b.photo) {
-        await DaySales.updateOne({ _id: b.date }, { ...update, $setOnInsert: { cash: 0, upi: 0 } }, { upsert: true });
-      } else {
-        await DaySales.updateOne({ _id: b.date }, update, { upsert: true });
+      if (b.costs.length) {
+        await DayCost.insertMany(
+          b.costs.map((c) => ({ date: b.date, kind: c.kind, amount: c.amount, party: c.party ?? "", by: actor.username })),
+          { session },
+        );
       }
-    }
-    if (b.costs.length) {
-      await DayCost.insertMany(b.costs.map((c) => ({ date: b.date, kind: c.kind, amount: c.amount, party: c.party ?? "", by: actor.username })));
-    }
+    });
     return { ok: true, costsAdded: b.costs.length };
   }
 

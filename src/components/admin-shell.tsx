@@ -131,10 +131,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </Link>
           )}
           <div className="min-w-0 flex-1">
-            {desktop && current && (
+            {current && (
               <div className="truncate">
-                <div className="text-sm font-semibold text-white">{current.label}</div>
-                {current.hint && <div className="truncate text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{current.hint}</div>}
+                <div className="truncate text-sm font-semibold text-white">{current.label}</div>
+                {desktop && current.hint && <div className="truncate text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{current.hint}</div>}
               </div>
             )}
           </div>

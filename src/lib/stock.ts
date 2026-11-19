@@ -1,5 +1,7 @@
 import mongoose, { type ClientSession } from "mongoose";
 import { StockMovement, Variant, type MovementType } from "./models";
+import { HARD_STOCK_BLOCK } from "./flags";
+import { AppError } from "./errors";
 
 export interface MovementInput {
   variantId: string;
@@ -15,11 +17,23 @@ export interface MovementInput {
 /**
  * Write a ledger row and update the cached stockOnHand in the same transaction.
  * Never change variants.stockOnHand anywhere else.
+ *
+ * When ENFORCE_STOCK_LIMITS is on, a negative movement is an atomic conditional update:
+ * the sale (or damage) fails inside the transaction if the shelf would go below zero —
+ * two people cannot sell the same last piece at once.
  */
 export async function recordMovement(m: MovementInput, session: ClientSession): Promise<void> {
   if (!Number.isFinite(m.qty) || m.qty === 0) throw new Error("Movement qty must be a non-zero number");
-  const updated = await Variant.findByIdAndUpdate(m.variantId, { $inc: { stockOnHand: m.qty } }, { session, returnDocument: "after" });
-  if (!updated) throw new Error(`Variant ${m.variantId} not found`);
+  const enforce = HARD_STOCK_BLOCK && m.qty < 0;
+  const updated = await Variant.findOneAndUpdate(
+    enforce ? { _id: m.variantId, stockOnHand: { $gte: -m.qty } } : { _id: m.variantId },
+    { $inc: { stockOnHand: m.qty } },
+    { session, returnDocument: "after" },
+  );
+  if (!updated) {
+    if (enforce) throw new AppError("Not enough stock for this sale. Check the count and try again.", 409);
+    throw new Error(`Variant ${m.variantId} not found`);
+  }
   await StockMovement.create(
     [{ variantId: m.variantId, type: m.type, qty: m.qty, unitCost: m.unitCost ?? 0, refId: m.refId, note: m.note, by: m.by, at: new Date() }],
     { session },
