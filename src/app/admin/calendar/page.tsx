@@ -6,7 +6,6 @@ import {
   App,
   Badge,
   Button,
-  Calendar,
   Dropdown,
   Empty,
   Flex,
@@ -20,13 +19,14 @@ import {
   Typography,
   theme,
 } from "antd";
-import type { CalendarProps, MenuProps } from "antd";
+import type { MenuProps } from "antd";
 import { DeleteOutlined, MoreOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import { api } from "@/lib/client";
 import { istDate } from "@/lib/reports";
 import { EVENT_TYPES, TYPE_LABEL, type EventType } from "@/lib/shop-calendar";
 import { BRAND } from "@/lib/theme";
+import { ShopMonthGrid } from "@/components/shop-month-grid";
 
 interface CalEvent {
   id: string;
@@ -150,42 +150,10 @@ export default function CalendarPage() {
     ],
   };
 
-  const cellRender: CalendarProps<Dayjs>["cellRender"] = (value, info) => {
-    if (info.type !== "date") return info.originNode;
-    const key = value.format("YYYY-MM-DD");
-    const list = byDate.get(key) ?? [];
-    if (!list.length) {
-      return compact ? <div className="pb-cal-dots" aria-hidden /> : <div className="pb-cal-cell" />;
-    }
-
-    if (compact) {
-      const types = [...new Set(list.map((e) => e.type))];
-      return (
-        <div className="pb-cal-dots" title={list.map((e) => e.title).join(", ")}>
-          {types.slice(0, 5).map((t) => (
-            <span key={t} className="pb-cal-dot" style={{ background: TYPE_COLOR[t] }} />
-          ))}
-          {list.length > 1 && <span className="pb-cal-dot-count">{list.length}</span>}
-        </div>
-      );
-    }
-
-    return (
-      <div className="pb-cal-cell">
-        {list.slice(0, 4).map((e) => (
-          <div
-            key={e.id}
-            className="pb-cal-chip"
-            style={{ background: `${TYPE_COLOR[e.type]}22`, color: TYPE_COLOR[e.type], borderColor: `${TYPE_COLOR[e.type]}55` }}
-            title={e.title}
-          >
-            {e.title}
-          </div>
-        ))}
-        {list.length > 4 && <span className="pb-cal-more">+{list.length - 4}</span>}
-      </div>
-    );
-  };
+  const marks = useMemo(
+    () => (events ?? []).map((e) => ({ id: e.id, date: e.date, title: e.title, color: TYPE_COLOR[e.type] })),
+    [events],
+  );
 
   return (
     <div className="pb-cal-page flex min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden">
@@ -231,31 +199,27 @@ export default function CalendarPage() {
 
       <div className="grid min-h-0 min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
         {/* Month grid — compact dots on phone; chips on md+ */}
-        <section
-          style={surface}
-          className={`flex min-w-0 flex-col overflow-hidden ${compact ? "min-h-0" : "min-h-[420px] xl:min-h-[640px]"}`}
-        >
-          <div className={`pb-cal-scroll pb-scroll-y min-h-0 min-w-0 flex-1 ${compact ? "p-1.5" : "p-2 md:p-3"}`}>
+        <section style={surface} className="min-w-0 overflow-hidden">
+          <div className={`min-w-0 ${compact ? "p-2" : "p-3 md:p-4"}`}>
             {!events && !err ? (
               <Skeleton active paragraph={{ rows: compact ? 6 : 10 }} />
             ) : (
-              <Calendar
-                fullscreen={!compact}
-                value={cursor}
-                onSelect={(d) => {
-                  setCursor(d);
-                  setSelected(d.format("YYYY-MM-DD"));
-                }}
-                onPanelChange={(d) => setCursor(d)}
-                cellRender={cellRender}
+              <ShopMonthGrid
+                cursor={cursor}
+                selected={selected}
+                today={today}
+                marks={marks}
+                showTitles={!compact}
+                onSelect={setSelected}
+                onMonthChange={setCursor}
               />
             )}
           </div>
         </section>
 
         {/* Day + month agenda — primary readable content on phone */}
-        <div className="flex min-h-0 min-w-0 flex-col gap-4 xl:max-h-[calc(100dvh-11rem)]">
-          <section style={surface} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className={`flex min-w-0 flex-col gap-4 ${compact ? "" : "min-h-0 xl:max-h-[calc(100dvh-11rem)]"}`}>
+          <section style={surface} className={`flex flex-col overflow-hidden ${compact ? "" : "min-h-0 flex-1"}`}>
             <Flex
               justify="space-between"
               align="center"
@@ -271,7 +235,7 @@ export default function CalendarPage() {
                 Add
               </Button>
             </Flex>
-            <div className="pb-scroll-y min-h-0 flex-1 px-3 py-3 sm:px-4">
+            <div className={compact ? "px-3 py-3 sm:px-4" : "pb-scroll-y min-h-0 flex-1 px-3 py-3 sm:px-4"}>
               {dayEvents.length === 0 ? (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing on this day. Add a bill, stock note or festival reminder." />
               ) : (
@@ -284,7 +248,7 @@ export default function CalendarPage() {
             </div>
           </section>
 
-          <section style={surface} className="flex min-h-[200px] flex-[1.2] flex-col overflow-hidden">
+          <section style={surface} className={`flex flex-col overflow-hidden ${compact ? "" : "min-h-[200px] flex-[1.2]"}`}>
             <Flex
               justify="space-between"
               align="center"
@@ -295,7 +259,7 @@ export default function CalendarPage() {
                 This month ({monthEvents.length})
               </Typography.Title>
             </Flex>
-            <div className="pb-scroll-y min-h-0 flex-1 px-3 py-3 sm:px-4">
+            <div className={compact ? "px-3 py-3 sm:px-4" : "pb-scroll-y min-h-0 flex-1 px-3 py-3 sm:px-4"}>
               {monthEvents.length === 0 ? (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}

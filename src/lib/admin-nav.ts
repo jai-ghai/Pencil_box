@@ -51,7 +51,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Stock",
     items: [
       { href: "/admin/products", label: "Products", hint: "Items in the shop", perm: "products" },
-      { href: "/admin/requests", label: "Requests", hint: "Customer asks", perm: "products" },
+      { href: "/admin/requests", label: "Buy list", hint: "Asks + what to buy", perm: "products" },
       { href: "/admin/stock", label: "Stock levels", hint: "Counts & reorder", perm: "stock" },
       { href: "/admin/purchases", label: "Purchases", hint: "Stock you bought", perm: "purchases" },
       { href: "/admin/offers", label: "Offers", hint: "Bundles & deals", perm: "offers" },

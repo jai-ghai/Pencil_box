@@ -71,109 +71,162 @@ html[data-theme="dark"] body {
   white-space: nowrap;
 }
 
-/* Shop calendar: taller day cells that scroll when a day has many events */
+/* Shop calendar page + custom month grid (no Ant Design Calendar) */
 .pb-cal-page {
   max-width: 100%;
 }
-.pb-cal-scroll {
-  -webkit-overflow-scrolling: touch;
-  overflow-x: hidden;
+
+.pb-month {
+  width: 100%;
   max-width: 100%;
 }
-.pb-cal-scroll .ant-picker-calendar.ant-picker-calendar-full {
-  background: transparent;
+
+.pb-month-nav {
+  margin-bottom: 0.5rem;
+  padding-inline: 0.15rem;
 }
-.pb-cal-scroll .ant-picker-panel {
-  background: transparent;
-  max-width: 100%;
+
+.pb-month-weekdays,
+.pb-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  width: 100%;
 }
-.pb-cal-scroll .ant-picker-calendar {
-  max-width: 100%;
+
+.pb-month-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0 0.5rem;
 }
-.pb-cal-scroll .ant-picker-body {
-  padding-inline: 0 !important;
+
+.pb-month-grid {
+  gap: 4px;
 }
-.pb-cal-scroll .ant-picker-content {
-  width: 100% !important;
-  table-layout: fixed;
+
+.pb-month-day {
+  appearance: none;
+  border: 1px solid var(--pb-day-border);
+  background: var(--pb-day-fill);
+  border-radius: 10px;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1 / 1.05;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  cursor: pointer;
+  color: var(--pb-day-text);
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.pb-cal-scroll .ant-picker-calendar-date-content {
-  height: 5.5rem !important;
-  overflow-y: auto;
-  overflow-x: hidden;
-  margin: 0 !important;
-  scrollbar-width: thin;
+
+.pb-month-day.is-out {
+  opacity: 0.42;
 }
-.pb-cal-cell {
+
+.pb-month-day.is-today .pb-month-num {
+  background: var(--pb-day-accent);
+  color: #fff;
+  border-radius: 999px;
+  width: 1.55rem;
+  height: 1.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pb-month-day.is-selected {
+  border-color: var(--pb-day-accent);
+  background: var(--pb-day-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--pb-day-accent);
+}
+
+.pb-month-day:focus-visible {
+  outline: 2px solid var(--pb-sun, #ecc233);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .pb-month-day:hover {
+    border-color: color-mix(in srgb, var(--pb-day-accent) 45%, var(--pb-day-border));
+  }
+}
+
+.pb-month-num {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  align-self: flex-start;
+}
+
+.pb-month-marks {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-height: 4.5rem;
-  padding-inline: 2px;
-}
-.pb-cal-chip {
-  font-size: 10px;
-  line-height: 1.2;
-  font-weight: 600;
-  border-radius: 4px;
-  border: 1px solid;
-  padding: 1px 4px;
-  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.pb-cal-more {
-  font-size: 10px;
-  opacity: 0.7;
-  padding-inline: 2px;
 }
 
-/* Colored presence dots (phone / non-fullscreen month) */
-.pb-cal-dots {
+.pb-month-dots {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 10px;
-  padding: 1px 0 0;
-  max-width: 100%;
+  gap: 3px;
+  margin-top: auto;
+  padding-bottom: 2px;
 }
-.pb-cal-dot {
+
+.pb-month-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.pb-cal-dot-count {
+
+.pb-month-count {
   font-size: 9px;
-  line-height: 1;
   font-weight: 700;
   opacity: 0.75;
-  margin-inline-start: 1px;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Phone: compact calendar — no chip cells, no horizontal page scroll */
+.pb-month-chip {
+  font-size: 10px;
+  line-height: 1.15;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid;
+  padding: 1px 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.pb-month-more {
+  font-size: 10px;
+  opacity: 0.7;
+  padding-inline: 1px;
+}
+
 @media (max-width: 767px) {
-  .pb-cal-scroll .ant-picker-calendar-date-content {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    margin: 0 !important;
+  .pb-month-grid {
+    gap: 3px;
   }
-  .pb-cal-scroll .ant-picker-cell {
-    padding: 1px 0 !important;
+  .pb-month-day {
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    padding: 3px;
   }
-  .pb-cal-scroll .ant-picker-calendar-date,
-  .pb-cal-scroll .ant-picker-cell-inner {
-    min-width: 0 !important;
-    max-width: 100%;
-  }
-  .pb-cal-scroll .ant-picker-calendar-header {
-    flex-wrap: wrap;
-    row-gap: 4px;
-    padding-inline: 4px !important;
+  .pb-month-num {
+    font-size: 0.75rem;
   }
   .pb-cal-modal.ant-modal {
     max-width: calc(100vw - 24px) !important;
@@ -181,6 +234,13 @@ html[data-theme="dark"] body {
   }
   .pb-cal-modal .ant-modal-content {
     max-width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .pb-month-day {
+    aspect-ratio: auto;
+    min-height: 5.75rem;
   }
 }
 

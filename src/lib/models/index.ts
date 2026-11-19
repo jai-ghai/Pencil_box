@@ -252,8 +252,9 @@ export const AuditLog = model("AuditLog", auditSchema);
 
 export type UserDoc = InferSchemaType<typeof userSchema>;
 
-/* ---------- Customer requests: items a visitor asked for that the shop does not stock ---------- */
+/* ---------- Buy list lines: customer asks + admin adds for a purchase day ---------- */
 export const REQUEST_STATUSES = ["new", "ordered", "in_stock", "declined"] as const;
+export const REQUEST_SOURCES = ["customer", "admin", "check"] as const;
 const itemRequestSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -262,9 +263,18 @@ const itemRequestSchema = new Schema(
     phone: { type: String, trim: true },
     imageUrl: { type: String },
     status: { type: String, enum: REQUEST_STATUSES, default: "new", index: true },
+    /** India-time YYYY-MM-DD — which day's buy list this line belongs to */
+    buyDate: { type: String, match: /^\d{4}-\d{2}-\d{2}$/, index: true },
+    /** how many to buy */
+    qty: { type: Number, default: 1, min: 1 },
+    /** when this line is a known catalogue item (e.g. from shop check) */
+    variantId: { type: Schema.Types.ObjectId, ref: "Variant" },
+    /** who put it on the list */
+    source: { type: String, enum: REQUEST_SOURCES, default: "customer" },
   },
   opts,
 );
+itemRequestSchema.index({ buyDate: 1, status: 1 });
 export const ItemRequest = model("ItemRequest", itemRequestSchema);
 
 /* ---------- Daily book: totals typed in by hand (no billing needed) ---------- */

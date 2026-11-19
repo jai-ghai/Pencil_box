@@ -177,7 +177,7 @@ export default function DailyBookPage() {
 
           {canProducts && (
             <Card
-              title={`Customer requests${openReqs ? ` (${openReqs.length} open)` : ""}`}
+              title={`Buy list${openReqs ? ` (${openReqs.length} open)` : ""}`}
               size="small"
               styles={{ body: { padding: openReqs && openReqs.length ? 0 : 16 } }}
             >

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { HttpError, publicRoute } from "@/lib/api";
 import { ItemRequest } from "@/lib/models";
 import { saveProductImage } from "@/lib/storage";
+import { defaultBuyDate } from "@/lib/buy-list";
 
 const MAX_PHOTO = 3 * 1024 * 1024;
 const fields = z.object({
@@ -12,7 +13,7 @@ const fields = z.object({
 
 /**
  * A visitor asks for an item the shop does not stock (name, optional note, photo and phone number).
- * Rate limited per visitor; nothing is returned except "ok". Needs no login.
+ * Lands on today's buy list. Rate limited; returns only "ok".
  */
 export const POST = publicRoute({ bucket: "store-request", limit: 4 }, async (req) => {
   const form = await req.formData();
@@ -31,6 +32,6 @@ export const POST = publicRoute({ bucket: "store-request", limit: 4 }, async (re
     }
   }
   if ((await ItemRequest.countDocuments({ status: "new" })) >= 500) throw new HttpError(429, "Too many open requests. Please visit the shop.");
-  await ItemRequest.create({ ...input, imageUrl });
+  await ItemRequest.create({ ...input, imageUrl, buyDate: defaultBuyDate(), qty: 1, source: "customer" });
   return { ok: true };
 });
