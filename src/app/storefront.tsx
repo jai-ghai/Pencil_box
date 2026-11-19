@@ -319,7 +319,10 @@ function StorefrontInner() {
         <div className="mx-auto w-full max-w-6xl px-4 pb-3 pt-3">
           <Flex align="center" gap={screens.sm ? 12 : 6}>
             <div className="min-w-0 flex-1">
-              <Wordmark size={screens.sm ? 28 : 19} />
+              {/* Logo doubles as the staff door — tap it to reach the admin login */}
+              <Link href="/login" aria-label="Staff login" className="inline-block rounded-md outline-offset-4">
+                <Wordmark size={screens.sm ? 28 : 19} />
+              </Link>
               {screens.sm && <div className="mt-1 truncate text-xs italic" style={{ color: "rgba(255,255,255,0.85)" }}>{t("tagline")}</div>}
             </div>
             <Segmented<Lang> size={screens.sm ? "middle" : "small"} value={lang} onChange={chooseLang} aria-label={t("language")} options={[{ label: "EN", value: "en" }, { label: "हिं", value: "hi" }]} />
