@@ -3,6 +3,7 @@ import {
   ADDRESS_LINE,
   COLLECTIONS,
   HOURS_LABEL,
+  INSTAGRAM_URL,
   MAPS_URL,
   PHONE_DISPLAY,
   PHONE_TEL,
@@ -100,6 +101,12 @@ export function ShopFooter() {
           </a>
           <a className="pb-seo-link" href={REVIEW_URL}>
             Review us on Google
+          </a>
+          <a className="pb-seo-link inline-flex items-center gap-1.5" href={INSTAGRAM_URL} rel="me noopener noreferrer" target="_blank">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm10 1.8H7A2.2 2.2 0 0 0 4.8 7v10A2.2 2.2 0 0 0 7 19.2h10a2.2 2.2 0 0 0 2.2-2.2V7A2.2 2.2 0 0 0 17 4.8zM12 8.2A3.8 3.8 0 1 1 8.2 12 3.8 3.8 0 0 1 12 8.2zm0 1.6A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8zM17.35 6.4a.95.95 0 1 1-.95.95.95.95 0 0 1 .95-.95z" />
+            </svg>
+            Instagram
           </a>
         </p>
       </div>
