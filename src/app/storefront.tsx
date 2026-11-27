@@ -462,17 +462,7 @@ function StorefrontInner() {
         <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 4 }}>
           {t("pickupNote")} {t("finalPrice")}
         </Typography.Paragraph>
-        <address className="not-italic" style={{ fontSize: 13, color: token.colorTextSecondary, lineHeight: 1.6 }}>
-          <strong style={{ color: token.colorText }}>Pencil Box</strong>
-          <br />
-          B-92, Block B, Tigri Extension, New Delhi, Delhi 110062
-          <br />
-          <a href="tel:+919625443053" style={{ color: "inherit", textDecoration: "underline" }}>
-            +91 96254 43053
-          </a>
-          {" \u00b7 "}
-          <Link href="/login" style={{ color: "inherit", textDecoration: "underline" }}>{t("staff")}</Link>
-        </address>
+        <Link href="/login" style={{ fontSize: 13, color: token.colorTextSecondary, textDecoration: "underline" }}>{t("staff")}</Link>
       </footer>
 
       {/* sticky cart bar */}
