@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <>
       <link rel="canonical" href={canonicalUrl("/")} />
-      <ShopHero title={HOME_H1} />
+      <ShopHero title={HOME_H1} hideTitle />
     </>
   );
 }

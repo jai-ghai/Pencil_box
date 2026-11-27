@@ -18,5 +18,5 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
   const collection = collectionBySlug(slug);
   if (!collection) notFound();
-  return <ShopHero title={collection.h1} lede={collection.lede} current={collection.slug} />;
+  return <ShopHero title={collection.h1} lede={collection.lede} />;
 }

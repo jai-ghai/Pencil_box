@@ -25,41 +25,36 @@ export function ShopJsonLd() {
   );
 }
 
-/** H1, address and hours, then crawlable category links. `current` is the collection slug, or null on the home page. */
-export function ShopHero({ title, lede, current }: { title: string; lede?: string | null; current?: string | null }) {
+/**
+ * Address strip above the shop header, plus the page H1.
+ * On the home page the H1 is visually hidden (sr-only, not display:none) so it stays in the HTML for search and screen readers without repeating the logo.
+ */
+export function ShopHero({ title, lede, hideTitle = false }: { title: string; lede?: string | null; hideTitle?: boolean }) {
   return (
-    <header className="mx-auto w-full max-w-6xl px-4 pb-2 pt-5">
-      <h1 className="border-l-4 pl-3 text-[1.35rem] font-extrabold leading-snug tracking-tight sm:text-[1.65rem]" style={{ borderColor: "var(--pb-sun)" }}>
+    <header>
+      <h1 className={hideTitle ? "pb-sr-only" : "mx-auto w-full max-w-6xl px-4 pb-1 pt-4 text-[1.35rem] font-extrabold leading-snug tracking-tight sm:text-[1.65rem]"}>
         {title}
       </h1>
-      {lede ? <p className="pb-seo-muted mt-2 max-w-3xl text-[15px] leading-relaxed">{lede}</p> : null}
-      <p className="pb-seo-muted mt-2 text-sm leading-relaxed">
-        {ADDRESS_LINE}
-        <span aria-hidden> · </span>
-        <a className="pb-seo-link" href={`tel:${PHONE_TEL}`}>
-          {PHONE_DISPLAY}
-        </a>
-        <span aria-hidden> · </span>
-        {HOURS_LABEL}
-      </p>
-      <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <a className="pb-seo-link" href={MAPS_URL}>
-          Get directions
-        </a>
-        <a className="pb-seo-link" href={REVIEW_URL}>
-          Review us on Google
-        </a>
-      </p>
-      <nav aria-label="Shop categories" className="mt-4 flex flex-wrap gap-2">
-        <Link href="/" aria-current={current ? undefined : "page"} className="pb-seo-chip">
-          All
-        </Link>
-        {COLLECTIONS.map((c) => (
-          <Link key={c.slug} href={`/c/${c.slug}`} aria-current={current === c.slug ? "page" : undefined} className="pb-seo-chip">
-            {c.nav}
-          </Link>
-        ))}
-      </nav>
+      {lede && !hideTitle ? <p className="pb-seo-muted mx-auto w-full max-w-6xl px-4 pb-2 text-[15px] leading-relaxed">{lede}</p> : null}
+      <div className="px-3 py-1.5 text-center text-[12px] leading-snug sm:text-[13px]" style={{ background: "var(--pb-navy)", color: "rgba(255,255,255,0.92)" }}>
+        <p className="mx-auto max-w-6xl">
+          {ADDRESS_LINE}
+          <span aria-hidden> · </span>
+          <a className="pb-seo-strip-link" href={`tel:${PHONE_TEL}`}>
+            {PHONE_DISPLAY}
+          </a>
+          <span aria-hidden> · </span>
+          {HOURS_LABEL}
+          <span aria-hidden> · </span>
+          <a className="pb-seo-strip-link" href={MAPS_URL}>
+            Get directions
+          </a>
+          <span aria-hidden> · </span>
+          <a className="pb-seo-strip-link" href={REVIEW_URL}>
+            Review us on Google
+          </a>
+        </p>
+      </div>
     </header>
   );
 }
@@ -102,6 +97,15 @@ export function ShopFooter() {
           <a className="pb-seo-link" href={REVIEW_URL}>
             Review us on Google
           </a>
+        </p>
+        <nav aria-label="Shop categories" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          {COLLECTIONS.map((c) => (
+            <Link key={c.slug} href={`/c/${c.slug}`} className="pb-seo-link">
+              {c.nav}
+            </Link>
+          ))}
+        </nav>
+        <p className="mt-2">
           <a className="pb-seo-link inline-flex items-center gap-1.5" href={INSTAGRAM_URL} rel="me noopener noreferrer" target="_blank">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm10 1.8H7A2.2 2.2 0 0 0 4.8 7v10A2.2 2.2 0 0 0 7 19.2h10a2.2 2.2 0 0 0 2.2-2.2V7A2.2 2.2 0 0 0 17 4.8zM12 8.2A3.8 3.8 0 1 1 8.2 12 3.8 3.8 0 0 1 12 8.2zm0 1.6A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8zM17.35 6.4a.95.95 0 1 1-.95.95.95.95 0 0 1 .95-.95z" />
