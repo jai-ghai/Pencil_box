@@ -29,6 +29,28 @@ export const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "item";
 
+/** First free slug. `used` is every slug already taken. */
+export function uniqueSlug(name: string, used: Set<string>): string {
+  const base = slugify(name);
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
+/** Give every product a stable public slug, once. Safe to call often. */
+export async function ensureProductSlugs(): Promise<void> {
+  const rows = await Product.find({}, "name_en slug").lean();
+  const used = new Set(rows.map((r) => r.slug).filter((s): s is string => !!s));
+  for (const row of rows) {
+    if (row.slug) continue;
+    const slug = uniqueSlug(row.name_en, used);
+    used.add(slug);
+    await Product.updateOne({ _id: row._id, slug: { $in: [null, ""] } }, { $set: { slug } });
+    await Product.updateOne({ _id: row._id, slug: { $exists: false } }, { $set: { slug } });
+  }
+}
+
 /** Prices come from the UI in rupees (may have paise); store integer paise. */
 export const toPaise = (rupees: number) => Math.round(rupees * 100);
 
@@ -40,6 +62,7 @@ export const variantInput = z.object({
   sellPrice: z.number().min(0).max(10_000_000), // rupees
   costPrice: z.number().min(0).max(10_000_000).default(0), // rupees
   maxPrice: z.number().min(0).max(10_000_000).optional(), // rupees, optional higher price
+  mrp: z.number().min(0).max(10_000_000).optional(), // rupees, printed MRP; omit when you do not have one
   baseUnit: z.string().max(20).default("piece"),
   packSize: z.number().int().min(1).max(100000).default(1),
   reorderLevel: z.number().int().min(0).default(0),
@@ -101,14 +124,19 @@ export async function saveProduct(input: ProductInput, productId?: string) {
   const doc = { ...fields, ...(imageGeneric !== undefined ? { imageGeneric } : {}), brandId: brandId || undefined, supplierId: supplierId || undefined };
   const product = productId ? await Product.findByIdAndUpdate(productId, doc, { returnDocument: "after" }) : await Product.create(doc);
   if (!product) throw new Error("Product not found");
+  if (!product.slug) {
+    const taken = new Set((await Product.find({ slug: { $nin: [null, ""] } }, "slug").lean()).map((r) => r.slug).filter((s): s is string => !!s));
+    product.slug = uniqueSlug(product.name_en, taken);
+    await product.save();
+  }
   await removeUnusedImages(before.filter((u) => !product.images.includes(u)));
 
   const cat = await Category.findById(product.categoryId).lean();
   const prefix = codePrefix(cat?.name_en ?? "");
   for (const v of variants) {
-    const { _id, sellPrice, costPrice, maxPrice, openingStock, ...rest } = v;
+    const { _id, sellPrice, costPrice, maxPrice, mrp, openingStock, ...rest } = v;
     if (maxPrice !== undefined && maxPrice !== 0 && maxPrice < sellPrice) throw new CatalogError("The higher price must be at least the normal price");
-    const data: Record<string, unknown> = { ...rest, productId: product._id, sellPrice: toPaise(sellPrice), costPrice: toPaise(costPrice), maxPrice: maxPrice ? toPaise(maxPrice) : undefined };
+    const data: Record<string, unknown> = { ...rest, productId: product._id, sellPrice: toPaise(sellPrice), costPrice: toPaise(costPrice), maxPrice: maxPrice ? toPaise(maxPrice) : undefined, mrp: mrp && mrp > 0 ? toPaise(mrp) : undefined };
     const code = rest.shortCode?.trim().toLowerCase();
     if (code && (await Variant.findOne({ shortCode: code, ...(_id ? { _id: { $ne: _id } } : {}) }))) throw new CatalogError(`Item code "${code.toUpperCase()}" is already used by another item`);
     if (_id) {

@@ -67,6 +67,8 @@ const productSchema = new Schema(
     images: { type: [String], default: [] },
     attributes: { type: Schema.Types.Mixed, default: {} },
     tags: { type: [String], default: [] },
+    /** public URL /p/<slug>. Set once and kept stable. */
+    slug: { type: String, unique: true, sparse: true },
     active: { type: Boolean, default: true },
   },
   opts,
@@ -93,6 +95,8 @@ const variantSchema = new Schema(
     costPrice: { type: Number, default: 0, min: 0 },
     /** integer paise; optional higher price the shop may also charge (e.g. "25 or 30"). sellPrice is the lower one */
     maxPrice: { type: Number, min: 0 },
+    /** integer paise; printed MRP. The site shows a strike-through only when this is above the sell price. */
+    mrp: { type: Number, min: 0 },
     baseUnit: { type: String, default: "piece" },
     /** how many base units come in one purchase pack, e.g. 10 pencils per box */
     packSize: { type: Number, default: 1, min: 1 },

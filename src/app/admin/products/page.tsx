@@ -9,7 +9,7 @@ import { can, useMe } from "@/lib/use-me";
 import { QuickAddModal } from "@/components/quick-add-modal";
 
 interface Opt { _id: string; name?: string; name_en?: string; parentId?: string | null }
-interface VariantDoc { _id: string; label: string; shortCode?: string; sellPrice: number; costPrice: number; packSize: number; reorderLevel: number; quickTap: boolean; trackStock?: boolean; stockOnHand: number }
+interface VariantDoc { _id: string; label: string; shortCode?: string; sellPrice: number; costPrice: number; mrp?: number; packSize: number; reorderLevel: number; quickTap: boolean; trackStock?: boolean; stockOnHand: number }
 interface ProductDoc {
   _id: string;
   name_en: string;
@@ -18,6 +18,7 @@ interface ProductDoc {
   categoryId?: { _id: string; name_en: string } | null;
   supplierId?: string;
   internalNote?: string;
+  description_en?: string;
   imageGeneric?: boolean;
   imageSource?: string;
   images: string[];
@@ -29,6 +30,7 @@ interface VariantForm {
   shortCode?: string;
   sellPrice?: number;
   costPrice?: number;
+  mrp?: number;
   packSize?: number;
   reorderLevel?: number;
   openingStock?: number;
@@ -43,6 +45,7 @@ interface ProductForm {
   categoryId?: string;
   supplierId?: string;
   internalNote?: string;
+  description_en?: string;
   variants: VariantForm[];
 }
 
@@ -101,7 +104,8 @@ export default function Products() {
       categoryId: p.categoryId?._id,
       supplierId: p.supplierId ? String(p.supplierId) : undefined,
       internalNote: p.internalNote,
-      variants: p.variants.map((v) => ({ _id: v._id, label: v.label, shortCode: v.shortCode, sellPrice: v.sellPrice / 100, costPrice: v.costPrice / 100, packSize: v.packSize, reorderLevel: v.reorderLevel, quickTap: v.quickTap, trackStock: v.trackStock !== false, stockOnHand: v.stockOnHand })),
+      description_en: p.description_en,
+      variants: p.variants.map((v) => ({ _id: v._id, label: v.label, shortCode: v.shortCode, sellPrice: v.sellPrice / 100, costPrice: v.costPrice / 100, mrp: v.mrp ? v.mrp / 100 : undefined, packSize: v.packSize, reorderLevel: v.reorderLevel, quickTap: v.quickTap, trackStock: v.trackStock !== false, stockOnHand: v.stockOnHand })),
     });
     setImages(p.images);
     setGeneric(!!p.imageGeneric);
@@ -118,6 +122,7 @@ export default function Products() {
         categoryId: v.categoryId,
         supplierId: v.supplierId || undefined,
         internalNote: v.internalNote?.trim() || undefined,
+        description_en: v.description_en?.trim() || undefined,
         images,
         imageGeneric: images.length > 0 && generic,
         variants: v.variants.map((x) => ({
@@ -126,6 +131,7 @@ export default function Products() {
           shortCode: x._id ? undefined : x.shortCode?.trim() || undefined, // existing codes never change
           sellPrice: x.sellPrice ?? 0,
           costPrice: x.costPrice ?? 0,
+          mrp: x.mrp && x.mrp > 0 ? x.mrp : undefined,
           packSize: Math.max(1, Math.round(x.packSize ?? 1)),
           reorderLevel: Math.round(x.reorderLevel ?? 0),
           quickTap: !!x.quickTap,
@@ -254,6 +260,7 @@ export default function Products() {
             <Col xs={24} md={12}><Form.Item label="Category" name="categoryId" rules={[{ required: true, message: "Choose a category" }]}><Select showSearch={{ optionFilterProp: "label" }} placeholder="Choose" options={categoryOptions} /></Form.Item></Col>
             <Col xs={24} md={12}><Form.Item label="Supplier" name="supplierId"><Select allowClear placeholder="None" options={suppliers.map((s) => ({ value: s._id, label: s.name }))} /></Form.Item></Col>
             <Col xs={24} md={12}><Form.Item label="Private note (only you see this)" name="internalNote"><Input maxLength={500} /></Form.Item></Col>
+            <Col xs={24}><Form.Item label="Short description (shown on the product page)" name="description_en"><Input.TextArea maxLength={400} rows={2} placeholder="Optional. Leave empty if you have nothing to add." /></Form.Item></Col>
           </Row>
 
           {generic && <Alert type="info" showIcon style={{ marginBottom: 12 }} title="This is a general picture from the internet (free licence), not your exact item. The website labels it 'for illustration'. Upload your own photo to replace it." />}
@@ -299,6 +306,7 @@ export default function Products() {
                         <Col xs={24} sm={10}><Form.Item label="Variant (e.g. HB, Blue)" name={[f.name, "label"]}><Input /></Form.Item></Col>
                         <Col xs={12} sm={6}><Form.Item label="Item code" name={[f.name, "shortCode"]} extra={existing ? undefined : "Blank = automatic"}><Input disabled={existing} placeholder="auto" /></Form.Item></Col>
                         <Col xs={12} sm={4}><Form.Item label="Sell ₹" name={[f.name, "sellPrice"]} rules={[{ required: true, message: "Price?" }]}><InputNumber min={0} precision={2} style={{ width: "100%" }} /></Form.Item></Col>
+                        <Col xs={12} sm={4}><Form.Item label="MRP ₹" name={[f.name, "mrp"]} extra="Only if printed on the pack"><InputNumber min={0} precision={2} style={{ width: "100%" }} /></Form.Item></Col>
                         <Col xs={12} sm={4}><Form.Item label="Cost ₹ each" name={[f.name, "costPrice"]}><InputNumber min={0} precision={2} style={{ width: "100%" }} /></Form.Item></Col>
                         <Col xs={12} sm={5}><Form.Item label="Pieces per box" name={[f.name, "packSize"]}><InputNumber min={1} precision={0} style={{ width: "100%" }} /></Form.Item></Col>
                         <Col xs={12} sm={5}><Form.Item label="Reorder at" name={[f.name, "reorderLevel"]}><InputNumber min={0} precision={0} style={{ width: "100%" }} /></Form.Item></Col>
