@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import NextImage from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
 import { DownOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, SearchOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
@@ -13,6 +14,7 @@ import { inr, itemTitle, stripBrand } from "@/lib/client";
 import { text, type Lang, type TextKey } from "@/lib/i18n";
 import { BRAND } from "@/lib/theme";
 import { buildOrderMessage, whatsappUrl, type OrderLine } from "@/lib/whatsapp";
+import { categoryMatchFromPath, collectionByMatch } from "@/lib/shop";
 import type { StoreCatalog, StoreProduct, StoreVariant } from "@/lib/store";
 
 interface PricedLine {
@@ -85,6 +87,10 @@ function loadCart(): Cart {
 /** Smaller, faster images for Cloudinary links; other links are used as they are. */
 const thumb = (url: string) => (url.includes("res.cloudinary.com") && url.includes("/upload/") ? url.replace("/upload/", "/upload/f_auto,q_auto,w_500/") : url);
 const priceText = (v: StoreVariant) => (v.maxPrice ? `${inr(v.price)}–${inr(v.maxPrice).replace("₹", "")}` : inr(v.price));
+function productAlt(p: StoreProduct): string {
+  const name = [p.brand, p.name_en].filter(Boolean).join(" ") || "Stationery item";
+  return p.imageGeneric ? `Illustration of ${name}` : name;
+}
 
 export function Storefront() {
   return (
@@ -102,8 +108,14 @@ function StorefrontInner() {
   const [catalog, setCatalog] = useState<StoreCatalog | null>(null);
   const [error, setError] = useState(false);
   const [q, setQ] = useState("");
+  const pathname = usePathname();
+  const router = useRouter();
+  const routeName = categoryMatchFromPath(pathname);
+  /* Category filter. A /c/<slug> URL sets it; subcategory picks on the home page set it too. */
   const [topCat, setTopCat] = useState<string | null>(null);
   const [subCat, setSubCat] = useState<string | null>(null);
+  const routeKey = `${routeName ?? ""}:${catalog ? "y" : "n"}`;
+  const [appliedRoute, setAppliedRoute] = useState(routeKey);
   const [brand, setBrand] = useState<string | undefined>(undefined);
   const [offersOnly, setOffersOnly] = useState(false);
   const [cart, setCart] = useState<Cart>({});
@@ -111,6 +123,12 @@ function StorefrontInner() {
   const [sheet, setSheet] = useState(false);
   const [notice, setNotice] = useState<TextKey | "">("");
   const [ready, setReady] = useState(false);
+  if (appliedRoute !== routeKey) {
+    setAppliedRoute(routeKey);
+    const match = routeName ? (catalog?.categories.find((c) => !c.parentId && c.name_en === routeName)?.id ?? null) : null;
+    setTopCat(match);
+    setSubCat(null);
+  }
   const t: T = useCallback((k) => text(lang, k), [lang]);
 
   const load = useCallback(() => {
@@ -291,6 +309,7 @@ function StorefrontInner() {
     setSubCat(null);
     setBrand(undefined);
     setOffersOnly(false);
+    if (routeName) router.push("/");
   };
 
   /* cart numbers */
@@ -348,15 +367,21 @@ function StorefrontInner() {
             <div className="pb-scroll-x -mx-4 flex gap-3 px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-6 lg:overflow-visible lg:px-0" role="group" aria-label="Categories">
               {TILES.map((tile) => {
                 const cat = topCats.find((c) => c.name_en === tile.match);
-                const active = !!cat && topCat === cat.id;
+                const col = collectionByMatch(tile.match);
+                const active = routeName === tile.match || (!routeName && !!cat && topCat === cat.id);
+                const href = col ? (active && routeName ? "/" : `/c/${col.slug}`) : "/";
                 return (
-                  <button
+                  <Link
                     key={tile.match}
-                    type="button"
-                    disabled={!cat}
-                    aria-pressed={active}
-                    onClick={() => cat && (setTopCat(active ? null : cat.id), setSubCat(null))}
-                    className="flex shrink-0 items-center gap-3 text-left lg:min-w-0"
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => {
+                      if (active && !routeName) {
+                        setTopCat(null);
+                        setSubCat(null);
+                      }
+                    }}
+                    className="flex shrink-0 items-center gap-3 text-left no-underline lg:min-w-0"
                     style={{
                       minWidth: 176,
                       padding: "10px 12px",
@@ -366,22 +391,21 @@ function StorefrontInner() {
                       borderBottom: `4px solid ${tile.accent}`,
                       boxShadow: active ? `0 0 0 2px ${token.colorText}` : undefined,
                       opacity: cat ? 1 : 0.6,
-                      cursor: cat ? "pointer" : "not-allowed",
                       color: token.colorText,
                     }}
                   >
-                    <NextImage src={`/brand/cat-${tile.icon}.png`} alt="" width={40} height={40} />
+                    <NextImage src={`/brand/cat-${tile.icon}.png`} alt={tile.match} width={40} height={40} />
                     <span style={{ fontWeight: 700, lineHeight: 1.2 }}>
                       {cat ? catName(cat) : lang === "hi" ? tile.hi : tile.match}
                       {!cat && <span style={{ display: "block", fontSize: 12, fontWeight: 500, color: token.colorTextSecondary }}>{t("comingSoon")}</span>}
                     </span>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
             {subCats.length > 0 && (
               <div className="pb-scroll-x -mx-4 flex items-center gap-2 px-4" role="group" aria-label="Sub categories">
-                <Button size="small" type="text" onClick={() => (setTopCat(null), setSubCat(null))}>{t("showAll")}</Button>
+                <Button size="small" type="text" onClick={() => { setTopCat(null); setSubCat(null); if (routeName) router.push("/"); }}>{t("showAll")}</Button>
                 <Button size="small" type={!subCat ? "primary" : "default"} onClick={() => setSubCat(null)}>{t("all")}</Button>
                 {subCats.map((c) => (
                   <Button key={c.id} size="small" type={subCat === c.id ? "primary" : "default"} onClick={() => setSubCat(c.id)} className="shrink-0">
@@ -420,7 +444,13 @@ function StorefrontInner() {
           <section key={row.cat.id} className="mb-5" aria-label={catName(row.cat)}>
             <Flex align="center" justify="space-between" gap={8} className="mb-2" style={{ borderLeft: `4px solid ${row.accent}`, paddingLeft: 10 }}>
               <Typography.Title level={4} style={{ margin: 0 }}>{catName(row.cat)}</Typography.Title>
-              <Button type="link" onClick={() => pickCollection(row.cat.id, null)}>{t("viewAll")} ({row.total})</Button>
+              {collectionByMatch(row.cat.name_en) ? (
+                <Link href={`/c/${collectionByMatch(row.cat.name_en)!.slug}`} style={{ color: token.colorLink, fontWeight: 600, whiteSpace: "nowrap" }}>
+                  {t("viewAll")} ({row.total})
+                </Link>
+              ) : (
+                <Button type="link" onClick={() => pickCollection(row.cat.id, null)}>{t("viewAll")} ({row.total})</Button>
+              )}
             </Flex>
             <ul className="pb-scroll-x -mx-4 flex items-start gap-3 px-4 pb-2 lg:mx-0 lg:px-0">
               {row.items.map((p) => (
@@ -458,7 +488,7 @@ function StorefrontInner() {
       <RequestModal open={requestOpen} onClose={() => setRequestOpen(false)} t={t} />
 
       <footer className="px-4 pb-24 pt-2 text-center">
-        <NextImage src="/brand/mascot.png" alt="" width={72} height={68} className="mx-auto mb-2" style={{ height: "auto" }} />
+        <NextImage src="/brand/mascot.png" alt="Pencil Box Stationery mascot" width={72} height={68} loading="lazy" className="mx-auto mb-2" style={{ height: "auto" }} />
         <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 4 }}>
           {t("pickupNote")} {t("finalPrice")}
         </Typography.Paragraph>
@@ -583,7 +613,7 @@ function CollectionGrid({ items, expanded, onToggle, onPick, name, t }: {
               <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px]" style={{ background: "rgba(255,213,0,0.14)" }}>
                 {image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={thumb(image)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                  <img src={thumb(image)} alt={name(cat)} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 22, color: token.colorTextQuaternary }} aria-hidden /></span>
                 )}
@@ -680,7 +710,7 @@ function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang
         <div className="relative aspect-square w-full overflow-hidden" style={{ background: p.image ? "#fff" : "rgba(255,213,0,0.14)" }}>
           {p.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumb(p.image)} alt={p.name_en} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-contain p-2" />
+            <img src={thumb(p.image)} alt={productAlt(p)} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-contain p-2" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 30, color: token.colorTextQuaternary }} aria-hidden /></div>
           )}

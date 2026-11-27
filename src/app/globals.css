@@ -289,3 +289,54 @@ input:focus-visible,
 textarea:focus-visible {
   outline: none;
 }
+
+/* Server-rendered shop intro, FAQ and address. Colours follow the light/dark theme. */
+.pb-seo-muted {
+  color: #5a6a82;
+}
+html[data-theme="dark"] .pb-seo-muted {
+  color: #9aabc4;
+}
+.pb-seo-link {
+  color: var(--pb-navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+html[data-theme="dark"] .pb-seo-link {
+  color: var(--pb-sun-soft);
+}
+.pb-seo-card {
+  background: #fff;
+  border: 1px solid rgba(12, 18, 34, 0.1);
+  border-radius: 14px;
+}
+html[data-theme="dark"] .pb-seo-card {
+  background: var(--pb-slate);
+  border-color: rgba(232, 238, 248, 0.1);
+}
+.pb-seo-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  background: #fff;
+  color: var(--pb-ink);
+  border: 1px solid rgba(12, 18, 34, 0.1);
+  border-bottom: 3px solid var(--pb-sun);
+}
+html[data-theme="dark"] .pb-seo-chip {
+  background: var(--pb-slate);
+  color: #e8eef8;
+  border-color: rgba(232, 238, 248, 0.1);
+}
+.pb-seo-chip[aria-current="page"] {
+  box-shadow: 0 0 0 2px var(--pb-ink);
+}
+html[data-theme="dark"] .pb-seo-chip[aria-current="page"] {
+  box-shadow: 0 0 0 2px #e8eef8;
+}
