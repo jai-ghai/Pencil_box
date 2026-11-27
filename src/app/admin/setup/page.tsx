@@ -8,8 +8,8 @@ import { can, useMe } from "@/lib/use-me";
 import { SimpleList } from "@/components/simple-list";
 
 interface Brand { _id: string; name: string; products: number }
-interface Cat { _id: string; name_en: string; name_hi?: string; slug: string; parentId?: string | null; products: number }
-type Editing = { kind: "brands" | "categories"; id: string; name: string; name_hi?: string } | null;
+interface Cat { _id: string; name_en: string; name_hi?: string; slug: string; parentId?: string | null; products: number; image?: string }
+type Editing = { kind: "brands" | "categories"; id: string; name: string; name_hi?: string; image?: string } | null;
 
 export default function Setup() {
   const { message } = App.useApp();
@@ -21,7 +21,7 @@ export default function Setup() {
   const [saving, setSaving] = useState(false);
   const [brandForm] = Form.useForm<{ name: string }>();
   const [catForm] = Form.useForm<{ name_en: string; name_hi?: string; parentId?: string }>();
-  const [editForm] = Form.useForm<{ name: string; name_hi?: string }>();
+  const [editForm] = Form.useForm<{ name: string; name_hi?: string; image?: string }>();
 
   const load = useCallback(async () => {
     const [b, c] = await Promise.all([api<{ brands: Brand[] }>("/api/admin/brands"), api<{ categories: Cat[] }>("/api/admin/categories")]);
@@ -51,7 +51,7 @@ export default function Setup() {
     const v = await editForm.validateFields();
     setSaving(true);
     await run(
-      () => api(`/api/admin/${editing.kind}/${editing.id}`, { method: "PATCH", body: editing.kind === "brands" ? { name: v.name.trim() } : { name_en: v.name.trim(), name_hi: v.name_hi?.trim() || undefined } }),
+      () => api(`/api/admin/${editing.kind}/${editing.id}`, { method: "PATCH", body: editing.kind === "brands" ? { name: v.name.trim() } : { name_en: v.name.trim(), name_hi: v.name_hi?.trim() || undefined, image: v.image?.trim() ?? "" } }),
       "Saved",
     );
     setSaving(false);
@@ -60,9 +60,9 @@ export default function Setup() {
 
   const remove = (kind: "brands" | "categories", id: string, label: string) => run(() => api(`/api/admin/${kind}/${id}`, { method: "DELETE" }), `${label} deleted`);
 
-  const rowButtons = (kind: "brands" | "categories", item: { _id: string; name: string; name_hi?: string; products: number }) => (
+  const rowButtons = (kind: "brands" | "categories", item: { _id: string; name: string; name_hi?: string; products: number; image?: string }) => (
     <Flex gap={4} align="center">
-      <Button size="small" icon={<EditOutlined />} aria-label={`Edit ${item.name}`} onClick={() => (editForm.setFieldsValue({ name: item.name, name_hi: item.name_hi }), setEditing({ kind, id: item._id, name: item.name, name_hi: item.name_hi }))}>Edit</Button>
+      <Button size="small" icon={<EditOutlined />} aria-label={`Edit ${item.name}`} onClick={() => (editForm.setFieldsValue({ name: item.name, name_hi: item.name_hi, image: item.image }), setEditing({ kind, id: item._id, name: item.name, name_hi: item.name_hi, image: item.image }))}>Edit</Button>
       {canDelete && (
         <Popconfirm
           title={`Delete "${item.name}"?`}
@@ -119,13 +119,13 @@ export default function Setup() {
                 <Flex vertical gap={8} className="w-full">
                   <Flex justify="space-between" align="center" gap={8}>
                     <span><Typography.Text strong>{t.name_en}</Typography.Text> <Typography.Text type="secondary">{t.name_hi}</Typography.Text></span>
-                    {rowButtons("categories", { _id: t._id, name: t.name_en, name_hi: t.name_hi, products: t.products })}
+                    {rowButtons("categories", { _id: t._id, name: t.name_en, name_hi: t.name_hi, products: t.products, image: t.image })}
                   </Flex>
                   <Flex vertical gap={6} style={{ paddingInlineStart: 12 }}>
                     {(cats ?? []).filter((c) => c.parentId === t._id).map((c) => (
                       <Flex key={c._id} justify="space-between" align="center" gap={8}>
                         <span>{c.name_en} <Tag style={{ marginInlineStart: 6 }}>{c.products}</Tag></span>
-                        {rowButtons("categories", { _id: c._id, name: c.name_en, name_hi: c.name_hi, products: c.products })}
+                        {rowButtons("categories", { _id: c._id, name: c.name_en, name_hi: c.name_hi, products: c.products, image: c.image })}
                       </Flex>
                     ))}
                   </Flex>
@@ -139,6 +139,11 @@ export default function Setup() {
         <Form form={editForm} layout="vertical" onFinish={saveEdit}>
           <Form.Item label={editing?.kind === "brands" ? "Brand name" : "English"} name="name" rules={[{ required: true, message: "Enter a name" }]}><Input autoFocus /></Form.Item>
           {editing?.kind === "categories" && <Form.Item label="हिंदी" name="name_hi"><Input /></Form.Item>}
+          {editing?.kind === "categories" && (
+            <Form.Item label="Card photo" name="image" extra="Optional. A plain product photo replaces the drawing on the shop grid. Leave empty to keep the drawing.">
+              <Input placeholder="https://res.cloudinary.com/..." />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </>

@@ -37,7 +37,7 @@ export interface StoreProduct {
 }
 export interface StoreCatalog {
   whatsapp: string | null;
-  categories: { id: string; name_en: string; name_hi: string; parentId: string | null }[];
+  categories: { id: string; name_en: string; name_hi: string; parentId: string | null; slug: string; image: string }[];
   brands: { id: string; name: string }[];
   products: StoreProduct[];
 }
@@ -109,7 +109,7 @@ export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog>
 
   return {
     whatsapp: normalizeWhatsappNumber(process.env.WHATSAPP_NUMBER),
-    categories: cats.filter((c) => usedCats.has(String(c._id))).map((c) => ({ id: String(c._id), name_en: c.name_en, name_hi: c.name_hi ?? "", parentId: c.parentId ? String(c.parentId) : null })),
+    categories: cats.filter((c) => usedCats.has(String(c._id))).map((c) => ({ id: String(c._id), name_en: c.name_en, name_hi: c.name_hi ?? "", parentId: c.parentId ? String(c.parentId) : null, slug: c.slug, image: c.image ?? "" })),
     brands: brands.filter((b) => usedBrands.has(String(b._id))).map((b) => ({ id: String(b._id), name: b.name })).sort((a, b) => a.name.localeCompare(b.name)),
     products: out.sort((a, b) => a.name_en.localeCompare(b.name_en)),
   };
