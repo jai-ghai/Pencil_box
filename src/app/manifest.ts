@@ -6,9 +6,9 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Pencil Box",
+    name: "Pencil Box Stationery",
     short_name: "Pencil Box",
-    description: "Stationery, gifts, printing and photocopy",
+    description: "Stationery shop in Tigri Extension, New Delhi. Gifts, printing and photocopy.",
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -4,5 +4,5 @@ import Image from "next/image";
 export function Wordmark({ size = 28 }: { size?: number }) {
   const height = Math.round(size * 1.25);
   const width = Math.round((height * 1470) / 256);
-  return <Image src="/brand/wordmark.png" alt="Pencil Box" width={width} height={height} priority style={{ width, height }} />;
+  return <Image src="/brand/wordmark.png" alt="Pencil Box Stationery" width={width} height={height} priority style={{ width, height }} />;
 }
