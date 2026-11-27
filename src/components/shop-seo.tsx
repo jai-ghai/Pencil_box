@@ -24,32 +24,15 @@ export function ShopJsonLd() {
   );
 }
 
-/** H1, intro and crawlable category links. `current` is the collection slug, or null on the home page. */
+/** H1, one intro line, and crawlable category links. Address and hours live in the footer. */
 export function ShopHero({ title, lede, current }: { title: string; lede: string; current?: string | null }) {
   return (
-    <header className="mx-auto w-full max-w-6xl px-4 pb-2 pt-5">
-      <h1 className="border-l-4 pl-3 text-[1.35rem] font-extrabold leading-snug tracking-tight sm:text-[1.65rem]" style={{ borderColor: "var(--pb-sun)" }}>
+    <header className="mx-auto w-full max-w-6xl px-4 pb-1 pt-3">
+      <h1 className="border-l-4 pl-2 text-[1.05rem] font-bold leading-tight tracking-tight sm:text-xl" style={{ borderColor: "var(--pb-sun)" }}>
         {title}
       </h1>
-      <p className="pb-seo-muted mt-2 max-w-3xl text-[15px] leading-relaxed">{lede}</p>
-      <p className="pb-seo-muted mt-2 text-sm leading-relaxed">
-        {ADDRESS_LINE}
-        <span aria-hidden> · </span>
-        <a className="pb-seo-link" href={`tel:${PHONE_TEL}`}>
-          {PHONE_DISPLAY}
-        </a>
-        <span aria-hidden> · </span>
-        {HOURS_LABEL}
-      </p>
-      <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <a className="pb-seo-link" href={MAPS_URL}>
-          Get directions
-        </a>
-        <a className="pb-seo-link" href={REVIEW_URL}>
-          Review us on Google
-        </a>
-      </p>
-      <nav aria-label="Shop categories" className="mt-4 flex flex-wrap gap-2">
+      <p className="pb-seo-muted mt-1 max-w-3xl text-sm leading-snug">{lede}</p>
+      <nav aria-label="Shop categories" className="mt-2 flex flex-wrap gap-1.5">
         <Link href="/" aria-current={current ? undefined : "page"} className="pb-seo-chip">
           All
         </Link>
