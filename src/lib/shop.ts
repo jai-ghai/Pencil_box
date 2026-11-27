@@ -11,7 +11,6 @@ export const HOME_TITLE = "Stationery Shop in Tigri Extension, New Delhi 110062 
 export const HOME_DESCRIPTION =
   "Pencil Box Stationery, B-92 Tigri Extension (near Sangam Vihar, Khanpur, Devli), New Delhi 110062. School stationery, DOMS, Flair, Luxor, art & craft, gifts, photocopy & printing. Open daily 7 AM–9:30 PM.";
 export const HOME_H1 = "Pencil Box Stationery – Stationery & Photocopy Shop in Tigri Extension";
-export const HOME_INTRO = "Sangam Vihar, Khanpur aur Devli ke paas – stationery, gifts, photocopy aur printout.";
 
 export const SHOP_NAME = "Pencil Box Stationery";
 export const SHOP_ALTERNATE_NAME = "Pencil Box";
