@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Alert, Badge, Button, Card, Checkbox, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Slider, Space, Tag, Typography, theme } from "antd";
 import { DownOutlined, MenuOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, SearchOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { HomeGrid } from "@/components/home-grid";
 import { ShopMenu } from "@/components/shop-menu";
 import { ShopTabBar } from "@/components/shop-tabbar";
 import { Wordmark } from "@/components/wordmark";
@@ -16,7 +17,6 @@ import { text, type Lang, type TextKey } from "@/lib/i18n";
 import { BRAND } from "@/lib/theme";
 import { buildOrderMessage, whatsappUrl, type OrderLine } from "@/lib/whatsapp";
 import { categoryMatchFromPath, collectionByMatch } from "@/lib/shop";
-import { shopCards } from "@/lib/category-cards";
 import { cloudinarySquare } from "@/lib/images";
 import { SORTS, cleanItemName, discountPercent, groupSameProducts, lowestPrice, pageCount, pageSlice, sortProducts, type SortKey } from "@/lib/browse";
 import { COLLECTIONS } from "@/lib/shop";
@@ -157,38 +157,6 @@ function FilterPanel({ catalog, subCats, brandIds, minRupee, maxRupee, subSlug, 
         }} />
       </div>
     </div>
-  );
-}
-
-function CategoryGrid({ catalog, query = "" }: { catalog: StoreCatalog; query?: string }) {
-  const cards = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const p of catalog.products) counts.set(p.categoryId, (counts.get(p.categoryId) ?? 0) + 1);
-    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-    return shopCards(catalog.categories, counts).filter((card) => {
-      if (!words.length) return true;
-      const hay = `${card.label} ${card.href}`.toLowerCase();
-      return words.every((w) => hay.includes(w));
-    });
-  }, [catalog, query]);
-  if (!cards.length) {
-    return query.trim() ? <p className="m-0 text-sm text-[#5a6a82]">No category matches. Try another word, or clear the search.</p> : null;
-  }
-  return (
-    <ul className="mb-1 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6" aria-label="Categories">
-      {cards.map((card) => (
-        <li key={card.key}>
-          <Link href={card.href} className="flex h-full flex-col overflow-hidden rounded-[10px] border border-black/10 bg-white no-underline shadow-[0_1px_2px_rgba(12,18,34,0.08)]">
-            <span className="flex aspect-square items-center justify-center overflow-hidden bg-white">
-              {/* drawings are generic; an owner photo is padded on white */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={card.uploaded ? thumb(card.image) : card.image} alt="" className="h-[92%] w-[92%] object-contain" />
-            </span>
-            <span className="px-2 pb-2 text-left text-[11px] font-extrabold uppercase leading-[1.15] tracking-wide text-[#0c1222] sm:text-xs">{card.label}</span>
-          </Link>
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -399,7 +367,8 @@ function StorefrontInner({ children }: { children?: ReactNode }) {
   const showRates = rates.length > 0 && !q && !brandIds.length && !offersOnly && !subCat && !minPaise && !maxPaise && (!topCat || topCat === printTop?.id);
   /* landing view (nothing searched or filtered): collection tiles and a row of products per category, before the full list */
   const home = pathname === "/";
-  const showBrowse = pathname.startsWith("/c/") || pathname === "/products";
+  const sectionSlug = pathname.startsWith("/c/") ? pathname.slice(3).split("/")[0] : "";
+  const showBrowse = pathname === "/products" || COLLECTIONS.some((c) => c.slug === sectionSlug);
   const landing = false;
   const categoryRows = landing
     ? TILES.flatMap((tile) => {
@@ -478,9 +447,9 @@ function StorefrontInner({ children }: { children?: ReactNode }) {
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-3">
         {children}
+        {home && <div className="order-2"><HomeGrid query={q} /></div>}
         {catalog && (
           <Flex vertical gap={10} className="order-2 mb-4">
-            {(home || landing) && <CategoryGrid catalog={catalog} query={home ? q : ""} />}
             {showBrowse && hasOffers && (
               <Button type={offersOnly ? "primary" : "default"} size="large" icon={<TagsOutlined />} aria-pressed={offersOnly} onClick={() => setOffersOnly((v) => !v)} style={{ alignSelf: "flex-start" }}>
                 {t("offersToday")}

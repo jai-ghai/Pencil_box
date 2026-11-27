@@ -6,22 +6,79 @@ import { groupSameProducts, sortProducts } from "@/lib/browse";
 import { COLLECTION_COPY } from "@/lib/collection-copy";
 import { breadcrumbJsonLd, itemListJsonLd, productsInCollection } from "@/lib/product-json";
 import { cachedCatalog } from "@/lib/public-catalog";
-import { COLLECTIONS, collectionBySlug, jsonLdScript, pageMeta } from "@/lib/shop";
+import { PARENT_LABEL, allDepartmentSlugs, childDepartments, departmentBySlug } from "@/lib/departments";
+import { loadDepartmentPrefs } from "@/lib/department-prefs";
+import { COLLECTIONS, PHONE_TEL, collectionBySlug, jsonLdScript, pageMeta } from "@/lib/shop";
+
+function askLink(label: string): string {
+  return `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}?text=${encodeURIComponent(`Hello, do you have ${label}?`)}`;
+}
 
 export function generateStaticParams() {
-  return COLLECTIONS.map((c) => ({ slug: c.slug }));
+  const slugs = new Set([...COLLECTIONS.map((c) => c.slug), ...allDepartmentSlugs()]);
+  return [...slugs].map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const collection = collectionBySlug(slug);
-  if (!collection) return {};
-  return pageMeta({ title: collection.title, description: collection.description, path: `/c/${collection.slug}` });
+  if (collection) return pageMeta({ title: collection.title, description: collection.description, path: `/c/${collection.slug}` });
+  const dept = departmentBySlug(slug);
+  if (!dept) return {};
+  return {
+    ...pageMeta({ title: `${dept.label} | Pencil Box Stationery`, description: dept.about.slice(0, 160), path: `/c/${dept.slug}` }),
+    ...(dept.parent ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const collection = collectionBySlug(slug);
+  const dept = departmentBySlug(slug);
+  if (!collection && !dept) notFound();
+  const hidden = new Set((await loadDepartmentPrefs()).hidden);
+  if (dept && hidden.has(dept.slug)) notFound();
+  if (!collection && dept) {
+    const kids = childDepartments(dept.slug).filter((kid) => !hidden.has(kid.slug));
+    return (
+      <>
+        <div className="pt-3">
+          <nav aria-label="Breadcrumb" className="text-sm">
+            <Link href="/" className="font-semibold underline">Home</Link>
+            <span aria-hidden> › </span>
+            {dept.parent ? <Link href={`/c/${dept.parent}`} className="font-semibold underline">{PARENT_LABEL[dept.parent] ?? dept.parent}</Link> : <Link href="/categories" className="font-semibold underline">Categories</Link>}
+            <span aria-hidden> › </span>
+            <span>{dept.label}</span>
+          </nav>
+          <h1 className="mt-1 text-lg font-extrabold leading-snug">{dept.label}</h1>
+          {kids.length > 0 && (
+            <ul className="mt-3 grid grid-cols-3 gap-2">
+              {kids.map((kid) => (
+                <li key={kid.slug}>
+                  <Link href={`/c/${kid.slug}`} className="block rounded-[10px] border border-black/10 bg-white p-2 no-underline">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/category/${kid.slug}.svg`} alt="" className="aspect-square w-full object-contain" />
+                    <span className="mt-1 block text-left text-[11px] font-extrabold uppercase leading-tight text-[#0c1222]">{kid.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <a className="mt-4 inline-flex rounded-[10px] bg-[#153a7a] px-4 py-2 text-sm font-bold text-white no-underline" href={askLink(dept.label)}>Ask on WhatsApp</a>
+        </div>
+        <section className="mt-6 max-w-3xl">
+          <h2 className="text-lg font-extrabold">About this shelf</h2>
+          <p className="mt-2 text-[15px] leading-relaxed">{dept.about}</p>
+          <h3 className="mt-4 font-extrabold">Questions</h3>
+          <dl className="mt-2 flex flex-col gap-3">
+            {dept.faqs.map((f) => (
+              <div key={f.q}><dt className="font-bold">{f.q}</dt><dd className="text-[15px] leading-relaxed text-[#5a6a82]">{f.a}</dd></div>
+            ))}
+          </dl>
+        </section>
+      </>
+    );
+  }
   if (!collection) notFound();
   const catalog = await cachedCatalog();
   const products = catalog ? sortProducts(groupSameProducts(productsInCollection(catalog, collection.match)), "popular") : [];
@@ -42,6 +99,20 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
         </nav>
         <h1 className="mt-1 text-lg font-extrabold leading-snug">{collection.nav}</h1>
         {catalog && <p className="mt-1 text-sm font-semibold">{products.length} {products.length === 1 ? "item" : "items"}</p>}
+        {childDepartments(collection.slug).some((kid) => !hidden.has(kid.slug)) && (
+          <ul className="mt-3 grid grid-cols-3 gap-2">
+            {childDepartments(collection.slug).filter((kid) => !hidden.has(kid.slug)).map((kid) => (
+              <li key={kid.slug}>
+                <Link href={`/c/${kid.slug}`} className="block rounded-[10px] border border-black/10 bg-white p-2 no-underline">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/category/${kid.slug}.svg`} alt="" className="aspect-square w-full object-contain" />
+                  <span className="mt-1 block text-[11px] font-extrabold uppercase leading-tight text-[#0c1222]">{kid.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {catalog && products.length === 0 && <a className="mt-3 inline-flex rounded-[10px] bg-[#153a7a] px-4 py-2 text-sm font-bold text-white no-underline" href={askLink(collection.nav)}>Ask on WhatsApp</a>}
       </div>
       {(collection.lede || copy) && (
         <section className="order-3 mt-6 max-w-3xl">
