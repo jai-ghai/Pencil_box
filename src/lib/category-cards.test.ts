@@ -13,6 +13,9 @@ const cats: CardCategory[] = [
   { id: "9", name_en: "Gifts & More", name_hi: "", parentId: null, slug: "gifts-more" },
   { id: "10", name_en: "Printing & Photocopy", name_hi: "", parentId: null, slug: "printing-photocopy" },
   { id: "11", name_en: "Erasers", name_hi: "", parentId: "1", slug: "erasers" },
+  { id: "12", name_en: "Chart Paper", name_hi: "", parentId: "7", slug: "chart-paper" },
+  { id: "13", name_en: "Glue & Whitener", name_hi: "", parentId: "14", slug: "glue" },
+  { id: "14", name_en: "School Supplies", name_hi: "", parentId: null, slug: "school-supplies" },
 ];
 
 const counts = new Map(cats.filter((c) => c.parentId).map((c) => [c.id, 3]));
@@ -24,7 +27,7 @@ describe("generic category cards", () => {
 
   it("uses plain department names, never a brand", () => {
     const labels = cards.map((c) => c.label);
-    expect(labels).toEqual(expect.arrayContaining(["PENCIL", "PEN", "NOTEBOOK", "ERASER", "COLOURS", "DIARY", "ART & CRAFT", "GIFTS", "PRINTING"]));
+    expect(labels).toEqual(expect.arrayContaining(["PENCIL", "PEN", "NOTEBOOK", "ERASER", "COLOURS", "CHART PAPER", "GLUE", "DIARY", "ART & CRAFT", "GIFTS", "PRINTING"]));
     expect(labels.join(" ")).not.toMatch(/doms|flair|delta|luxor|nataraj/i);
     expect(labels).not.toContain("GEOMETRY BOX");
     expect(labels).not.toContain("SOFT TOYS");

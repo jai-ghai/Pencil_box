@@ -3,6 +3,7 @@ import { loadOffers } from "./sales";
 import { isOfferLive, offerApplies } from "./pricing";
 import { normalizeWhatsappNumber } from "./whatsapp";
 import { ENFORCE_STOCK_LIMITS } from "./flags";
+import { ensureProductSlugs } from "./catalog";
 
 /**
  * What the public website may see. This is an allow-list: cost price, supplier, private notes and exact
@@ -22,6 +23,8 @@ export interface StoreVariant {
   /** true when only a few are left */
   low: boolean;
   offers: { label_en: string; label_hi?: string }[];
+  /** paise, 0 when no MRP above the sell price is saved */
+  mrp: number;
 }
 export interface StoreProduct {
   id: string;
@@ -31,8 +34,12 @@ export interface StoreProduct {
   brandId: string;
   categoryId: string;
   image: string;
+  images: string[];
   /** the picture is a general stand-in, not the exact item (the website says so) */
   imageGeneric: boolean;
+  slug: string;
+  description_en: string;
+  createdAt: number;
   variants: StoreVariant[];
 }
 export interface StoreCatalog {
@@ -46,10 +53,11 @@ export const LOW_STOCK_AT = 5;
 export const MAX_CART_QTY = 99;
 
 export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog> {
+  await ensureProductSlugs();
   // everything is read at the same time, and only the fields the website shows (no costs, notes or search text)
   const [variants, allProducts, cats, brands, allOffers] = await Promise.all([
-    Variant.find(ENFORCE_STOCK_LIMITS ? { active: true, $or: [{ trackStock: false }, { stockOnHand: { $gt: 0 } }] } : { active: true }, "productId shortCode label sellPrice maxPrice stockOnHand trackStock").lean(),
-    Product.find({ active: true }, "name_en name_hi brandId categoryId images imageGeneric").lean(),
+    Variant.find(ENFORCE_STOCK_LIMITS ? { active: true, $or: [{ trackStock: false }, { stockOnHand: { $gt: 0 } }] } : { active: true }, "productId shortCode label sellPrice maxPrice mrp stockOnHand trackStock").lean(),
+    Product.find({ active: true }, "name_en name_hi brandId categoryId images imageGeneric slug description_en createdAt").lean(),
     Category.find({}, "name_en name_hi parentId sortOrder").sort({ sortOrder: 1, name_en: 1 }).lean(),
     Brand.find({}, "name").lean(),
     loadOffers(),
@@ -75,6 +83,7 @@ export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog>
       maxQty: stock,
       low: ENFORCE_STOCK_LIMITS && v.trackStock !== false && v.stockOnHand <= LOW_STOCK_AT,
       offers: offers.filter((o) => offerApplies(o, line)).map((o) => ({ label_en: o.label_en, label_hi: o.label_hi })),
+      mrp: v.mrp && v.mrp > v.sellPrice ? v.mrp : 0,
     };
     const arr = byProduct.get(String(v.productId)) ?? [];
     arr.push(sv);
@@ -93,7 +102,11 @@ export async function buildStoreCatalog(now = new Date()): Promise<StoreCatalog>
       brandId: p.brandId ? String(p.brandId) : "",
       categoryId: String(p.categoryId),
       image: p.images?.[0] ?? "",
+      images: p.images ?? [],
       imageGeneric: !!p.images?.[0] && p.imageGeneric === true,
+      slug: p.slug ?? "",
+      description_en: p.description_en ?? "",
+      createdAt: p.createdAt ? new Date(p.createdAt).getTime() : 0,
       variants: vs.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })),
     });
   }
