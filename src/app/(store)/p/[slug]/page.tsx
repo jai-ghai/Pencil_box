@@ -10,11 +10,8 @@ import { collectionByMatch, jsonLdScript, pageMeta } from "@/lib/shop";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const catalog = await cachedCatalog();
-  const product = catalog?.products.find((p) => p.slug === slug);
-  if (!product) return {};
-  const title = `${product.brand ? `${product.brand} ` : ""}${product.name_en} | Pencil Box Stationery`;
-  return pageMeta({ title, description: product.description_en || `${product.name_en} at Pencil Box Stationery, Tigri Extension.`, path: `/p/${product.slug}` });
+  const title = `${slug.replace(/-/g, " ")} | Pencil Box Stationery`;
+  return pageMeta({ title, description: "Item at Pencil Box Stationery, Tigri Extension, New Delhi.", path: `/p/${slug}` });
 }
 
 async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {

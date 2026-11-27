@@ -6,7 +6,8 @@ import { buildStoreCatalog, type StoreCatalog } from "./store";
 export async function cachedCatalog(): Promise<StoreCatalog | null> {
   "use cache";
   cacheLife("minutes");
-  if (!process.env.MONGODB_URI) return null;
+  // The production build must not open MongoDB. The list is filled on the first real request.
+  if (!process.env.MONGODB_URI || process.env.NEXT_PHASE === "phase-production-build") return null;
   try {
     await connectDb();
     return await buildStoreCatalog();
