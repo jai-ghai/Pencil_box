@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { DEPARTMENTS, HOME_LINKS, orderedHomeLinks, normalisePrefs } from "./departments";
 
@@ -21,5 +22,16 @@ describe("departments", () => {
     expect(labels).not.toContain("printing");
     expect(prefs.images.toys).toBe("https://cdn.example/toy.png");
     expect(prefs.images.bad).toBeUndefined();
+  });
+
+  it("gives every shelf its own drawing", () => {
+    const slugs = [...new Set([...DEPARTMENTS.map((d) => d.slug), ...HOME_LINKS.map((h) => h.slug)])];
+    const bodies = slugs.map((slug) => {
+      const path = `public/category/${slug}.svg`;
+      expect(existsSync(path), path).toBe(true);
+      return readFileSync(path, "utf8");
+    });
+    expect(new Set(bodies).size).toBe(bodies.length);
+    expect(bodies.join("")).not.toMatch(/circle cx="100" cy="100" r="58"/);
   });
 });
