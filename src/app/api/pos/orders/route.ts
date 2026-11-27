@@ -27,15 +27,18 @@ export const GET = route(STAFF, async (req, session) => {
   const sum = (f: (b: (typeof bills)[number]) => number) => bills.reduce((s, b) => s + f(b), 0);
   return {
     date: new Date(day.getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10),
-    summary: { bills: bills.length, total: sum((b) => b.total ?? 0), cash: sum((b) => b.payments?.cash ?? 0), upi: sum((b) => b.payments?.upi ?? 0), discount: sum((b) => b.discount ?? 0) },
+    summary: { bills: bills.length, total: sum((b) => b.total ?? 0), cash: sum((b) => b.payments?.cash ?? 0), upi: sum((b) => b.payments?.upi ?? 0), card: sum((b) => b.payments?.card ?? 0), discount: sum((b) => b.discount ?? 0) },
     bills: bills.map((b) => ({
       id: String(b._id),
       billNo: b.billNo,
       at: b.at,
       cashier: b.cashierId,
+      subtotal: b.subtotal ?? (b.total ?? 0) + (b.discount ?? 0),
       total: b.total,
       discount: b.discount,
-      payments: { cash: b.payments?.cash ?? 0, upi: b.payments?.upi ?? 0 },
+      payments: { cash: b.payments?.cash ?? 0, upi: b.payments?.upi ?? 0, card: b.payments?.card ?? 0 },
+      customerName: b.customerName ?? "",
+      customerPhone: b.customerPhone ?? "",
       note: b.note ?? "",
       source: b.source ?? "pos",
       waText: b.waText ?? "",

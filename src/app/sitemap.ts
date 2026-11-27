@@ -5,6 +5,8 @@ import { COLLECTIONS, canonicalUrl } from "@/lib/shop";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages: MetadataRoute.Sitemap = [
     { url: canonicalUrl("/"), changeFrequency: "daily", priority: 1 },
+    { url: canonicalUrl("/categories"), changeFrequency: "weekly", priority: 0.7 },
+    { url: canonicalUrl("/products"), changeFrequency: "daily", priority: 0.7 },
     ...COLLECTIONS.map((c) => ({
       url: canonicalUrl(`/c/${c.slug}`),
       changeFrequency: "weekly" as const,

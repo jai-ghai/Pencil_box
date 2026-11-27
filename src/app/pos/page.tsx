@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { App, Button, Card, Col, Drawer, Empty, Flex, Input, InputNumber, Modal, Row, Statistic, Table, Tag, Typography, theme } from "antd";
+import { App, Button, Card, Col, Drawer, Empty, Flex, Grid, Input, InputNumber, Modal, Row, Statistic, Table, Tag, Tooltip, Typography, theme } from "antd";
 import type { InputRef, TableColumnsType } from "antd";
-import { CloseOutlined, DeleteOutlined, FileTextOutlined, QrcodeOutlined, SearchOutlined, WalletOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, CloseOutlined, CreditCardOutlined, DeleteOutlined, FileTextOutlined, QrcodeOutlined, SearchOutlined, WalletOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
@@ -48,11 +48,12 @@ interface Priced {
   discount: number;
   total: number;
 }
-type PayMode = "cash" | "upi";
+type PayMode = "cash" | "upi" | "card";
 
 export default function PosPage() {
   const { message } = App.useApp();
   const { token } = theme.useToken();
+  const screens = Grid.useBreakpoint();
   const searchRef = useRef<InputRef>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Item[]>([]);
@@ -69,6 +70,8 @@ export default function PosPage() {
   const [waOpen, setWaOpen] = useState(false);
   const [waDraft, setWaDraft] = useState("");
   const [waSaved, setWaSaved] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
 
   const focusSearch = useCallback(() => searchRef.current?.focus(), []);
   const priced = cart.length ? pricedRaw : null; // no cart, no price
@@ -119,6 +122,8 @@ export default function PosPage() {
   const clear = useCallback(() => {
     setCart([]);
     setWaSaved("");
+    setCustomerName("");
+    setCustomerPhone("");
     setReceived(null);
     setQuery("");
     focusSearch();
@@ -130,10 +135,16 @@ export default function PosPage() {
       setBusy(true);
       try {
         const out = await api<{ billNo: number; total: number; warnings: string[] }>("/api/pos/sale", {
-          body: { items: cart.map((c) => ({ variantId: c.variantId, qty: c.qty })), payments: { cash: 0, upi: 0, [mode]: priced.total }, ...(waSaved ? { source: "whatsapp", waText: waSaved } : {}) },
+          body: {
+            items: cart.map((c) => ({ variantId: c.variantId, qty: c.qty })),
+            payments: { cash: 0, upi: 0, card: 0, [mode]: priced.total },
+            customerName: customerName.trim() || undefined,
+            customerPhone: customerPhone.trim() || undefined,
+            ...(waSaved ? { source: "whatsapp", waText: waSaved } : {}),
+          },
         });
         clear();
-        message.success({ content: `Bill #${out.billNo} saved · ${inr(out.total)} · ${mode === "upi" ? "UPI" : "Cash"}`, duration: 4 });
+        message.success({ content: `Bill #${out.billNo} saved · ${inr(out.total)} · ${mode === "upi" ? "UPI" : mode === "card" ? "Card" : "Cash"}`, duration: 4 });
         out.warnings.forEach((w) => message.warning({ content: w, duration: 6 }));
       } catch (e) {
         message.error((e as Error).message);
@@ -141,7 +152,7 @@ export default function PosPage() {
         setBusy(false);
       }
     },
-    [priced, busy, cart, clear, message, waSaved],
+    [priced, busy, cart, clear, message, waSaved, customerName, customerPhone],
   );
 
   /* keyboard shortcuts: F2 or / search, F8 cash, F9 UPI */
@@ -227,20 +238,33 @@ export default function PosPage() {
     { title: "", key: "rm", width: 48, render: (_: unknown, c) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => setQty(c.variantId, 0)} aria-label={`Remove ${c.name}`} /> },
   ];
 
+  const wideHeader = !!screens.md;
   return (
-    <div className="flex min-h-dvh flex-1 flex-col">
-      <header style={{ background: BRAND.navy }}>
-        <Flex className="mx-auto w-full max-w-[1400px] px-4 py-3" align="center" gap={12} justify="space-between">
-          <Wordmark size={24} />
-          <Flex gap={8} align="center">
+    <div className="flex min-h-dvh min-w-0 flex-1 flex-col overflow-x-hidden">
+      <header className="sticky top-0 z-40" style={{ background: BRAND.navy }}>
+        <div className="mx-auto flex h-14 w-full max-w-[1400px] min-w-0 items-center gap-2 px-3">
+          <Link href="/pos" aria-label="Pencil Box billing" className="min-w-0 shrink">
+            <Wordmark size={wideHeader ? 22 : 15} />
+          </Link>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <ThemeToggle />
-            <Button icon={<FileTextOutlined />} onClick={openBills}>Today&apos;s bills</Button>
-            <Link href="/admin"><Button>Admin</Button></Link>
-          </Flex>
-        </Flex>
+            <Tooltip title="Today's bills">
+              <Button aria-label="Today's bills" icon={<FileTextOutlined />} onClick={openBills} style={{ paddingInline: wideHeader ? undefined : 10 }}>
+                {wideHeader ? "Today's bills" : null}
+              </Button>
+            </Tooltip>
+            <Tooltip title="Admin">
+              <Link href="/admin" aria-label="Admin" className="inline-flex">
+                <Button aria-label="Admin" icon={<AppstoreOutlined />} style={{ paddingInline: wideHeader ? undefined : 10 }}>
+                  {wideHeader ? "Admin" : null}
+                </Button>
+              </Link>
+            </Tooltip>
+          </div>
+        </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1400px] flex-1 p-4">
+      <div className="mx-auto w-full min-w-0 max-w-[1400px] flex-1 p-3 sm:p-4">
       <Row gutter={[16, 16]}>
         {/* left: find items */}
         <Col xs={24} lg={11}>
@@ -306,7 +330,7 @@ export default function PosPage() {
         {/* right: cart + payment */}
         <Col xs={24} lg={13}>
           <Flex vertical gap={12}>
-            <Card styles={{ body: { padding: 0 } }}>
+            <Card styles={{ body: { padding: 0 } }} className="overflow-x-auto">
               <Table<CartLine>
                 rowKey="variantId"
                 size="small"
@@ -326,20 +350,34 @@ export default function PosPage() {
                   <Typography.Title level={2} style={{ margin: 0 }}>{inr(total)}</Typography.Title>
                 </Flex>
 
-                <Row gutter={8}>
-                  <Col span={12}>
+                <Row gutter={[8, 8]}>
+                  <Col xs={24} sm={12}>
+                    <Input aria-label="Customer name" placeholder="Customer name (optional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} maxLength={80} />
+                  </Col>
+                  <Col xs={24} sm={12}>
+                    <Input aria-label="Customer phone" placeholder="Phone (optional)" inputMode="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} maxLength={20} />
+                  </Col>
+                </Row>
+
+                <Row gutter={[8, 8]}>
+                  <Col xs={12} sm={8}>
                     <Button type="primary" size="large" block icon={<WalletOutlined />} disabled={!priced} loading={busy} onClick={() => pay("cash")} style={{ height: 56, fontSize: 17 }}>
                       Cash <kbd style={{ marginInlineStart: 6, color: "inherit" }}>F8</kbd>
                     </Button>
                   </Col>
-                  <Col span={12}>
+                  <Col xs={12} sm={8}>
                     <Button type="primary" size="large" block icon={<QrcodeOutlined />} disabled={!priced} loading={busy} onClick={() => pay("upi")} style={{ height: 56, fontSize: 17 }}>
                       UPI <kbd style={{ marginInlineStart: 6, color: "inherit" }}>F9</kbd>
                     </Button>
                   </Col>
+                  <Col xs={24} sm={8}>
+                    <Button type="primary" size="large" block icon={<CreditCardOutlined />} disabled={!priced} loading={busy} onClick={() => pay("card")} style={{ height: 56, fontSize: 17 }}>
+                      Card
+                    </Button>
+                  </Col>
                 </Row>
 
-                <Flex gap={12} align="flex-end">
+                <Flex gap={12} align="flex-end" wrap>
                   <div className="flex-1">
                     <label htmlFor="recv" style={{ fontSize: 13, color: token.colorTextSecondary }}>Cash received (shows change)</label>
                     <InputNumber id="recv" prefix="₹" min={0} value={received} onChange={setReceived} style={{ width: "100%" }} />

@@ -11,6 +11,38 @@ interface Brand { _id: string; name: string; products: number }
 interface Cat { _id: string; name_en: string; name_hi?: string; slug: string; parentId?: string | null; products: number; image?: string }
 type Editing = { kind: "brands" | "categories"; id: string; name: string; name_hi?: string; image?: string } | null;
 
+function BillUpi() {
+  const { message } = App.useApp();
+  const [upi, setUpi] = useState("");
+  const [saved, setSaved] = useState("");
+  useEffect(() => {
+    api<{ upiId: string }>("/api/admin/bill-profile")
+      .then((d) => (setUpi(d.upiId), setSaved(d.upiId)))
+      .catch(() => {});
+  }, []);
+  async function save() {
+    try {
+      const d = await api<{ upiId: string }>("/api/admin/bill-profile", { method: "PUT", body: { upiId: upi.trim() } });
+      setUpi(d.upiId);
+      setSaved(d.upiId);
+      message.success(d.upiId ? "UPI ID saved for the bill QR" : "Payment QR removed from the bill");
+    } catch (e) {
+      message.error((e as Error).message);
+    }
+  }
+  return (
+    <Card title="Bill" className="mb-4">
+      <Typography.Paragraph type="secondary">
+        Optional UPI ID. When this is set, the A5 bill includes a payment QR. Leave it empty and the bill has no payment QR. This shop is not GST registered, so the bill stays a cash memo with no tax lines.
+      </Typography.Paragraph>
+      <Flex gap={8} wrap>
+        <Input aria-label="UPI ID" placeholder="name@upi" value={upi} onChange={(e) => setUpi(e.target.value)} style={{ maxWidth: 280 }} />
+        <Button type="primary" onClick={save} disabled={upi.trim() === saved}>Save</Button>
+      </Flex>
+    </Card>
+  );
+}
+
 export default function Setup() {
   const { message } = App.useApp();
   const me = useMe();
@@ -79,6 +111,7 @@ export default function Setup() {
 
   return (
     <>
+      <BillUpi />
       <Row gutter={[16, 16]}>
         <Col xs={24} md={10}>
           <Card title="Brands">

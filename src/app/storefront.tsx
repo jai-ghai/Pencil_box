@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import NextImage from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Alert, Badge, Button, Card, Checkbox, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Slider, Space, Tag, Typography, theme } from "antd";
-import { DownOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, SearchOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { DownOutlined, MenuOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, SearchOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { ShopMenu } from "@/components/shop-menu";
+import { ShopTabBar } from "@/components/shop-tabbar";
 import { Wordmark } from "@/components/wordmark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SimpleList } from "@/components/simple-list";
@@ -17,7 +18,7 @@ import { buildOrderMessage, whatsappUrl, type OrderLine } from "@/lib/whatsapp";
 import { categoryMatchFromPath, collectionByMatch } from "@/lib/shop";
 import { shopCards } from "@/lib/category-cards";
 import { cloudinarySquare } from "@/lib/images";
-import { PAGE_SIZE, SORTS, discountPercent, lowestPrice, pageCount, pageSlice, sortProducts, type SortKey } from "@/lib/browse";
+import { SORTS, cleanItemName, discountPercent, groupSameProducts, lowestPrice, pageCount, pageSlice, sortProducts, type SortKey } from "@/lib/browse";
 import { COLLECTIONS } from "@/lib/shop";
 import type { StoreCatalog, StoreProduct, StoreVariant } from "@/lib/store";
 
@@ -159,13 +160,20 @@ function FilterPanel({ catalog, subCats, brandIds, minRupee, maxRupee, subSlug, 
   );
 }
 
-function CategoryGrid({ catalog }: { catalog: StoreCatalog }) {
+function CategoryGrid({ catalog, query = "" }: { catalog: StoreCatalog; query?: string }) {
   const cards = useMemo(() => {
     const counts = new Map<string, number>();
     for (const p of catalog.products) counts.set(p.categoryId, (counts.get(p.categoryId) ?? 0) + 1);
-    return shopCards(catalog.categories, counts);
-  }, [catalog]);
-  if (!cards.length) return null;
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    return shopCards(catalog.categories, counts).filter((card) => {
+      if (!words.length) return true;
+      const hay = `${card.label} ${card.href}`.toLowerCase();
+      return words.every((w) => hay.includes(w));
+    });
+  }, [catalog, query]);
+  if (!cards.length) {
+    return query.trim() ? <p className="m-0 text-sm text-[#5a6a82]">No category matches. Try another word, or clear the search.</p> : null;
+  }
   return (
     <ul className="mb-1 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6" aria-label="Categories">
       {cards.map((card) => (
@@ -189,15 +197,15 @@ function productAlt(p: StoreProduct): string {
   return p.imageGeneric ? `Illustration of ${name}` : name;
 }
 
-export function Storefront() {
+export function Storefront({ children }: { children?: ReactNode }) {
   return (
     <AccentScope accent="sun">
-      <StorefrontInner />
+      <StorefrontInner>{children}</StorefrontInner>
     </AccentScope>
   );
 }
 
-function StorefrontInner() {
+function StorefrontInner({ children }: { children?: ReactNode }) {
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
   const [lang, setLang] = useState<Lang>("en");
@@ -225,6 +233,7 @@ function StorefrontInner() {
   const [cart, setCart] = useState<Cart>({});
   const [pricedRaw, setPriced] = useState<PricedCart | null>(null);
   const [sheet, setSheet] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState<TextKey | "">("");
   const [ready, setReady] = useState(false);
   if (appliedRoute !== routeKey) {
@@ -283,8 +292,15 @@ function StorefrontInner() {
 
   useEffect(() => {
     const sync = () => setCart(loadCart());
+    const openCart = () => setSheet(true);
     window.addEventListener("pb-cart", sync);
-    return () => window.removeEventListener("pb-cart", sync);
+    window.addEventListener("pb-open-cart", openCart);
+    const menuTimer = new URLSearchParams(window.location.search).get("menu") === "1" ? window.setTimeout(() => setMenuOpen(true), 0) : 0;
+    return () => {
+      window.clearTimeout(menuTimer);
+      window.removeEventListener("pb-cart", sync);
+      window.removeEventListener("pb-open-cart", openCart);
+    };
   }, []);
 
   useEffect(() => {
@@ -370,7 +386,7 @@ function StorefrontInner() {
       const hay = `${p.name_en} ${p.name_hi} ${p.brand} ${p.variants.map((v) => `${v.label} ${v.code}`).join(" ")}`.toLowerCase();
       return words.every((w) => hay.includes(w));
     });
-    return sortProducts(filtered, sort);
+    return sortProducts(groupSameProducts(filtered), sort);
   }, [catalog, q, topCat, subCat, brandIds, offersOnly, parentOf, minPaise, maxPaise, sort]);
   const pages = pageCount(shown.length);
   const safePage = Math.min(page, pages);
@@ -382,12 +398,14 @@ function StorefrontInner() {
   const rates = servicesCat ? (catalog?.products ?? []).filter((p) => p.categoryId === servicesCat.id && p.variants.length > 0) : [];
   const showRates = rates.length > 0 && !q && !brandIds.length && !offersOnly && !subCat && !minPaise && !maxPaise && (!topCat || topCat === printTop?.id);
   /* landing view (nothing searched or filtered): collection tiles and a row of products per category, before the full list */
-  const landing = !q && !topCat && !subCat && !brandIds.length && !offersOnly && !minPaise && !maxPaise;
+  const home = pathname === "/";
+  const showBrowse = pathname.startsWith("/c/") || pathname === "/products";
+  const landing = false;
   const categoryRows = landing
     ? TILES.flatMap((tile) => {
         const cat = topCats.find((c) => c.name_en === tile.match);
         if (!cat || cat.id === printTop?.id) return []; // printing already has the rates card
-        const items = (catalog?.products ?? []).filter((p) => p.categoryId === cat.id || parentOf.get(p.categoryId) === cat.id);
+        const items = groupSameProducts((catalog?.products ?? []).filter((p) => p.categoryId === cat.id || parentOf.get(p.categoryId) === cat.id));
         // short cards keep the row tidy (a card with ten colours would stretch it); pictures first
         const compact = items.filter((p) => p.variants.length <= 3);
         const ranked = [...compact.filter((p) => p.image), ...compact.filter((p) => !p.image), ...items.filter((p) => p.variants.length > 3)].slice(0, 8);
@@ -427,7 +445,7 @@ function StorefrontInner() {
     const pl = priced?.lines.find((l) => l.variantId === id);
     return [{
       code: info.variant.code,
-      name: itemTitle({ brand: info.product.brand, name: info.product.name_en, label: info.variant.label }),
+      name: itemTitle({ brand: info.product.brand, name: cleanItemName(info.product.name_en), label: info.variant.label }),
       qty: cart[id],
       freeUnits: pl?.freeUnits ?? 0,
       lineTotal: pl?.lineTotal ?? info.variant.price * cart[id],
@@ -437,40 +455,38 @@ function StorefrontInner() {
   const catName = (c: { name_en: string; name_hi: string }) => (lang === "hi" && c.name_hi ? c.name_hi : c.name_en);
 
   return (
-    <div className="flex min-h-dvh flex-1 flex-col" style={{ background: token.colorBgLayout }}>
-      {/* header: wordmark, language, cart; search sits in the same navy band */}
-      <header style={{ background: BRAND.navy }} className="sticky top-0 z-40">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-3 pt-3">
-          <Flex align="center" gap={screens.sm ? 12 : 6}>
+    <div className="flex min-h-dvh flex-1 flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))]" style={{ background: token.colorBgLayout }}>
+      <header style={{ background: BRAND.navy }} className="sticky top-0 z-40 overflow-x-hidden">
+        <div className="mx-auto w-full max-w-6xl px-3 pb-3 pt-2">
+          <Flex align="center" gap={screens.sm ? 12 : 4}>
+            <Button type="text" aria-label="Open menu" icon={<MenuOutlined style={{ color: "#fff", fontSize: 20 }} />} onClick={() => setMenuOpen(true)} style={{ paddingInline: 6 }} />
             <div className="min-w-0 flex-1">
-              {/* Logo doubles as the staff door — tap it to reach the admin login */}
-              <Link href="/login" aria-label="Staff login" className="inline-block rounded-md outline-offset-4">
-                <Wordmark size={screens.sm ? 28 : 19} />
+              <Link href="/" aria-label="Pencil Box home" className="inline-block max-w-full rounded-md outline-offset-4">
+                <Wordmark size={screens.sm ? 22 : 14} />
               </Link>
-              {screens.sm && <div className="mt-1 truncate text-xs italic" style={{ color: "rgba(255,255,255,0.85)" }}>{t("tagline")}</div>}
             </div>
-            <Segmented<Lang> size={screens.sm ? "middle" : "small"} value={lang} onChange={chooseLang} aria-label={t("language")} options={[{ label: "EN", value: "en" }, { label: "हिं", value: "hi" }]} />
+            <Segmented<Lang> size="small" value={lang} onChange={chooseLang} aria-label={t("language")} options={[{ label: "EN", value: "en" }, { label: "हिं", value: "hi" }]} />
             <ThemeToggle toLight={t("lightMode")} toDark={t("darkMode")} />
             <Badge count={cartCount} color={BRAND.navyDeep} offset={[-2, 4]}>
-              <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => setSheet(true)} aria-label={`${t("cart")}: ${cartCount}`}>
-                {screens.sm ? t("cart") : null}
-              </Button>
+              <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => setSheet(true)} aria-label={`${t("cart")}: ${cartCount}`} style={{ paddingInline: screens.sm ? undefined : 8 }} />
             </Badge>
           </Flex>
-          <Input size="large" allowClear className="mt-3" prefix={<SearchOutlined />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("search")} aria-label={t("search")} />
+          <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("search")} aria-label={t("search")} />
         </div>
       </header>
+      <ShopMenu open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-28">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-3">
+        {children}
         {catalog && (
-          <Flex vertical gap={10} className="mb-4">
-            {landing && <CategoryGrid catalog={catalog} />}
-            {hasOffers && (
+          <Flex vertical gap={10} className="order-2 mb-4">
+            {(home || landing) && <CategoryGrid catalog={catalog} query={home ? q : ""} />}
+            {showBrowse && hasOffers && (
               <Button type={offersOnly ? "primary" : "default"} size="large" icon={<TagsOutlined />} aria-pressed={offersOnly} onClick={() => setOffersOnly((v) => !v)} style={{ alignSelf: "flex-start" }}>
                 {t("offersToday")}
               </Button>
             )}
-            {subCats.length > 0 && (
+            {showBrowse && subCats.length > 0 && (
               <div className="pb-scroll-x -mx-4 flex items-center gap-2 px-4" role="group" aria-label="Sub categories">
                 <Button size="small" type="text" onClick={() => { setTopCat(null); setSubCat(null); if (routeName) router.push("/"); }}>{t("showAll")}</Button>
                 <Button size="small" type={!subCat ? "primary" : "default"} onClick={() => setSubCat(null)}>{t("all")}</Button>
@@ -481,25 +497,28 @@ function StorefrontInner() {
                 ))}
               </div>
             )}
-            <Flex gap={8} wrap>
-              <Button className="lg:hidden" onClick={() => setFiltersOpen(true)}>Filter</Button>
-              <Select
-                value={sort}
-                onChange={(v) => setQuery({ sort: v === "popular" ? null : v })}
-                aria-label="Sort"
-                style={{ width: 180 }}
-                options={SORTS.map((s) => ({ value: s.value, label: s.label }))}
-              />
-            </Flex>
+            {showBrowse && (
+              <Flex gap={8} wrap>
+                <Button className="lg:hidden" onClick={() => setFiltersOpen(true)}>Filter</Button>
+                <Select
+                  value={sort}
+                  onChange={(v) => setQuery({ sort: v === "popular" ? null : v })}
+                  aria-label="Sort"
+                  style={{ width: 180 }}
+                  options={SORTS.map((s) => ({ value: s.value, label: s.label }))}
+                />
+              </Flex>
+            )}
           </Flex>
         )}
 
-        {catalog && <PolicyStrip t={t} showBulk={hasOffers} />}
-        {showRates && <RatesCard rates={rates} lang={lang} t={t} />}
+        <div className="order-2 flex flex-col gap-3">
+        {showBrowse && catalog && <PolicyStrip t={t} showBulk={hasOffers} />}
+        {showBrowse && showRates && <RatesCard rates={rates} lang={lang} t={t} />}
 
         {notice && <Alert type="info" showIcon closable title={t(notice)} className="mb-3" onClose={() => setNotice("")} />}
 
-        {categoryRows.map((row) => (
+        {showBrowse && categoryRows.map((row) => (
           <section key={row.cat.id} className="mb-5" aria-label={catName(row.cat)}>
             <Flex align="center" justify="space-between" gap={8} className="mb-2" style={{ borderLeft: `4px solid ${row.accent}`, paddingLeft: 10 }}>
               <Typography.Title level={4} style={{ margin: 0 }}>{catName(row.cat)}</Typography.Title>
@@ -520,64 +539,55 @@ function StorefrontInner() {
             </ul>
           </section>
         ))}
-        {landing && categoryRows.length > 0 && <Typography.Title level={4} className="!mb-3 !mt-2">{t("allItems")}</Typography.Title>}
+        {showBrowse && landing && categoryRows.length > 0 && <Typography.Title level={4} className="!mb-3 !mt-2">{t("allItems")}</Typography.Title>}
 
-        {!catalog && !error && <LoadingGrid />}
+        {home && !catalog && !error && <LoadingGrid />}
+        {showBrowse && !catalog && !error && <LoadingGrid />}
         {error && <Result status="warning" title={t("error")} extra={<Button type="primary" onClick={() => (setError(false), load())}>{t("retry")}</Button>} />}
-        {catalog && shown.length === 0 && (
+        {showBrowse && catalog && shown.length === 0 && (
           <Empty description={t("noResults")} image={Empty.PRESENTED_IMAGE_SIMPLE}>
             <Button onClick={clearFilters}>{t("clearFilters")}</Button>
           </Empty>
         )}
-
-        <div className="lg:flex lg:items-start lg:gap-4">
-          <aside className="mb-4 hidden w-56 shrink-0 lg:block">
-            <FilterPanel catalog={catalog} subCats={subCats} brandIds={brandIds} minRupee={minRupee} maxRupee={maxRupee} subSlug={subSlug} catName={catName} onQuery={setQuery} onSub={(slug) => setQuery({ sub: slug })} />
-          </aside>
-          <div className="min-w-0 flex-1">
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-              {pageItems.map((p) => (
-                <li key={p.id}>
-                  <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} />
-                </li>
-              ))}
-            </ul>
-            {pages > 1 && (
-              <nav aria-label="Pages" className="mt-4 flex flex-wrap gap-2">
-                {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-                  <Link key={n} href={pageHref(pathname, searchParams, n)} aria-current={n === safePage ? "page" : undefined} className="rounded-[8px] border px-3 py-1 text-sm font-bold no-underline" style={{ borderColor: n === safePage ? "#153a7a" : "rgba(12,18,34,0.15)", background: n === safePage ? "#153a7a" : "#fff", color: n === safePage ? "#fff" : "#0c1222" }}>{n}</Link>
-                ))}
-              </nav>
-            )}
-          </div>
         </div>
-        <Drawer open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filter" size="min(100%, 360px)">
-          {catalog && <FilterPanel catalog={catalog} subCats={subCats} brandIds={brandIds} minRupee={minRupee} maxRupee={maxRupee} subSlug={subSlug} catName={catName} onQuery={(u) => (setQuery(u), setFiltersOpen(false))} onSub={(slug) => (setQuery({ sub: slug }), setFiltersOpen(false))} />}
-        </Drawer>
+
+        {showBrowse && (
+          <div className="order-2 lg:flex lg:items-start lg:gap-4">
+            <aside className="mb-4 hidden w-56 shrink-0 lg:block">
+              <FilterPanel catalog={catalog} subCats={subCats} brandIds={brandIds} minRupee={minRupee} maxRupee={maxRupee} subSlug={subSlug} catName={catName} onQuery={setQuery} onSub={(slug) => setQuery({ sub: slug })} />
+            </aside>
+            <div className="min-w-0 flex-1">
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                {pageItems.map((p) => (
+                  <li key={p.id}>
+                    <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} />
+                  </li>
+                ))}
+              </ul>
+              {pages > 1 && (
+                <nav aria-label="Pages" className="mt-4 flex flex-wrap gap-2">
+                  {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
+                    <Link key={n} href={pageHref(pathname, searchParams, n)} aria-current={n === safePage ? "page" : undefined} className="rounded-[8px] border px-3 py-1 text-sm font-bold no-underline" style={{ borderColor: n === safePage ? "#153a7a" : "rgba(12,18,34,0.15)", background: n === safePage ? "#153a7a" : "#fff", color: n === safePage ? "#fff" : "#0c1222" }}>{n}</Link>
+                  ))}
+                </nav>
+              )}
+            </div>
+          </div>
+        )}
+        {showBrowse && (
+          <Drawer open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filter" size="min(100%, 360px)">
+            {catalog && <FilterPanel catalog={catalog} subCats={subCats} brandIds={brandIds} minRupee={minRupee} maxRupee={maxRupee} subSlug={subSlug} catName={catName} onQuery={(u) => (setQuery(u), setFiltersOpen(false))} onSub={(slug) => (setQuery({ sub: slug }), setFiltersOpen(false))} />}
+          </Drawer>
+        )}
       </main>
 
-      <div className="px-4 pb-4 text-center">
-        <Button onClick={() => setRequestOpen(true)}>{t("reqCta")}</Button>
-      </div>
-      <RequestModal open={requestOpen} onClose={() => setRequestOpen(false)} t={t} />
-
-      <footer className="px-4 pb-24 pt-2 text-center">
-        <NextImage src="/brand/mascot.png" alt="Pencil Box Stationery mascot" width={72} height={68} loading="lazy" className="mx-auto mb-2" style={{ height: "auto" }} />
-        <Typography.Paragraph type="secondary" style={{ fontSize: 13, marginBottom: 4 }}>
-          {t("pickupNote")} {t("finalPrice")}
-        </Typography.Paragraph>
-        <Link href="/login" style={{ fontSize: 13, color: token.colorTextSecondary, textDecoration: "underline" }}>{t("staff")}</Link>
-      </footer>
-
-      {/* sticky cart bar */}
-      {cartCount > 0 && !sheet && (
-        <div className="fixed inset-x-0 bottom-0 z-30 p-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))" }}>
-          <Flex align="center" justify="space-between" gap={12} className="mx-auto max-w-xl rounded-[14px] px-4 py-3" style={{ background: BRAND.navy, boxShadow: "0 8px 24px rgba(11,29,82,0.35)" }}>
-            <span className="text-sm font-semibold text-white">{cartCount} {t("items")} · {hasRange ? `${t("fromPrice")} ` : ""}{inr(total)}</span>
-            <Button type="primary" onClick={() => setSheet(true)}>{t("cart")}</Button>
-          </Flex>
+      {showBrowse && (
+        <div className="px-4 pb-4 text-center">
+          <Button onClick={() => setRequestOpen(true)}>{t("reqCta")}</Button>
         </div>
       )}
+      <RequestModal open={requestOpen} onClose={() => setRequestOpen(false)} t={t} />
+      <ShopTabBar cartCount={cartCount} onCart={() => setSheet(true)} />
 
       <CartDrawer
         open={sheet} onClose={() => setSheet(false)} t={t} lang={lang} cartIds={cartIds} cart={cart} variantInfo={variantInfo} priced={priced}
@@ -871,7 +881,7 @@ function CartDrawer(props: {
             if (!info) return null;
             const { product: p, variant: v } = info;
             const pl = priced?.lines.find((l) => l.variantId === id);
-            const nm = lang === "hi" && p.name_hi ? p.name_hi : p.name_en;
+            const nm = lang === "hi" && p.name_hi ? p.name_hi : cleanItemName(p.name_en);
             const label = pl ? (lang === "hi" && pl.offerLabel_hi ? pl.offerLabel_hi : pl.offerLabel_en) : undefined;
             const nudge = pl?.nudge ? (lang === "hi" && pl.nudge.label_hi ? pl.nudge.label_hi : pl.nudge.label_en) : undefined;
             return (

@@ -336,3 +336,64 @@ html[data-theme="dark"] .pb-seo-card {
   background: var(--pb-slate);
   border-color: rgba(232, 238, 248, 0.1);
 }
+
+/* Fixed shop tab bar. Content above it uses padding so nothing sits underneath. */
+.pb-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: calc(58px + env(safe-area-inset-bottom, 0px));
+  padding: 0 4px env(safe-area-inset-bottom, 0px);
+  background: #fff;
+  border-top: 1px solid rgba(12, 18, 34, 0.08);
+  box-shadow: 0 -6px 18px rgba(12, 18, 34, 0.06);
+}
+.pb-tab-slot {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.pb-tab-cart {
+  position: absolute;
+  top: -28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: #153a7a;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(21, 58, 122, 0.35);
+  cursor: pointer;
+}
+.pb-tab-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ecc233;
+  color: #0a1628;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 18px;
+}
+.pb-tab-cart-label {
+  margin-top: 30px;
+  padding-bottom: 6px;
+  color: #153a7a;
+  font-size: 10px;
+  font-weight: 800;
+}

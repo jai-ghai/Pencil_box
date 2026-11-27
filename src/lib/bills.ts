@@ -42,7 +42,7 @@ export async function deleteBill(id: string, by: string): Promise<{ billNo: numb
 
 export const editBillSchema = z.object({
   items: z.array(z.object({ variantId: z.string().length(24), qty: z.number().int().min(1).max(100000) })).min(1).max(200),
-  payMode: z.enum(["cash", "upi"]),
+  payMode: z.enum(["cash", "upi", "card"]),
   note: z.string().max(200).optional(),
 });
 export type EditBillInput = z.infer<typeof editBillSchema>;
@@ -121,7 +121,14 @@ export async function editBill(id: string, input: EditBillInput, by: string) {
     sale.subtotal = priced.subtotal;
     sale.discount = priced.discount;
     sale.total = priced.total;
-    sale.set("payments", input.payMode === "cash" ? { cash: priced.total, upi: 0 } : { cash: 0, upi: priced.total });
+    sale.set(
+      "payments",
+      input.payMode === "upi"
+        ? { cash: 0, upi: priced.total, card: 0 }
+        : input.payMode === "card"
+          ? { cash: 0, upi: 0, card: priced.total }
+          : { cash: priced.total, upi: 0, card: 0 },
+    );
     sale.note = input.note?.trim() || undefined;
     sale.editedAt = new Date();
     sale.editedBy = by;

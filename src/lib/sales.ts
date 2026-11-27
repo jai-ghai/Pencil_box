@@ -19,7 +19,10 @@ export const saleInputSchema = z.object({
   payments: z.object({
     cash: z.number().int().min(0).default(0),
     upi: z.number().int().min(0).default(0),
+    card: z.number().int().min(0).optional(),
   }),
+  customerName: z.string().trim().max(80).optional(),
+  customerPhone: z.string().trim().max(20).optional(),
   note: z.string().max(200).optional(),
   /** "whatsapp" when the cart was filled from a pasted customer message (the text is kept on the bill) */
   source: z.enum(["pos", "whatsapp"]).optional(),
@@ -114,9 +117,11 @@ export async function priceFromDb(items: { variantId: string; qty: number; unitP
 
 export async function completeSale(input: SaleInput, cashierId: string) {
   const { priced, meta, variants } = await priceFromDb(input.items);
-  const { cash, upi } = input.payments;
-  if (cash + upi !== priced.total) {
-    throw new SaleError(`Payments (${cash + upi}) must equal the bill total (${priced.total}) in paise`);
+  const cash = input.payments.cash ?? 0;
+  const upi = input.payments.upi ?? 0;
+  const card = input.payments.card ?? 0;
+  if (cash + upi + card !== priced.total) {
+    throw new SaleError(`Payments (${cash + upi + card}) must equal the bill total (${priced.total}) in paise`);
   }
 
   const warnings: string[] = [];
@@ -147,7 +152,9 @@ export async function completeSale(input: SaleInput, cashierId: string) {
           subtotal: priced.subtotal,
           discount: priced.discount,
           total: priced.total,
-          payments: { cash, upi },
+          payments: { cash, upi, card },
+          customerName: input.customerName?.trim() || undefined,
+          customerPhone: input.customerPhone?.trim() || undefined,
           cashierId,
           note: input.note?.trim() || undefined,
           source: input.source ?? "pos",

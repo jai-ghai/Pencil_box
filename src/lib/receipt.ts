@@ -5,7 +5,7 @@ interface ReceiptBill {
   at: string;
   total: number;
   discount: number;
-  payments: { cash: number; upi: number };
+  payments: { cash: number; upi: number; card?: number };
   items: { name: string; qty: number; freeUnits: number; lineTotal: number }[];
 }
 
@@ -14,7 +14,8 @@ const rs = (paise: number) => (paise / 100).toLocaleString("en-IN", { minimumFra
 
 /** HTML for an 80 mm thermal roll (also fine on 58 mm, it just wraps). No customer details are printed. */
 export function receiptHtml(b: ReceiptBill): string {
-  const mode = b.payments.upi > 0 && b.payments.cash > 0 ? "Cash + UPI" : b.payments.upi > 0 ? "UPI" : "Cash";
+  const parts = [b.payments.cash > 0 ? "Cash" : "", b.payments.upi > 0 ? "UPI" : "", (b.payments.card ?? 0) > 0 ? "Card" : ""].filter(Boolean);
+  const mode = parts.length ? parts.join(" + ") : "Cash";
   const rows = b.items
     .map((i) => `<tr><td>${esc(i.name)}<br><small>${i.qty}${i.freeUnits > 0 ? ` (${i.freeUnits} free)` : ""} x</small></td><td class="r">${rs(i.lineTotal)}</td></tr>`)
     .join("");
