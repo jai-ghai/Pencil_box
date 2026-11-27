@@ -1,3 +1,4 @@
+import { cleanItemName } from "./browse";
 import { canonicalUrl, SITE } from "./shop";
 import { cloudinarySquare } from "./images";
 import type { StoreCatalog, StoreProduct } from "./store";
@@ -12,7 +13,7 @@ export function productJsonLd(p: StoreProduct) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: p.name_en,
+    name: cleanItemName(p.name_en) || p.name_en,
     sku: p.variants[0]?.code,
     url: canonicalUrl(`/p/${p.slug}`),
     ...(p.brand ? { brand: { "@type": "Brand", name: p.brand } } : {}),
@@ -48,7 +49,7 @@ export function itemListJsonLd(products: StoreProduct[]) {
     itemListElement: products.map((p, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      name: p.brand ? `${p.brand} ${p.name_en}` : p.name_en,
+      name: p.brand ? `${p.brand} ${cleanItemName(p.name_en) || p.name_en}` : cleanItemName(p.name_en) || p.name_en,
       url: p.slug ? canonicalUrl(`/p/${p.slug}`) : undefined,
       image: p.image ? cloudinarySquare(p.image.startsWith("http") ? p.image : `${SITE}${p.image}`) : undefined,
     })),

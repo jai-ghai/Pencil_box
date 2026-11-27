@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { discountPercent, pageCount, pageSlice, sortProducts } from "./browse";
+import { cleanItemName, discountPercent, groupSameProducts, pageCount, pageSlice, sortProducts } from "./browse";
 import type { StoreProduct } from "./store";
 
 function item(name: string, price: number, createdAt = 0, offer = false): StoreProduct {
@@ -27,5 +27,34 @@ describe("browse", () => {
     expect(discountPercent(8000, 10000)).toBe(20);
     expect(discountPercent(8000, 0)).toBe(0);
     expect(discountPercent(8000, 8000)).toBe(0);
+  });
+
+  it("breaks price ties by id so a page boundary cannot repeat an item", () => {
+    const rows = [item("same", 100), item("same", 100)].map((p, i) => ({ ...p, id: i === 0 ? "b" : "a" }));
+    expect(sortProducts(rows, "price-asc").map((p) => p.id)).toEqual(["a", "b"]);
+  });
+
+  it("strips a trailing price and groups the same photo into one card", () => {
+    expect(cleanItemName("Akash Notebook ₹30")).toBe("Akash Notebook");
+    const cheap = item("Akash Notebook ₹20", 2000);
+    const mid = item("Akash Notebook ₹30", 3000);
+    cheap.id = "1";
+    mid.id = "2";
+    cheap.brand = "Akash";
+    mid.brand = "Akash";
+    cheap.image = "nb.png";
+    mid.image = "nb.png";
+    cheap.variants[0].id = "v1";
+    mid.variants[0].id = "v2";
+    mid.variants[0].label = "Maths";
+    const other = item("Alfa + Notebook ₹20", 2000);
+    other.id = "3";
+    other.brand = "Alfa +";
+    other.image = "nb.png";
+    const grouped = groupSameProducts([mid, other, cheap]);
+    const akash = grouped.find((p) => p.brand === "Akash");
+    expect(grouped).toHaveLength(2);
+    expect(akash?.name_en).toBe("Akash Notebook");
+    expect(akash?.variants.map((v) => v.id).sort()).toEqual(["v1", "v2"]);
   });
 });

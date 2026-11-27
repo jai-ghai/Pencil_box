@@ -28,7 +28,12 @@ interface Found {
 export function EditBillModal({ bill, onClose, onSaved }: { bill: Bill | null; onClose: () => void; onSaved: () => void }) {
   const { message } = App.useApp();
   const [lines, setLines] = useState<Line[]>(() => bill?.items.map((i) => ({ variantId: i.variantId ?? "", name: i.name, qty: i.qty })) ?? []);
-  const [payMode, setPayMode] = useState<"cash" | "upi">(bill && bill.payments.upi > 0 && bill.payments.cash === 0 ? "upi" : "cash");
+  const [payMode, setPayMode] = useState<"cash" | "upi" | "card">(() => {
+    if (!bill) return "cash";
+    if ((bill.payments.card ?? 0) > 0 && bill.payments.cash === 0 && bill.payments.upi === 0) return "card";
+    if (bill.payments.upi > 0 && bill.payments.cash === 0) return "upi";
+    return "cash";
+  });
   const [note, setNote] = useState(bill?.note ?? "");
   const [found, setFound] = useState<Found[]>([]);
   const [busy, setBusy] = useState(false);
@@ -80,7 +85,7 @@ export function EditBillModal({ bill, onClose, onSaved }: { bill: Bill | null; o
         />
         <div>
           <Typography.Text type="secondary" style={{ fontSize: 13, display: "block", marginBottom: 4 }}>Paid by</Typography.Text>
-          <Segmented<"cash" | "upi"> value={payMode} onChange={setPayMode} options={[{ value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }]} />
+          <Segmented<"cash" | "upi" | "card"> value={payMode} onChange={setPayMode} options={[{ value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "card", label: "Card" }]} />
         </div>
         <div>
           <label htmlFor="billNote" style={{ fontSize: 13 }}>Note (optional)</label>

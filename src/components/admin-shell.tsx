@@ -109,9 +109,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </aside>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col" style={{ background: "var(--pb-bg)" }}>
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden" style={{ background: "var(--pb-bg)" }}>
         <header
-          className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 px-3 md:px-5"
+          className="sticky top-0 z-40 flex h-14 min-w-0 shrink-0 items-center gap-2 overflow-hidden px-3 md:gap-3 md:px-5"
           style={{
             background: "var(--pb-chrome)",
             borderBottom: "1px solid rgba(236,194,51,0.2)",
@@ -120,14 +120,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           {!desktop && (
             <Button
               type="text"
+              className="shrink-0"
               aria-label="Open menu"
               icon={<MenuOutlined style={{ color: "#fff", fontSize: 18 }} />}
               onClick={() => setDrawerOpen(true)}
             />
           )}
           {!desktop && (
-            <Link href={homeHref} aria-label="Pencil Box admin home" className="shrink-0">
-              <Wordmark size={18} />
+            <Link href={homeHref} aria-label="Pencil Box admin home" className="min-w-0 shrink">
+              <Wordmark size={16} />
             </Link>
           )}
           <div className="min-w-0 flex-1">
@@ -169,7 +170,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         {me && !blocked && <AdminAlerts />}
 
-        <main className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">
+        <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 overflow-x-auto p-4 md:p-6">
           {!me && <Skeleton active paragraph={{ rows: 6 }} />}
           {blocked && (
             <Result

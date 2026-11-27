@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProductBuy } from "@/components/product-buy";
+import { cleanItemName, groupSameProducts } from "@/lib/browse";
 import { cloudinarySquare } from "@/lib/images";
 import { breadcrumbJsonLd, productJsonLd, productsInCollection } from "@/lib/product-json";
 import { cachedCatalog } from "@/lib/public-catalog";
@@ -23,32 +24,33 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
   const category = catalog.categories.find((c) => c.id === product.categoryId);
   const top = category?.parentId ? catalog.categories.find((c) => c.id === category.parentId) : category;
   const collection = top ? collectionByMatch(top.name_en) : undefined;
+  const title = cleanItemName(product.name_en) || product.name_en;
   const crumbs = [
     { name: "Home", path: "/" },
     ...(collection ? [{ name: collection.nav, path: `/c/${collection.slug}` }] : []),
-    { name: product.name_en, path: `/p/${product.slug}` },
+    { name: title, path: `/p/${product.slug}` },
   ];
-  const related = productsInCollection(catalog, top?.name_en ?? "").filter((p) => p.id !== product.id && p.slug).slice(0, 4);
+  const related = groupSameProducts(productsInCollection(catalog, top?.name_en ?? "").filter((p) => p.id !== product.id)).filter((p) => p.slug).slice(0, 4);
   const photos = product.images.length ? product.images : product.image ? [product.image] : [];
   return (
-    <article className="mx-auto w-full max-w-6xl px-4 py-4">
+    <article className="py-3">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product)) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd(crumbs)) }} />
       <nav aria-label="Breadcrumb" className="mb-3 text-sm">
         <Link href="/" className="font-semibold underline">Home</Link>
         {collection && <> <span aria-hidden> › </span> <Link href={`/c/${collection.slug}`} className="font-semibold underline">{collection.nav}</Link></>}
-        <span aria-hidden> › </span> <span>{product.name_en}</span>
+        <span aria-hidden> › </span> <span>{title}</span>
       </nav>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex aspect-square items-center justify-center rounded-[12px] border border-black/10 bg-white p-4">
           {photos[0] ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cloudinarySquare(photos[0])} alt={`${product.brand ? `${product.brand} ` : ""}${product.name_en}`} className="h-full w-full object-contain" />
+            <img src={cloudinarySquare(photos[0])} alt={`${product.brand ? `${product.brand} ` : ""}${title}`} className="h-full w-full object-contain" />
           ) : <span className="text-sm text-[#5a6a82]">No photo yet</span>}
         </div>
         <div>
           {product.brand && <p className="text-sm font-semibold text-[#5a6a82]">{product.brand}</p>}
-          <h1 className="text-2xl font-extrabold leading-tight">{product.name_en}</h1>
+          <h1 className="text-2xl font-extrabold leading-tight">{title}</h1>
           {product.description_en && <p className="mt-2 text-[15px] leading-relaxed">{product.description_en}</p>}
           <ProductBuy product={product} whatsapp={catalog.whatsapp} />
         </div>

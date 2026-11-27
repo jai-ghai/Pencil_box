@@ -217,7 +217,10 @@ const saleSchema = new Schema(
     payments: {
       cash: { type: Number, default: 0 },
       upi: { type: Number, default: 0 },
+      card: { type: Number, default: 0 },
     },
+    customerName: String,
+    customerPhone: String,
     cashierId: String,
     note: String,
     /** "whatsapp" when the cart was filled from a pasted customer message */

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, ConfigProvider } from "antd";
 import { WhatsAppOutlined } from "@ant-design/icons";
 import { inr, itemTitle } from "@/lib/client";
-import { discountPercent } from "@/lib/browse";
+import { cleanItemName, discountPercent } from "@/lib/browse";
 import { buildOrderMessage, whatsappUrl } from "@/lib/whatsapp";
 import type { StoreProduct } from "@/lib/store";
 
@@ -28,7 +28,7 @@ export function ProductBuy({ product, whatsapp }: { product: StoreProduct; whats
   const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   if (!variant) return null;
   const off = discountPercent(variant.price, variant.mrp);
-  const name = itemTitle({ brand: product.brand, name: product.name_en, label: variant.label });
+  const name = itemTitle({ brand: product.brand, name: cleanItemName(product.name_en) || product.name_en, label: variant.label });
 
   function add() {
     const cart = readCart();

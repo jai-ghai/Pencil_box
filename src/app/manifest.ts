@@ -13,8 +13,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "any",
-    background_color: "#12296b",
-    theme_color: "#12296b",
+    background_color: "#153a7a",
+    theme_color: "#153a7a",
     categories: ["shopping", "business"],
     /** long-press the installed icon: jump straight to staff screens */
     shortcuts: [

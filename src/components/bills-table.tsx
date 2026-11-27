@@ -3,7 +3,9 @@
 import type { ReactNode } from "react";
 import { Button, Flex, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
-import { PrinterOutlined } from "@ant-design/icons";
+import { DownloadOutlined, PrinterOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { printA5Bill, downloadA5Bill, shareA5Bill } from "@/lib/a5-print";
+import { paymentLabel } from "@/lib/a5-bill";
 import { printReceipt } from "@/lib/receipt";
 import { inr } from "@/lib/client";
 import { formatIST } from "@/lib/time";
@@ -13,9 +15,12 @@ export interface Bill {
   billNo: number;
   at: string;
   cashier?: string;
+  subtotal?: number;
   total: number;
   discount: number;
-  payments: { cash: number; upi: number };
+  payments: { cash: number; upi: number; card?: number };
+  customerName?: string;
+  customerPhone?: string;
   note?: string;
   source?: "pos" | "whatsapp";
   waText?: string;
@@ -24,7 +29,21 @@ export interface Bill {
   items: { variantId?: string; name: string; qty: number; freeUnits: number; unitPrice: number; lineTotal: number; offer: string }[];
 }
 
-const mode = (b: Bill) => (b.payments.upi > 0 && b.payments.cash === 0 ? "UPI" : b.payments.cash > 0 && b.payments.upi === 0 ? "Cash" : "Cash + UPI");
+const mode = (b: Bill) => paymentLabel(b.payments);
+
+function toA5(b: Bill) {
+  return {
+    billNo: b.billNo,
+    at: b.at,
+    customerName: b.customerName,
+    customerPhone: b.customerPhone,
+    items: b.items.map((i) => ({ name: i.name, qty: i.qty, freeUnits: i.freeUnits, unitPrice: i.unitPrice, lineTotal: i.lineTotal })),
+    subtotal: b.subtotal ?? b.total + b.discount,
+    discount: b.discount,
+    total: b.total,
+    payments: b.payments,
+  };
+}
 
 /** Every bill made on the billing screen is an order record; this lists them with their items. `actions` adds buttons (edit, delete) for people allowed to use them. */
 export function BillsTable({ bills, loading, actions }: { bills: Bill[]; loading?: boolean; actions?: (b: Bill) => ReactNode }) {
@@ -68,8 +87,17 @@ export function BillsTable({ bills, loading, actions }: { bills: Bill[]; loading
                 <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, margin: "6px 0 0", fontFamily: "inherit" }}>{b.waText}</pre>
               </details>
             )}
+            {(b.customerName || b.customerPhone) && (
+              <Typography.Paragraph style={{ margin: "8px 0 0" }}>
+                <Typography.Text type="secondary">Customer: </Typography.Text>
+                {[b.customerName, b.customerPhone].filter(Boolean).join(" · ")}
+              </Typography.Paragraph>
+            )}
             <Flex gap={8} wrap style={{ marginTop: 10 }}>
-              <Button icon={<PrinterOutlined />} onClick={() => printReceipt(b)}>Print receipt</Button>
+              <Button type="primary" icon={<PrinterOutlined />} onClick={() => printA5Bill(toA5(b))}>Print bill</Button>
+              <Button icon={<DownloadOutlined />} onClick={() => downloadA5Bill(toA5(b))}>Download PDF</Button>
+              <Button icon={<WhatsAppOutlined />} onClick={() => shareA5Bill(toA5(b))}>Share</Button>
+              <Button onClick={() => printReceipt(b)}>Receipt</Button>
               {actions?.(b)}
             </Flex>
           </div>

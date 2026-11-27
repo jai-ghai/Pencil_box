@@ -29,34 +29,9 @@ export function ShopJsonLd() {
  * Address strip above the shop header, plus the page H1.
  * On the home page the H1 is visually hidden (sr-only, not display:none) so it stays in the HTML for search and screen readers without repeating the logo.
  */
-export function ShopHero({ title, lede, hideTitle = false }: { title: string; lede?: string | null; hideTitle?: boolean }) {
-  return (
-    <header>
-      <h1 className={hideTitle ? "pb-sr-only" : "mx-auto w-full max-w-6xl px-4 pb-1 pt-4 text-[1.35rem] font-extrabold leading-snug tracking-tight sm:text-[1.65rem]"}>
-        {title}
-      </h1>
-      {lede && !hideTitle ? <p className="pb-seo-muted mx-auto w-full max-w-6xl px-4 pb-2 text-[15px] leading-relaxed">{lede}</p> : null}
-      <div className="px-3 py-1.5 text-center text-[12px] leading-snug sm:text-[13px]" style={{ background: "var(--pb-navy)", color: "rgba(255,255,255,0.92)" }}>
-        <p className="mx-auto max-w-6xl">
-          {ADDRESS_LINE}
-          <span aria-hidden> · </span>
-          <a className="pb-seo-strip-link" href={`tel:${PHONE_TEL}`}>
-            {PHONE_DISPLAY}
-          </a>
-          <span aria-hidden> · </span>
-          {HOURS_LABEL}
-          <span aria-hidden> · </span>
-          <a className="pb-seo-strip-link" href={MAPS_URL}>
-            Get directions
-          </a>
-          <span aria-hidden> · </span>
-          <a className="pb-seo-strip-link" href={REVIEW_URL}>
-            Review us on Google
-          </a>
-        </p>
-      </div>
-    </header>
-  );
+/** Page H1. Home keeps it for search engines without showing a second title under the logo. */
+export function ShopHero({ title, hideTitle = false }: { title: string; hideTitle?: boolean }) {
+  return <h1 className={hideTitle ? "pb-sr-only" : "text-lg font-extrabold leading-snug"}>{title}</h1>;
 }
 
 export function ShopFaq() {
@@ -78,8 +53,9 @@ export function ShopFaq() {
 }
 
 export function ShopFooter() {
+  const whatsapp = `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}`;
   return (
-    <footer className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6">
+    <footer className="mx-auto w-full max-w-6xl px-4 pb-28 pt-8">
       <div className="pb-seo-card px-4 py-4 text-[15px] leading-relaxed">
         <address className="not-italic">
           <strong className="block text-base">{SHOP_NAME}</strong>
@@ -91,21 +67,9 @@ export function ShopFooter() {
         </address>
         <p className="mt-2 font-semibold">{HOURS_LABEL}</p>
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-          <a className="pb-seo-link" href={MAPS_URL}>
-            Get directions
-          </a>
-          <a className="pb-seo-link" href={REVIEW_URL}>
-            Review us on Google
-          </a>
-        </p>
-        <nav aria-label="Shop categories" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-          {COLLECTIONS.map((c) => (
-            <Link key={c.slug} href={`/c/${c.slug}`} className="pb-seo-link">
-              {c.nav}
-            </Link>
-          ))}
-        </nav>
-        <p className="mt-2">
+          <a className="pb-seo-link" href={MAPS_URL}>Get directions</a>
+          <a className="pb-seo-link" href={REVIEW_URL}>Review us on Google</a>
+          <a className="pb-seo-link" href={whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp</a>
           <a className="pb-seo-link inline-flex items-center gap-1.5" href={INSTAGRAM_URL} rel="me noopener noreferrer" target="_blank">
             <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm10 1.8H7A2.2 2.2 0 0 0 4.8 7v10A2.2 2.2 0 0 0 7 19.2h10a2.2 2.2 0 0 0 2.2-2.2V7A2.2 2.2 0 0 0 17 4.8zM12 8.2A3.8 3.8 0 1 1 8.2 12 3.8 3.8 0 0 1 12 8.2zm0 1.6A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8zM17.35 6.4a.95.95 0 1 1-.95.95.95.95 0 0 1 .95-.95z" />
@@ -113,6 +77,16 @@ export function ShopFooter() {
             Instagram
           </a>
         </p>
+        <nav aria-label="Shop categories" className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          {COLLECTIONS.map((c) => (
+            <Link key={c.slug} href={`/c/${c.slug}`} className="pb-seo-link">{c.nav}</Link>
+          ))}
+        </nav>
+        <div className="pb-seo-muted mt-4 text-sm leading-relaxed">
+          <p>Fixed price on stationery. No bargaining.</p>
+          <p>No return or exchange on toys and electronics.</p>
+          <p className="mt-2">Pickup from the shop. The price on the bill is the price you pay.</p>
+        </div>
       </div>
     </footer>
   );

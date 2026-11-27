@@ -1,21 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Flex, Typography } from "antd";
-import { CloseOutlined, DownloadOutlined } from "@ant-design/icons";
+import { publishInstallPrompt, type InstallPrompt } from "@/lib/pwa-prompt";
 import { BRAND } from "@/lib/theme";
 
-const DISMISS_KEY = "pb_pwa_dismiss";
+const DISMISS_KEY = "pb_pwa_dismiss_until";
+const OLD_DISMISS_KEY = "pb_pwa_dismiss";
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+interface BeforeInstallPromptEvent extends Event, InstallPrompt {}
+
+function installedAlready(): boolean {
+  const nav = navigator as Navigator & { standalone?: boolean };
+  return window.matchMedia("(display-mode: standalone)").matches || nav.standalone === true;
+}
+
+function dismissedUntilLater(): boolean {
+  try {
+    const until = Number(localStorage.getItem(DISMISS_KEY) || 0);
+    if (until > Date.now()) return true;
+    if (localStorage.getItem(OLD_DISMISS_KEY) === "1") {
+      localStorage.setItem(DISMISS_KEY, String(Date.now() + WEEK_MS));
+      localStorage.removeItem(OLD_DISMISS_KEY);
+      return true;
+    }
+  } catch {
+    /* private mode */
+  }
+  return false;
+}
+
+function rememberDismiss() {
+  try {
+    localStorage.setItem(DISMISS_KEY, String(Date.now() + WEEK_MS));
+  } catch {
+    /* ignore */
+  }
 }
 
 /**
- * Registers the service worker (needed for "Install app" on Android Chrome) and shows a small
- * "Add Pencil Box to your phone" banner the first time the browser fires beforeinstallprompt.
- * iOS Safari has no beforeinstallprompt; the banner stays hidden there (Share → Add to Home Screen still works).
+ * Registers the service worker and offers a compact install card when the browser can install.
+ * Closing it hides the card for about a week. It stays hidden once the app is installed.
  */
 export function PwaBootstrap() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -23,29 +48,39 @@ export function PwaBootstrap() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-    // Only register over https (or localhost); browsers refuse SW on plain http.
+    if (installedAlready()) return;
     const ok = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
     if (ok) navigator.serviceWorker.register("/sw.js").catch(() => {});
 
+    const preview = new URLSearchParams(location.search).get("pwa") === "preview";
+    const previewTimer = preview && !dismissedUntilLater() ? window.setTimeout(() => setShow(true), 0) : 0;
+
     const onBip = async (e: Event) => {
       e.preventDefault();
-      try {
-        if (localStorage.getItem(DISMISS_KEY) === "1") return;
-      } catch {
-        /* private mode */
-      }
-      // Signed-in staff already have the app on their phone — don't nag them on the storefront.
+      if (installedAlready() || dismissedUntilLater()) return;
+      const event = e as BeforeInstallPromptEvent;
+      setDeferred(event);
+      publishInstallPrompt(event);
       try {
         const me = await fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null));
         if (me?.role) return;
       } catch {
         /* signed out */
       }
-      setDeferred(e as BeforeInstallPromptEvent);
       setShow(true);
     };
+    const onInstalled = () => {
+      setShow(false);
+      setDeferred(null);
+      publishInstallPrompt(null);
+    };
     window.addEventListener("beforeinstallprompt", onBip);
-    return () => window.removeEventListener("beforeinstallprompt", onBip);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.clearTimeout(previewTimer);
+      window.removeEventListener("beforeinstallprompt", onBip);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   async function install() {
@@ -54,43 +89,88 @@ export function PwaBootstrap() {
     const { outcome } = await deferred.userChoice;
     setShow(false);
     setDeferred(null);
-    if (outcome === "dismissed") {
-      try {
-        localStorage.setItem(DISMISS_KEY, "1");
-      } catch {
-        /* ignore */
-      }
-    }
+    publishInstallPrompt(null);
+    if (outcome === "dismissed") rememberDismiss();
   }
 
   function dismiss() {
     setShow(false);
-    try {
-      localStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      /* ignore */
-    }
+    rememberDismiss();
   }
 
   if (!show) return null;
   return (
     <div
-      role="region"
-      aria-label="Install Pencil Box"
-        style={{ position: "fixed", left: 12, right: 12, bottom: "max(12px, env(safe-area-inset-bottom, 0px))", zIndex: 1000, background: BRAND.navy, color: "#fff", borderRadius: 14, padding: "12px 14px", boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
+      style={{
+        position: "fixed",
+        left: 12,
+        right: 12,
+        bottom: "calc(70px + env(safe-area-inset-bottom, 0px))",
+        zIndex: 45,
+        display: "flex",
+        justifyContent: "center",
+        pointerEvents: "none",
+      }}
     >
-      <Flex align="center" gap={12} justify="space-between" wrap>
-        <div style={{ flex: "1 1 180px" }}>
-          <Typography.Text strong style={{ color: BRAND.sun, display: "block" }}>Add Pencil Box to your phone</Typography.Text>
-          <Typography.Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13 }}>Install for a one-tap open — no app store needed.</Typography.Text>
+      <div
+        role="region"
+        aria-label="Install Pencil Box"
+        style={{
+          pointerEvents: "auto",
+          width: "min(440px, 100%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "8px 8px 8px 10px",
+          background: "#fff",
+          color: BRAND.ink,
+          borderRadius: 16,
+          boxShadow: "0 8px 24px rgba(12, 18, 34, 0.16)",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icons/icon-192.png" alt="" width={36} height={36} style={{ borderRadius: 8, flex: "0 0 auto" }} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, lineHeight: 1.2 }}>Pencil Box</div>
+          <div style={{ color: "#5a6a82", fontSize: 13, lineHeight: 1.3 }}>Install app for quick ordering</div>
         </div>
-        <Flex gap={8}>
-          <Button type="primary" icon={<DownloadOutlined />} onClick={install} style={{ background: BRAND.sun, color: BRAND.navyDeep, borderColor: BRAND.sun }}>
-            Install
-          </Button>
-          <Button type="text" aria-label="Dismiss" icon={<CloseOutlined style={{ color: "#fff" }} />} onClick={dismiss} />
-        </Flex>
-      </Flex>
+        <button
+          type="button"
+          onClick={install}
+          style={{
+            flex: "0 0 auto",
+            border: 0,
+            borderRadius: 999,
+            background: BRAND.navy,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 14,
+            padding: "8px 14px",
+            cursor: "pointer",
+          }}
+        >
+          Install
+        </button>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={dismiss}
+          style={{
+            flex: "0 0 auto",
+            width: 32,
+            height: 32,
+            border: 0,
+            borderRadius: 8,
+            background: "transparent",
+            color: "#5a6a82",
+            fontSize: 20,
+            lineHeight: 1,
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+      </div>
     </div>
   );
 }
