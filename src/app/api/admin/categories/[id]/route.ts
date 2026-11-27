@@ -5,7 +5,12 @@ import { audit } from "@/lib/audit";
 import { slugify, syncSearchText } from "@/lib/catalog";
 import { Category, Product } from "@/lib/models";
 
-const body = z.object({ name_en: z.string().trim().min(1).max(60), name_hi: z.string().trim().max(60).optional() });
+const body = z.object({
+  name_en: z.string().trim().min(1).max(60),
+  name_hi: z.string().trim().max(60).optional(),
+  /** public card photo; empty string clears it and the site drawing is used again */
+  image: z.string().trim().max(500).optional(),
+});
 const okId = (id: string) => {
   if (!/^[a-f0-9]{24}$/.test(id)) throw new AppError("Bad id");
   return id;
@@ -14,13 +19,13 @@ const okId = (id: string) => {
 /** Rename a category (English and Hindi name). Products inside it keep their place. */
 export const PATCH = route(can("setup"), async (req, actor, ctx) => {
   const id = okId((await ctx.params).id);
-  const { name_en, name_hi } = body.parse(await req.json());
+  const { name_en, name_hi, image } = body.parse(await req.json());
   const before = await Category.findById(id);
   if (!before) throw new AppError("Category not found", 404);
   const parent = before.parentId ? await Category.findById(before.parentId) : null;
   const slug = slugify(parent ? `${parent.name_en}-${name_en}` : name_en);
   if (await Category.findOne({ _id: { $ne: id }, slug })) throw new AppError("A category with that name already exists here", 409);
-  await Category.updateOne({ _id: id }, { name_en, name_hi: name_hi || undefined, slug });
+  await Category.updateOne({ _id: id }, { name_en, name_hi: name_hi || undefined, slug, ...(image !== undefined ? { image } : {}) });
   for (const p of await Product.find({ categoryId: id }, { _id: 1 }).lean()) await syncSearchText(String(p._id));
   await audit(actor.username, "category.edit", "category", `Renamed category "${before.name_en}" to "${name_en}"`, { entityId: id });
   return { ok: true };

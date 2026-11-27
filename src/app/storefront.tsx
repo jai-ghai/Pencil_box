@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import NextImage from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Badge, Button, Card, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Space, Tag, Typography, theme } from "antd";
 import { DownOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, SearchOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
@@ -15,6 +15,8 @@ import { text, type Lang, type TextKey } from "@/lib/i18n";
 import { BRAND } from "@/lib/theme";
 import { buildOrderMessage, whatsappUrl, type OrderLine } from "@/lib/whatsapp";
 import { categoryMatchFromPath, collectionByMatch } from "@/lib/shop";
+import { shopCards } from "@/lib/category-cards";
+import { cloudinarySquare } from "@/lib/images";
 import type { StoreCatalog, StoreProduct, StoreVariant } from "@/lib/store";
 
 interface PricedLine {
@@ -84,9 +86,34 @@ function loadCart(): Cart {
   }
 }
 
-/** Smaller, faster images for Cloudinary links; other links are used as they are. */
-const thumb = (url: string) => (url.includes("res.cloudinary.com") && url.includes("/upload/") ? url.replace("/upload/", "/upload/f_auto,q_auto,w_500/") : url);
+/** Square Cloudinary photos on white; local drawings stay as they are. */
+const thumb = (url: string) => cloudinarySquare(url);
 const priceText = (v: StoreVariant) => (v.maxPrice ? `${inr(v.price)}–${inr(v.maxPrice).replace("₹", "")}` : inr(v.price));
+function CategoryGrid({ catalog }: { catalog: StoreCatalog }) {
+  const cards = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of catalog.products) counts.set(p.categoryId, (counts.get(p.categoryId) ?? 0) + 1);
+    return shopCards(catalog.categories, counts);
+  }, [catalog]);
+  if (!cards.length) return null;
+  return (
+    <ul className="mb-1 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6" aria-label="Categories">
+      {cards.map((card) => (
+        <li key={card.key}>
+          <Link href={card.href} className="flex h-full flex-col overflow-hidden rounded-[10px] border border-black/10 bg-white no-underline shadow-[0_1px_2px_rgba(12,18,34,0.08)]">
+            <span className="flex aspect-square items-center justify-center overflow-hidden bg-white">
+              {/* drawings are generic; an owner photo is padded on white */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={card.uploaded ? thumb(card.image) : card.image} alt="" className="h-[92%] w-[92%] object-contain" />
+            </span>
+            <span className="px-2 pb-2 text-left text-[11px] font-extrabold uppercase leading-[1.15] tracking-wide text-[#0c1222] sm:text-xs">{card.label}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function productAlt(p: StoreProduct): string {
   const name = [p.brand, p.name_en].filter(Boolean).join(" ") || "Stationery item";
   return p.imageGeneric ? `Illustration of ${name}` : name;
@@ -110,11 +137,13 @@ function StorefrontInner() {
   const [q, setQ] = useState("");
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const routeName = categoryMatchFromPath(pathname);
+  const subSlug = searchParams.get("sub");
   /* Category filter. A /c/<slug> URL sets it; subcategory picks on the home page set it too. */
   const [topCat, setTopCat] = useState<string | null>(null);
   const [subCat, setSubCat] = useState<string | null>(null);
-  const routeKey = `${routeName ?? ""}:${catalog ? "y" : "n"}`;
+  const routeKey = `${routeName ?? ""}:${subSlug ?? ""}:${catalog ? "y" : "n"}`;
   const [appliedRoute, setAppliedRoute] = useState(routeKey);
   const [brand, setBrand] = useState<string | undefined>(undefined);
   const [offersOnly, setOffersOnly] = useState(false);
@@ -126,8 +155,9 @@ function StorefrontInner() {
   if (appliedRoute !== routeKey) {
     setAppliedRoute(routeKey);
     const match = routeName ? (catalog?.categories.find((c) => !c.parentId && c.name_en === routeName)?.id ?? null) : null;
+    const sub = subSlug ? catalog?.categories.find((c) => c.slug === subSlug && c.parentId === match) : undefined;
     setTopCat(match);
-    setSubCat(null);
+    setSubCat(sub?.id ?? null);
   }
   const t: T = useCallback((k) => text(lang, k), [lang]);
 
@@ -274,19 +304,6 @@ function StorefrontInner() {
   const showRates = rates.length > 0 && !q && !brand && !offersOnly && !subCat && (!topCat || topCat === printTop?.id);
   /* landing view (nothing searched or filtered): collection tiles and a row of products per category, before the full list */
   const landing = !q && !topCat && !subCat && !brand && !offersOnly;
-  const [allCollections, setAllCollections] = useState(false);
-  const collections = useMemo(
-    () =>
-      (catalog?.categories ?? [])
-        .filter((c) => c.parentId)
-        .map((c) => {
-          const items = (catalog?.products ?? []).filter((p) => p.categoryId === c.id);
-          return { cat: c, count: items.length, image: items.find((p) => p.image)?.image ?? "" };
-        })
-        .filter((x) => x.count > 0)
-        .sort((a, b) => b.count - a.count || a.cat.name_en.localeCompare(b.cat.name_en)),
-    [catalog],
-  );
   const categoryRows = landing
     ? TILES.flatMap((tile) => {
         const cat = topCats.find((c) => c.name_en === tile.match);
@@ -359,50 +376,12 @@ function StorefrontInner() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-28">
         {catalog && (
           <Flex vertical gap={10} className="mb-4">
+            {landing && <CategoryGrid catalog={catalog} />}
             {hasOffers && (
               <Button type={offersOnly ? "primary" : "default"} size="large" icon={<TagsOutlined />} aria-pressed={offersOnly} onClick={() => setOffersOnly((v) => !v)} style={{ alignSelf: "flex-start" }}>
                 {t("offersToday")}
               </Button>
             )}
-            <div className="pb-scroll-x -mx-4 flex gap-3 px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-6 lg:overflow-visible lg:px-0" role="group" aria-label="Categories">
-              {TILES.map((tile) => {
-                const cat = topCats.find((c) => c.name_en === tile.match);
-                const col = collectionByMatch(tile.match);
-                const active = routeName === tile.match || (!routeName && !!cat && topCat === cat.id);
-                const href = col ? (active && routeName ? "/" : `/c/${col.slug}`) : "/";
-                return (
-                  <Link
-                    key={tile.match}
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    onClick={() => {
-                      if (active && !routeName) {
-                        setTopCat(null);
-                        setSubCat(null);
-                      }
-                    }}
-                    className="flex shrink-0 items-center gap-3 text-left no-underline lg:min-w-0"
-                    style={{
-                      minWidth: 176,
-                      padding: "10px 12px",
-                      borderRadius: token.borderRadiusLG,
-                      background: token.colorBgContainer,
-                      border: `1px solid ${token.colorBorderSecondary}`,
-                      borderBottom: `4px solid ${tile.accent}`,
-                      boxShadow: active ? `0 0 0 2px ${token.colorText}` : undefined,
-                      opacity: cat ? 1 : 0.6,
-                      color: token.colorText,
-                    }}
-                  >
-                    <NextImage src={`/brand/cat-${tile.icon}.png`} alt={tile.match} width={40} height={40} />
-                    <span style={{ fontWeight: 700, lineHeight: 1.2 }}>
-                      {cat ? catName(cat) : lang === "hi" ? tile.hi : tile.match}
-                      {!cat && <span style={{ display: "block", fontSize: 12, fontWeight: 500, color: token.colorTextSecondary }}>{t("comingSoon")}</span>}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
             {subCats.length > 0 && (
               <div className="pb-scroll-x -mx-4 flex items-center gap-2 px-4" role="group" aria-label="Sub categories">
                 <Button size="small" type="text" onClick={() => { setTopCat(null); setSubCat(null); if (routeName) router.push("/"); }}>{t("showAll")}</Button>
@@ -434,12 +413,6 @@ function StorefrontInner() {
 
         {notice && <Alert type="info" showIcon closable title={t(notice)} className="mb-3" onClose={() => setNotice("")} />}
 
-        {landing && collections.length > 0 && (
-          <CollectionGrid
-            items={collections} expanded={allCollections} onToggle={() => setAllCollections((v) => !v)} name={catName} t={t}
-            onPick={(c) => pickCollection(c.id, c.parentId)}
-          />
-        )}
         {categoryRows.map((row) => (
           <section key={row.cat.id} className="mb-5" aria-label={catName(row.cat)}>
             <Flex align="center" justify="space-between" gap={8} className="mb-2" style={{ borderLeft: `4px solid ${row.accent}`, paddingLeft: 10 }}>
@@ -586,52 +559,6 @@ function PolicyStrip({ t, showBulk }: { t: T; showBulk: boolean }) {
   );
 }
 
-/** "Shop by collection": one tile per sub-category with a picture and item count. The first few show, the rest open with a button. */
-const COLLECTIONS_SHOWN = 8;
-function CollectionGrid({ items, expanded, onToggle, onPick, name, t }: {
-  items: { cat: { id: string; name_en: string; name_hi: string; parentId: string | null }; count: number; image: string }[];
-  expanded: boolean;
-  onToggle: () => void;
-  onPick: (c: { id: string; parentId: string | null }) => void;
-  name: (c: { name_en: string; name_hi: string }) => string;
-  t: T;
-}) {
-  const { token } = theme.useToken();
-  const shown = expanded ? items : items.slice(0, COLLECTIONS_SHOWN);
-  return (
-    <section className="mb-5" aria-label={t("collectionsTitle")}>
-      <Typography.Title level={4} className="!mb-2">{t("collectionsTitle")}</Typography.Title>
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-        {shown.map(({ cat, count, image }) => (
-          <li key={cat.id}>
-            <button
-              type="button"
-              onClick={() => onPick(cat)}
-              className="flex w-full items-center gap-3 text-left"
-              style={{ padding: 8, borderRadius: token.borderRadiusLG, background: token.colorBgContainer, border: `1px solid ${token.colorBorderSecondary}`, color: token.colorText, cursor: "pointer" }}
-            >
-              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[10px]" style={{ background: "rgba(255,213,0,0.14)" }}>
-                {image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={thumb(image)} alt={name(cat)} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-                ) : (
-                  <span className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 22, color: token.colorTextQuaternary }} aria-hidden /></span>
-                )}
-              </span>
-              <span className="min-w-0">
-                <span style={{ display: "block", fontWeight: 700, lineHeight: 1.2 }}>{name(cat)}</span>
-                <span style={{ fontSize: 12, color: token.colorTextSecondary }}>{count} {t("itemsCount")}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      {items.length > COLLECTIONS_SHOWN && (
-        <div className="mt-2 text-center"><Button onClick={onToggle}>{expanded ? t("fewerCollections") : `${t("seeAllCollections")} (${items.length})`}</Button></div>
-      )}
-    </section>
-  );
-}
 
 /** Photocopy and printout prices per page, taken live from the Services items. */
 function RatesCard({ rates, lang, t }: { rates: StoreProduct[]; lang: Lang; t: T }) {
@@ -707,17 +634,17 @@ function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang
     <Card hoverable={false} styles={{ body: { padding: 0 } }} className="h-full overflow-hidden [&>.ant-card-body]:h-full">
       <div className="flex h-full flex-col">
         {/* picture frame: square, the whole picture visible; empty until a picture exists */}
-        <div className="relative aspect-square w-full overflow-hidden" style={{ background: p.image ? "#fff" : "rgba(255,213,0,0.14)" }}>
+        <div className="relative aspect-square w-full overflow-hidden bg-white p-3">
           {p.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumb(p.image)} alt={productAlt(p)} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-contain p-2" />
+            <img src={thumb(p.image)} alt={productAlt(p)} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-contain p-3" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 30, color: token.colorTextQuaternary }} aria-hidden /></div>
           )}
         </div>
         <div className="flex flex-1 flex-col gap-1 p-3 pt-2">
           {!!p.brand && <Typography.Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>{p.brand}</Typography.Text>}
-          <div className="line-clamp-2" style={{ fontWeight: 700, lineHeight: 1.3, minHeight: "2.6em" }}>{name}</div>
+          <div className="line-clamp-2" style={{ fontWeight: 800, lineHeight: 1.25, minHeight: "2.5em" }}>{name}</div>
           {single?.label && <Typography.Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>{single.label}</Typography.Text>}
           <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
             <span style={{ fontWeight: 800, fontSize: 17 }}>{single ? priceText(single) : `${samePrice ? "" : `${t("fromPrice")} `}${inr(lowest)}`}</span>

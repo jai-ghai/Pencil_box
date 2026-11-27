@@ -39,6 +39,8 @@ const categorySchema = new Schema(
     name_hi: { type: String, trim: true },
     parentId: { type: Schema.Types.ObjectId, ref: "Category", default: null },
     slug: { type: String, required: true, unique: true },
+    /** optional owner photo for the public category card; empty means the built-in drawing */
+    image: { type: String, default: "" },
     /** attribute keys suggested in the add-item form, e.g. ["pages","ruling"] */
     attributeTemplate: { type: [String], default: [] },
     sortOrder: { type: Number, default: 0 },
