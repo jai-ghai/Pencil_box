@@ -14,7 +14,8 @@ import {
 } from "@ant-design/icons";
 import { Wordmark } from "@/components/wordmark";
 import { getInstallPrompt, publishInstallPrompt, subscribeInstallPrompt } from "@/lib/pwa-prompt";
-import { COLLECTIONS, PHONE_TEL } from "@/lib/shop";
+import { HOME_LINKS } from "@/lib/departments";
+import { PHONE_TEL } from "@/lib/shop";
 import { BRAND } from "@/lib/theme";
 
 const SUPPORT = `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}`;
@@ -107,13 +108,14 @@ export function ShopMenu({
       </nav>
       <div className="px-4 pb-2 pt-3 text-xs font-extrabold tracking-wide" style={{ color: BRAND.navy }}>CATEGORIES</div>
       <ul className="m-0 list-none p-0 pb-6">
-        {COLLECTIONS.map((c) => (
+        {HOME_LINKS.map((c) => (
           <li key={c.slug}>
-            <Link href={`/c/${c.slug}`} className="block px-4 py-2 text-sm font-semibold text-[#153a7a] no-underline" onClick={onClose}>
-              {c.nav}
+            <Link href={c.href} className="block px-4 py-2 text-sm font-semibold text-[#153a7a] no-underline" onClick={onClose}>
+              {c.label}
             </Link>
           </li>
         ))}
+        <li><Link href="/categories" className="block px-4 py-2 text-sm font-bold text-[#153a7a] no-underline" onClick={onClose}>All categories</Link></li>
       </ul>
     </Drawer>
   );
