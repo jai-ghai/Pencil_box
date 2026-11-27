@@ -31,6 +31,8 @@ describe("local shop facts", () => {
     expect(data.openingHoursSpecification[0].dayOfWeek).toHaveLength(7);
     expect(data.hasMap).toBe(MAPS_URL);
     expect(data.sameAs).toEqual(SAME_AS);
+    expect(data.sameAs).toContain("https://www.instagram.com/pencilbox.stationery");
+    expect(data.sameAs.some((url) => url.includes("pencilbox.stationary") || url.includes("pencilboxstationery"))).toBe(false);
     expect(data.areaServed.map((a) => a.name)).toEqual([...AREAS_SERVED]);
     expect(data.address).toMatchObject({ streetAddress: "B-92, Block B, Tigri Extension", postalCode: "110062", addressCountry: "IN" });
     expect(data).not.toHaveProperty("geo");

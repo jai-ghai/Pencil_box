@@ -29,12 +29,13 @@ export const HOURS_LABEL = "Open daily 7:00 AM – 9:30 PM";
 
 export const MAPS_URL = "https://www.google.com/maps/place/?q=place_id:ChIJo2mwYj_hDDkRzcnaRpeaLps";
 export const REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJo2mwYj_hDDkRzcnaRpeaLps";
+export const INSTAGRAM_URL = "https://www.instagram.com/pencilbox.stationery";
 
 /**
- * Profiles that should show on the business. Add the shop's Instagram, Justdial and Sulekha
- * URLs to this list when you have them — they are copied into JSON-LD `sameAs`.
+ * Profiles that should show on the business. Copied into JSON-LD `sameAs`.
+ * Add Justdial and Sulekha URLs here when you have them.
  */
-export const SAME_AS: string[] = [MAPS_URL];
+export const SAME_AS: string[] = [MAPS_URL, INSTAGRAM_URL];
 
 export const AREAS_SERVED = ["Tigri Extension", "Tigri", "Sangam Vihar", "Khanpur", "Devli"] as const;
 
