@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, App, Button, Card, Col, Drawer, Empty, Flex, Form, Grid, Image, Input, InputNumber, Popconfirm, Row, Select, Switch, Table, Tag, Typography, Upload } from "antd";
+import { Alert, App, Button, Card, Col, Drawer, Empty, Flex, Form, Grid, Input, InputNumber, Popconfirm, Row, Select, Switch, Table, Tag, Typography, Upload } from "antd";
 import type { TableColumnsType, UploadFile } from "antd";
 import { CopyOutlined, DeleteOutlined, PictureOutlined, PlusOutlined, SearchOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { ShopImage } from "@/components/shop-image";
 import { api, inr, stripBrand } from "@/lib/client";
 import { can, useMe } from "@/lib/use-me";
 import { QuickAddModal } from "@/components/quick-add-modal";
@@ -169,7 +170,7 @@ export default function Products() {
       key: "p",
       render: (_: unknown, p) => (
         <Flex gap={12} align="center">
-          {p.images[0] ? <Image src={p.images[0]} alt="" width={44} height={44} style={{ objectFit: "cover", borderRadius: 8 }} /> : <Flex align="center" justify="center" style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,213,0,0.18)" }}><PictureOutlined style={{ opacity: 0.45 }} /></Flex>}
+          {p.images[0] ? <span className="block w-11 shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={p.images[0]} alt="" width={88} sizes="44px" /></span> : <Flex align="center" justify="center" style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(255,213,0,0.18)" }}><PictureOutlined style={{ opacity: 0.45 }} /></Flex>}
           <div>
             <div style={{ fontWeight: 600 }}>{stripBrand(p.name_en, p.brandId?.name)}</div>
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>{p.brandId?.name ?? "No brand"}{p.name_hi ? ` · ${p.name_hi}` : ""}</Typography.Text>

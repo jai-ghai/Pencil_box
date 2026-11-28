@@ -18,7 +18,6 @@ import {
   Grid,
   Empty,
   Flex,
-  Image,
   Input,
   InputNumber,
   Modal,
@@ -30,6 +29,7 @@ import {
 } from "antd";
 import type { TableColumnsType } from "antd";
 import { CameraOutlined, DeleteOutlined, PlusOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { ShopImage } from "@/components/shop-image";
 import { api, inr } from "@/lib/client";
 import { can, useMe } from "@/lib/use-me";
 
@@ -146,7 +146,7 @@ export default function BuyListPage() {
       key: "n",
       render: (_: unknown, r) => (
         <Flex gap={12} align="center">
-          {r.imageUrl && <Image src={r.imageUrl} alt="" width={48} height={48} style={{ objectFit: "cover", borderRadius: 8 }} />}
+          {r.imageUrl && <span className="block w-12 shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={r.imageUrl} alt="" width={96} sizes="48px" /></span>}
           <div className="min-w-0">
             <div style={{ fontWeight: 600 }}>{r.name}</div>
             {r.known?.code && (
@@ -402,7 +402,7 @@ export default function BuyListPage() {
                     aria-label={`Select ${r.name}`}
                     className="mt-1"
                   />
-                  {r.imageUrl && <Image src={r.imageUrl} alt="" width={44} height={44} style={{ objectFit: "cover", borderRadius: 8 }} />}
+                  {r.imageUrl && <span className="block w-11 shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={r.imageUrl} alt="" width={88} sizes="44px" /></span>}
                   <div className="min-w-0 flex-1">
                     <Flex justify="space-between" gap={8} align="start">
                       <div className="min-w-0">
@@ -544,7 +544,7 @@ export default function BuyListPage() {
                 {(l.needsPhoto || !l.imageUrl) && (
                   <Flex gap={8} align="center" wrap>
                     {l.imageUrl ? (
-                      <Image src={l.imageUrl} alt="" width={40} height={40} style={{ objectFit: "cover", borderRadius: 6 }} />
+                      <span className="block w-10 shrink-0 overflow-hidden rounded-[6px]"><ShopImage src={l.imageUrl} alt="" width={80} sizes="40px" /></span>
                     ) : (
                       <Tag color="orange">Photo?</Tag>
                     )}

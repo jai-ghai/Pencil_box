@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ShopImage } from "@/components/shop-image";
 import { DEPARTMENTS, PARENT_LABEL, DEPARTMENT_PARENTS } from "@/lib/departments";
 import { loadDepartmentPrefs } from "@/lib/department-prefs";
 import { pageMeta } from "@/lib/shop";
@@ -23,11 +24,10 @@ export default async function CategoriesPage() {
             <section key={parent}>
               <h2 className="text-sm font-extrabold uppercase tracking-wide text-[#153a7a]">{PARENT_LABEL[parent]}</h2>
               <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                {kids.map((kid) => (
+                {kids.map((kid, i) => (
                   <li key={kid.slug}>
                     <Link href={`/c/${kid.slug}`} className="flex h-full flex-col overflow-hidden rounded-[10px] border border-black/10 bg-white no-underline shadow-[0_1px_2px_rgba(12,18,34,0.08)]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/category/${kid.slug}.svg`} alt="" className="aspect-square w-full object-contain" />
+                      <ShopImage src={`/category/${kid.slug}.svg`} alt="" priority={i < 6 && parent === "school"} />
                       <span className="px-2 pb-2 text-left text-[11px] font-extrabold uppercase leading-tight text-[#0c1222]">{kid.label}</span>
                     </Link>
                   </li>

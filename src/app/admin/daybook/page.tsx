@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, App, AutoComplete, Button, Card, Col, Empty, Flex, Input, InputNumber, Popconfirm, Row, Skeleton, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { CameraOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { ShopImage } from "@/components/shop-image";
 import { api, inr } from "@/lib/client";
 import { addDays, istDate } from "@/lib/reports";
 import { daysBetween } from "@/lib/daybook";
@@ -168,7 +169,7 @@ export default function DailyBookPage() {
                 {saved!.photos.map((url) => (
                   <a key={url} href={url} target="_blank" rel="noopener noreferrer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="Day photo" width={72} height={72} style={{ objectFit: "cover", borderRadius: 8 }} />
+                    <span className="block w-[72px] shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={url} alt="Day photo" width={144} sizes="72px" /></span>
                   </a>
                 ))}
               </Flex>
@@ -191,7 +192,7 @@ export default function DailyBookPage() {
                     <Flex gap={10} align="center" className="min-w-0" style={{ flex: "1 1 180px" }}>
                       {r.imageUrl && (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={r.imageUrl} alt="" width={48} height={48} style={{ objectFit: "cover", borderRadius: 8 }} />
+                        <span className="block w-12 shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={r.imageUrl} alt="" width={96} sizes="48px" /></span>
                       )}
                       <div className="min-w-0">
                         <div className="font-semibold" style={{ overflowWrap: "anywhere" }}>{r.name}</div>
@@ -429,7 +430,7 @@ function DayForm({
           {photoUrl && (
             <a href={photoUrl} target="_blank" rel="noopener noreferrer">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl} alt="Attached" width={48} height={48} style={{ objectFit: "cover", borderRadius: 8 }} />
+              <span className="block w-12 shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={photoUrl} alt="Attached" width={96} sizes="48px" /></span>
             </a>
           )}
           <Flex gap={8} style={{ marginLeft: "auto" }} wrap>

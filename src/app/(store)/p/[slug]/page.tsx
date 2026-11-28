@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProductBuy } from "@/components/product-buy";
+import { ShopImage } from "@/components/shop-image";
 import { cleanItemName, groupSameProducts } from "@/lib/browse";
-import { cloudinarySquare } from "@/lib/images";
 import { breadcrumbJsonLd, productJsonLd, productsInCollection } from "@/lib/product-json";
 import { cachedCatalog } from "@/lib/public-catalog";
 import { collectionByMatch, jsonLdScript, pageMeta } from "@/lib/shop";
@@ -44,8 +44,7 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex aspect-square items-center justify-center rounded-[12px] border border-black/10 bg-white p-4">
           {photos[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={cloudinarySquare(photos[0])} alt={`${product.brand ? `${product.brand} ` : ""}${title}`} className="h-full w-full object-contain" />
+            <ShopImage src={photos[0]} alt={`${product.brand ? `${product.brand} ` : ""}${title}`} width={800} priority sizes="(max-width: 640px) 100vw, 480px" />
           ) : <span className="text-sm text-[#5a6a82]">No photo yet</span>}
         </div>
         <div>
@@ -59,8 +58,7 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
         <ul className="mt-3 flex gap-2">
           {photos.slice(1, 5).map((url) => (
             <li key={url} className="h-16 w-16 overflow-hidden rounded-[8px] border bg-white">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={cloudinarySquare(url, 200)} alt="" className="h-full w-full object-contain" />
+              <ShopImage src={url} alt={`${title} photo`} width={200} sizes="64px" />
             </li>
           ))}
         </ul>
