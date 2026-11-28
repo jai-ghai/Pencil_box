@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
 import "@/styles/antd-store.css";
 import { AntdRoot } from "@/components/antd-root";
 import { CollectionShelf } from "@/components/collection-shelf";
@@ -11,9 +10,6 @@ import { liveCatalog } from "@/lib/public-catalog";
 import { COLLECTIONS, collectionBySlug } from "@/lib/shop";
 import type { StoreCatalog } from "@/lib/store";
 import { Storefront } from "../../../storefront";
-
-/** The first product photo is part of the response itself, not a hidden slot revealed later. */
-export const instant = false;
 
 /** The first screen only. The browser still loads the full list a moment later. */
 function firstScreen(catalog: StoreCatalog, slug: string): StoreCatalog {
@@ -35,7 +31,6 @@ export default async function CollectionLayout({ children, params }: { children:
       </Suspense>
     );
   }
-  await connection();
   const full = await liveCatalog();
   const initialCatalog = full ? firstScreen(full, slug) : null;
   const collection = collectionBySlug(slug);
