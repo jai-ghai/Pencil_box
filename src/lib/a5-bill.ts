@@ -50,9 +50,12 @@ export function upiPayLink(upiId: string, totalPaise: number, billNo: number): s
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 const rs = (paise: number) => (paise / 100).toLocaleString("en-IN", { minimumFractionDigits: paise % 100 ? 2 : 0, maximumFractionDigits: 2 });
 
-const MARK = `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" fill="#153a7a"/><rect x="16" y="30" width="32" height="22" rx="4" fill="#ecc233"/><rect x="20" y="14" width="6" height="22" rx="2" fill="#e23b3b"/><rect x="29" y="10" width="6" height="26" rx="2" fill="#2f6fed"/><rect x="38" y="16" width="6" height="20" rx="2" fill="#1f9d55"/></svg>`;
+export type BillTone = "colour" | "bw";
 
-export function a5BillHtml(bill: A5BillInput, opts: { reviewQr: string; upiQr?: string; upiId?: string }): string {
+const MARK = `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" fill="#153a7a"/><rect x="16" y="30" width="32" height="22" rx="4" fill="#ecc233"/><rect x="20" y="14" width="6" height="22" rx="2" fill="#e23b3b"/><rect x="29" y="10" width="6" height="26" rx="2" fill="#2f6fed"/><rect x="38" y="16" width="6" height="20" rx="2" fill="#1f9d55"/></svg>`;
+const MARK_BW = `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" fill="#fff" stroke="#222" stroke-width="2"/><rect x="16" y="30" width="32" height="22" rx="4" fill="none" stroke="#222" stroke-width="1.5"/><rect x="20" y="14" width="6" height="22" rx="2" fill="none" stroke="#222"/><rect x="29" y="10" width="6" height="26" rx="2" fill="none" stroke="#222"/><rect x="38" y="16" width="6" height="20" rx="2" fill="none" stroke="#222"/></svg>`;
+
+export function a5BillHtml(bill: A5BillInput, opts: { reviewQr: string; upiQr?: string; upiId?: string; tone?: BillTone }): string {
   const rows = bill.items
     .map(
       (i) => `<tr>
@@ -69,16 +72,19 @@ export function a5BillHtml(bill: A5BillInput, opts: { reviewQr: string; upiQr?: 
       ? `<div class="qr"><img src="${opts.upiQr}" alt="UPI payment QR" width="108" height="108"><div>Pay ${esc(opts.upiId)}</div></div>`
       : "";
   const site = SITE.replace(/^https:\/\//, "");
+  const bw = opts.tone === "bw";
+  const accent = bw ? "#111" : "#153a7a";
+  const rule = bw ? "1px solid #222" : "3px solid #153a7a";
   return `<!doctype html><html><head><meta charset="utf-8"><title>Bill ${bill.billNo}</title>
 <style>
   @page { size: A5 portrait; margin: 8mm; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #fff; color: #111; }
   body { font: 12px/1.35 "Segoe UI", system-ui, sans-serif; }
-  .sheet { width: 148mm; min-height: 194mm; margin: 0 auto; padding: 8mm; }
-  header { display: flex; gap: 10px; align-items: center; border-bottom: 3px solid #153a7a; padding-bottom: 8px; }
-  h1 { font-size: 22px; line-height: 1; margin: 0; letter-spacing: 0.04em; }
-  .kind { margin: 2px 0 0; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #153a7a; font-weight: 700; }
+  .sheet { width: 148mm; min-height: 194mm; margin: 0 auto; padding: 8mm; background: #fff; }
+  header { display: flex; gap: 10px; align-items: center; border-bottom: ${rule}; padding-bottom: 8px; background: #fff; }
+  h1 { font-size: 22px; line-height: 1; margin: 0; letter-spacing: 0.04em; color: #111; }
+  .kind { margin: 2px 0 0; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: ${accent}; font-weight: 700; }
   .shop { font-size: 11px; margin: 2px 0; }
   .meta { display: flex; justify-content: space-between; gap: 12px; margin: 10px 0; }
   .meta p { margin: 0; }
@@ -96,8 +102,8 @@ export function a5BillHtml(bill: A5BillInput, opts: { reviewQr: string; upiQr?: 
   .qr { text-align: center; font-size: 10px; }
   .qr img { display: block; margin: 0 auto 2px; }
   @media print { .sheet { width: auto; min-height: auto; padding: 0; } }
-</style></head><body><article class="sheet">
-<header>${MARK}<div>
+</style></head><body><article class="sheet${bw ? " bw" : ""}">
+<header>${bw ? MARK_BW : MARK}<div>
   <h1>Bill</h1>
   <p class="kind">Cash Memo</p>
   <p class="shop"><strong>${esc(SHOP_NAME)}</strong><br>${esc(ADDRESS_LINE)}<br>${esc(PHONE_DISPLAY)} · ${esc(site)}</p>

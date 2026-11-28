@@ -21,8 +21,18 @@ describe("a5 bill", () => {
     expect(html).toContain("Thank you! Visit again");
     expect(html).toContain("Sixty rupees only");
     expect(html).toContain("Ravi");
-    expect(html).not.toMatch(/GST|GSTIN|Tax Invoice/i);
+    expect(html).not.toMatch(/GST|GSTIN|Tax Invoice|signatory|signature|For Pencil Box/i);
     expect(html).not.toContain("Pay ");
+    expect(html).toContain("#153a7a");
+  });
+
+  it("prints a black and white copy with no filled brand colours", () => {
+    const html = a5BillHtml(sample, { reviewQr: "data:image/png;base64,abc", tone: "bw" });
+    expect(html).toContain("sheet bw");
+    expect(html).toContain(">Bill<");
+    expect(html).toContain("Cash Memo");
+    expect(html).not.toMatch(/#153a7a|#ecc233|#e23b3b|#2f6fed|#1f9d55/i);
+    expect(html).not.toMatch(/GST|GSTIN|Tax Invoice|signatory|signature|For Pencil Box/i);
   });
 
   it("prints a UPI QR only when an ID is provided", () => {
