@@ -20,7 +20,7 @@ export function CollectionShelf({ products }: { products: StoreProduct[] }) {
         const off = single ? discountPercent(single.price, single.mrp) : 0;
         return (
           <li key={product.id} className="flex flex-col overflow-hidden rounded-[10px] border border-black/10 bg-white">
-            <span className="block aspect-square bg-[#eceff3]">
+            <span className="block aspect-square min-h-[42vw] bg-[#f3f5f8] sm:min-h-0">
               {src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
