@@ -78,9 +78,18 @@ export function groupSameProducts(products: StoreProduct[]): StoreProduct[] {
   }
   return order.map((key) => {
     const members = groups.get(key)!;
-    if (members.length === 1 && solePrice(members[0]) === null) {
+    if (members.length === 1) {
       const only = members[0];
-      return { ...only, name_en: genericItemName(only.name_en, only.brand), variants: only.variants.map((v) => ({ ...v })) };
+      const shared = only.image ? (freq.get(normImage(only.image)) ?? 1) : 1;
+      const standIn = !!only.image && only.imageGeneric && shared >= 8;
+      return {
+        ...only,
+        name_en: genericItemName(only.name_en, only.brand),
+        brand: solePrice(only) === null ? only.brand : "",
+        image: standIn ? "" : only.image,
+        images: standIn ? [] : only.images.map((url) => url),
+        variants: only.variants.map((v) => ({ ...v })),
+      };
     }
     const names = new Map<string, number>();
     for (const p of members) {
