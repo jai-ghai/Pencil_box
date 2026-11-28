@@ -62,6 +62,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     id: "setup",
     label: "Setup",
     items: [
+      { href: "/admin/categories", label: "Categories", hint: "Shelves on the shop", perm: "setup" },
       { href: "/admin/setup", label: "Brands & categories", hint: "Catalogue structure", perm: "setup" },
       { href: "/qr-generator", label: "QR codes", hint: "Print labels", perm: "qr" },
       { href: "/admin/users", label: "Users", hint: "Who can open what", perm: "users" },

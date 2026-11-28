@@ -5,7 +5,7 @@ import { App, Button, Card, Col, Flex, Form, Input, Modal, Popconfirm, Row, Sele
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { api } from "@/lib/client";
 import { can, useMe } from "@/lib/use-me";
-import { DepartmentEditor } from "@/components/department-editor";
+import Link from "next/link";
 import { SimpleList } from "@/components/simple-list";
 
 interface Brand { _id: string; name: string; products: number }
@@ -113,7 +113,12 @@ export default function Setup() {
   return (
     <>
       <BillUpi />
-      <DepartmentEditor />
+      <Card className="mb-4">
+        <Typography.Paragraph style={{ marginBottom: 8 }}>
+          The shelves customers see — home row, groups, photos and the words on each page — are edited on the categories screen.
+        </Typography.Paragraph>
+        <Link href="/admin/categories">Open categories</Link>
+      </Card>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={10}>
           <Card title="Brands">

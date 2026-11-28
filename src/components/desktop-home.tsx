@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { HOME_DRAWING } from "@/components/home-drawings";
 import { HeroFrame } from "@/components/desktop-hero";
-import { orderedHomeLinks } from "@/lib/departments";
+import { cloudinarySquare, isCloudinary } from "@/lib/images";
+import { homeShopCategories } from "@/lib/shop-category-data";
+import { shopCategories } from "@/lib/shop-category-store";
 import { HOME_H1, HOURS_LABEL, PHONE_TEL, REVIEW_URL } from "@/lib/shop";
 
 const NEEDS = [
@@ -12,8 +14,8 @@ const NEEDS = [
 ] as const;
 
 /** Desktop homepage. Categories and offers only — the product shelves live on their own pages. */
-export function DesktopHome() {
-  const cards = orderedHomeLinks();
+export async function DesktopHome() {
+  const cards = homeShopCategories(await shopCategories());
   const wa = `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}`;
   return (
     <div className="hidden xl:block">
@@ -100,10 +102,10 @@ export function DesktopHome() {
         <ul className="grid grid-cols-4 gap-3 2xl:grid-cols-6">
           {cards.map((card) => (
             <li key={card.slug} data-home-card={card.label.toLowerCase()}>
-              <Link href={card.href} className="flex h-full flex-col overflow-hidden rounded-[14px] border border-black/10 bg-white no-underline">
+              <Link href={`/c/${card.slug}`} className="flex h-full flex-col overflow-hidden rounded-[14px] border border-black/10 bg-white no-underline">
                 <span className="block aspect-square bg-[#f7f8fb]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={HOME_DRAWING[card.slug] ?? `/category/${card.slug}.svg`} alt="" width={240} height={240} className="h-full w-full object-contain" />
+                  <img src={card.image ? (isCloudinary(card.image) ? cloudinarySquare(card.image, 400) : card.image) : (HOME_DRAWING[card.slug] ?? `/category/${card.slug}.svg`)} alt="" width={240} height={240} className="h-full w-full object-contain" />
                 </span>
                 <span className="px-3 py-2 text-sm font-extrabold text-[#0c1222]">{card.label}</span>
               </Link>
