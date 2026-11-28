@@ -164,10 +164,19 @@ function productAlt(p: StoreProduct): string {
   return p.imageGeneric ? `Illustration of ${name}` : name;
 }
 
-export function Storefront({ children, initialCatalog = null }: { children?: ReactNode; initialCatalog?: StoreCatalog | null }) {
+export function Storefront({
+  children,
+  initialCatalog = null,
+  shell,
+}: {
+  children?: ReactNode;
+  initialCatalog?: StoreCatalog | null;
+  /** Home draws its own category grid in the first HTML. This shell is only the header and the tab bar. */
+  shell?: "home";
+}) {
   return (
     <AccentScope accent="sun">
-      <StorefrontInner initialCatalog={initialCatalog}>{children}</StorefrontInner>
+      <StorefrontInner initialCatalog={initialCatalog} shell={shell}>{children}</StorefrontInner>
     </AccentScope>
   );
 }
@@ -179,7 +188,15 @@ function routeCategory(catalog: StoreCatalog | null, pathname: string, subSlug: 
   return { top, sub };
 }
 
-function StorefrontInner({ children, initialCatalog = null }: { children?: ReactNode; initialCatalog?: StoreCatalog | null }) {
+function StorefrontInner({
+  children,
+  initialCatalog = null,
+  shell,
+}: {
+  children?: ReactNode;
+  initialCatalog?: StoreCatalog | null;
+  shell?: "home";
+}) {
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
   const [lang, setLang] = useState<Lang>("en");
@@ -431,6 +448,37 @@ function StorefrontInner({ children, initialCatalog = null }: { children?: React
   const waHref = catalog?.whatsapp && orderLines.length ? whatsappUrl(catalog.whatsapp, buildOrderMessage(orderLines, total, { lang, hasPriceRange: hasRange })) : null;
   const catName = (c: { name_en: string; name_hi: string }) => (lang === "hi" && c.name_hi ? c.name_hi : c.name_en);
 
+  if (shell === "home") {
+    return (
+      <>
+        <header style={{ background: BRAND.navy, minHeight: 116 }} className="sticky top-0 z-40 overflow-x-hidden">
+          <div className="mx-auto w-full max-w-6xl px-3 pb-3 pt-2">
+            <Flex align="center" gap={screens.sm ? 12 : 4}>
+              <Button type="text" aria-label="Open menu" icon={<MenuOutlined style={{ color: "#fff", fontSize: 20 }} />} onClick={() => setMenuOpen(true)} style={{ paddingInline: 6 }} />
+              <div className="min-w-0 flex-1">
+                <Link href="/" aria-label="Pencil Box home" className="inline-block max-w-full rounded-md outline-offset-4">
+                  <Wordmark size={screens.sm ? 22 : 14} />
+                </Link>
+              </div>
+              <Segmented<Lang> size="small" value={lang} onChange={chooseLang} aria-label={t("language")} options={[{ label: "EN", value: "en" }, { label: "हिं", value: "hi" }]} />
+              <ThemeToggle toLight={t("lightMode")} toDark={t("darkMode")} />
+              <Badge count={cartCount} color={BRAND.navyDeep} offset={[-2, 4]}>
+                <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => setSheet(true)} aria-label={`${t("cart")}: ${cartCount}`} style={{ paddingInline: screens.sm ? undefined : 8 }} />
+              </Badge>
+            </Flex>
+            <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => { setQ(e.target.value); window.dispatchEvent(new CustomEvent("pb-home-q", { detail: e.target.value })); }} placeholder={t("search")} aria-label={t("search")} />
+          </div>
+        </header>
+        <ShopMenu open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
+        <ShopTabBar cartCount={cartCount} onCart={() => setSheet(true)} />
+        <CartDrawer
+          open={sheet} onClose={() => setSheet(false)} t={t} lang={lang} cartIds={cartIds} cart={cart} variantInfo={variantInfo} priced={priced}
+          total={total} hasRange={hasRange} waHref={waHref} setQty={setQty} onClear={() => (setCart({}), setNotice(""), setSheet(false))} wide={!!screens.md}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="flex min-h-dvh flex-1 flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))]" style={{ background: token.colorBgLayout }}>
       <header style={{ background: BRAND.navy }} className="sticky top-0 z-40 overflow-x-hidden">
@@ -448,7 +496,7 @@ function StorefrontInner({ children, initialCatalog = null }: { children?: React
               <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => setSheet(true)} aria-label={`${t("cart")}: ${cartCount}`} style={{ paddingInline: screens.sm ? undefined : 8 }} />
             </Badge>
           </Flex>
-          <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("search")} aria-label={t("search")} />
+          <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => { setQ(e.target.value); if (shell === "home") window.dispatchEvent(new CustomEvent("pb-home-q", { detail: e.target.value })); }} placeholder={t("search")} aria-label={t("search")} />
         </div>
       </header>
       <ShopMenu open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
