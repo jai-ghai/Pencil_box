@@ -2,6 +2,23 @@ import { cacheLife } from "next/cache";
 import { connectDb } from "./db";
 import { buildStoreCatalog, type StoreCatalog } from "./store";
 
+/**
+ * Catalogue for a page that already opted into request-time rendering.
+ * Unlike `cachedCatalog`, this is not called during `next build`, so it does not
+ * store an empty result that later requests keep reusing.
+ */
+export async function liveCatalog(): Promise<StoreCatalog | null> {
+  "use cache";
+  cacheLife("minutes");
+  if (!process.env.MONGODB_URI) return null;
+  try {
+    await connectDb();
+    return await buildStoreCatalog();
+  } catch {
+    return null;
+  }
+}
+
 /** Shared catalogue for server pages. Empty when the database is not reachable, so a build still finishes. */
 export async function cachedCatalog(): Promise<StoreCatalog | null> {
   "use cache";
