@@ -101,6 +101,7 @@ export function PwaBootstrap() {
   if (!show) return null;
   return (
     <div
+      className="pb-install"
       style={{
         position: "fixed",
         left: 12,

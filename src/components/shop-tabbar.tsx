@@ -25,7 +25,7 @@ export function ShopTabBar({ cartCount, onCart }: { cartCount: number; onCart: (
   const item = (active: boolean) =>
     `flex min-w-0 flex-1 flex-col items-center gap-0.5 pb-1.5 text-[10px] font-bold no-underline ${active ? "text-[#153a7a]" : "text-[#5a6a82]"}`;
   return (
-    <nav className="pb-tabbar" aria-label="Primary">
+    <nav className="pb-tabbar xl:hidden" aria-label="Primary">
       <Link href="/" className={item(pathname === "/")}><HomeOutlined style={{ fontSize: 18 }} />Home</Link>
       <Link href="/categories" className={item(pathname === "/categories")}><AppstoreOutlined style={{ fontSize: 18 }} />Categories</Link>
       <div className="pb-tab-slot">
