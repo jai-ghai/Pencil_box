@@ -11,7 +11,7 @@ export async function StorefrontWithMenu({
 }: {
   children?: React.ReactNode;
   initialCatalog?: StoreCatalog | null;
-  shell?: "home" | "collection";
+  shell?: "home" | "collection" | "chrome";
 }) {
   const menuLinks = homeShopCategories(await shopCategories()).map((row) => ({
     slug: row.slug,

@@ -7,10 +7,10 @@ import type { Metadata } from "next";
 
 export const SITE = "https://www.pencilbox.store";
 
-export const HOME_TITLE = "Stationery Shop in Tigri Extension, New Delhi 110062 | Pencil Box Stationery";
+export const HOME_TITLE = "Stationery Shop in Tigri Extension, South Delhi | Pencil Box";
 export const HOME_DESCRIPTION =
-  "Pencil Box Stationery, B-92 Tigri Extension (near Sangam Vihar, Khanpur, Devli), New Delhi 110062. School stationery, DOMS, Flair, Luxor, art & craft, gifts, photocopy & printing. Open daily 7 AM–9:30 PM.";
-export const HOME_H1 = "Pencil Box Stationery – Stationery & Photocopy Shop in Tigri Extension";
+  "School stationery, notebooks, chart paper, photocopy and kids’ toys near Sangam Vihar, Khanpur and Devli. Pencil Box, B-92 Tigri Extension, New Delhi 110062. Open daily 7 AM–9:30 PM.";
+export const HOME_H1 = "Stationery shop in Tigri Extension";
 
 export const SHOP_NAME = "Pencil Box Stationery";
 export const SHOP_ALTERNATE_NAME = "Pencil Box";
@@ -37,7 +37,13 @@ export const INSTAGRAM_URL = "https://www.instagram.com/pencilbox.stationery";
  */
 export const SAME_AS: string[] = [MAPS_URL, INSTAGRAM_URL];
 
-export const AREAS_SERVED = ["Tigri Extension", "Tigri", "Sangam Vihar", "Khanpur", "Devli"] as const;
+export const AREAS_SERVED = ["Tigri Extension", "Tigri", "Sangam Vihar", "Khanpur", "Devli", "South Delhi"] as const;
+
+/**
+ * Tigri, New Delhi 110062. OpenStreetMap’s point for the colony, used with the street address.
+ * The door is B-92, Block B, Tigri Extension.
+ */
+export const GEO = { latitude: 28.5122, longitude: 77.2439 } as const;
 
 /**
  * Per-page rates in rupees. Same figures as `SERVICES` in src/lib/seed-services.ts
@@ -45,15 +51,15 @@ export const AREAS_SERVED = ["Tigri Extension", "Tigri", "Sangam Vihar", "Khanpu
  */
 export const PRINT_RATES = { photocopy: 2, blackAndWhite: 5, colour: 10 } as const;
 
-/** No shop photograph is in the repo. This is the existing app icon, also used for og:image. */
+/** Shop card for link previews. An original navy-and-yellow drawing, not the app icon. */
 export const OG_IMAGE = {
-  url: "/icons/icon-512.png",
-  width: 512,
-  height: 512,
-  alt: SHOP_NAME,
+  url: "/og/shop-card.png",
+  width: 1200,
+  height: 630,
+  alt: "Pencil Box stationery shop in Tigri Extension",
 } as const;
 
-const LOGO_PATH = "/icons/icon-512.png";
+const LOGO_PATH = "/og/shop-card.png";
 
 export interface FaqItem {
   q: string;
@@ -116,57 +122,74 @@ export const COLLECTIONS: ShopCollection[] = [
     slug: "notebooks",
     match: "Notebooks & Registers",
     nav: "Notebooks",
-    title: "Notebooks in Tigri Extension | Pencil Box Stationery",
-    h1: "Notebooks in Tigri Extension | Pencil Box Stationery",
+    title: "Notebooks & Registers in Tigri Extension | Pencil Box",
+    h1: "Notebook and register shop in Tigri Extension",
     description: `School notebooks and registers near Sangam Vihar, Khanpur and Devli. ${place}`,
-    lede: "School notebooks and registers. Sangam Vihar, Khanpur aur Devli ke paas — copies, registers, sab isi dukaan pe.",
+    lede: "Copies, notebooks and registers for school, from one counter in Tigri Extension. Sangam Vihar, Khanpur aur Devli ke paas.",
   },
   {
     slug: "pens",
     match: "Pens & Pencils",
     nav: "Pens & pencils",
-    title: "Pens & Pencils in Tigri Extension | Pencil Box Stationery",
-    h1: "Pens & Pencils in Tigri Extension | Pencil Box Stationery",
-    description: `Ball pens, gel pens, pencils, erasers and sharpeners. DOMS, Nataraj, Apsara and more. ${place}`,
-    lede: "Ball pens, gel pens, pencils, erasers and sharpeners. DOMS, Nataraj, Apsara and more, Tigri Extension mein.",
+    title: "Pens and Pencils in Tigri Extension | Pencil Box",
+    h1: "Pens and pencils in Tigri Extension",
+    description: `Ball pens, gel pens, pencils, erasers and sharpeners for school. ${place}`,
+    lede: "Ball pens, gel pens, pencils, erasers and sharpeners. One pen or a class set, Tigri Extension mein.",
   },
   {
     slug: "art",
     match: "Art & Craft",
     nav: "Art & craft",
-    title: "Art & Craft in Tigri Extension | Pencil Box Stationery",
-    h1: "Art & Craft in Tigri Extension | Pencil Box Stationery",
-    description: `Chart paper, colours, crayons and craft supplies in Tigri Extension. ${place}`,
-    lede: "Chart paper, colours, crayons and craft supplies for school projects. One shop in Tigri Extension.",
+    title: "Chart Paper & Art Supplies in Tigri Extension | Pencil Box",
+    h1: "Chart paper and art supplies near Sangam Vihar",
+    description: `Chart paper, colours and craft supplies in Tigri Extension, near Sangam Vihar. ${place}`,
+    lede: "Chart paper, colours and craft supplies for a school project. Ask at the counter in Tigri Extension.",
   },
   {
     slug: "school",
     match: "School Supplies",
     nav: "School supplies",
-    title: "School Supplies in Tigri Extension | Pencil Box Stationery",
-    h1: "School Supplies in Tigri Extension | Pencil Box Stationery",
-    description: `Glue, markers, covers and the rest of the school list in Tigri Extension. ${place}`,
-    lede: "Glue, markers, covers, maps and the rest of the school list. B-92, Tigri Extension.",
+    title: "School Stationery near Sangam Vihar | Pencil Box",
+    h1: "School stationery in Tigri Extension",
+    description: `Glue, markers, covers and the rest of the school list near Sangam Vihar and Khanpur. ${place}`,
+    lede: "The rest of the school list: glue, markers, covers and maps. B-92, Tigri Extension.",
   },
   {
     slug: "gifts",
     match: "Gifts & More",
     nav: "Gifts",
-    title: "Gifts & Toys in Tigri Extension | Pencil Box Stationery",
-    h1: "Gifts & Toys in Tigri Extension | Pencil Box Stationery",
-    description: `Birthday return gifts, soft toys and party items near Sangam Vihar, Khanpur and Devli. ${place}`,
-    lede: "Birthday return gifts, soft toys and party items. Sangam Vihar, Khanpur aur Devli ke paas.",
+    title: "Birthday Return Gifts in Tigri Extension | Pencil Box",
+    h1: "Gift shop near Sangam Vihar and Tigri",
+    description: `Birthday return gifts and small party items near Sangam Vihar, Khanpur and Devli. ${place}`,
+    lede: "Birthday return gifts and small party pieces. Sangam Vihar, Khanpur aur Devli ke paas.",
   },
   {
     slug: "printing",
     match: "Printing & Photocopy",
     nav: "Printing",
-    title: "Printing & Photocopy in Tigri Extension | Pencil Box Stationery",
-    h1: "Printing & Photocopy in Tigri Extension | Pencil Box Stationery",
+    title: "Photocopy & Printout near Tigri Extension | Pencil Box",
+    h1: "Photocopy and printout near Sangam Vihar",
     description: `Photocopy ₹${PRINT_RATES.photocopy}/page, B&W printout ₹${PRINT_RATES.blackAndWhite}, colour ₹${PRINT_RATES.colour}. Phone, WhatsApp or pen drive. ${place}`,
-    lede: `Photocopy ₹${PRINT_RATES.photocopy} a page, B&W printout ₹${PRINT_RATES.blackAndWhite}, colour printout ₹${PRINT_RATES.colour}. Phone, WhatsApp ya pen drive. Roz 7 AM–9:30 PM.`,
+    lede: `Photocopy ₹${PRINT_RATES.photocopy} a page, black and white print ₹${PRINT_RATES.blackAndWhite}, colour ₹${PRINT_RATES.colour}. Phone, WhatsApp ya pen drive. Roz khula, 7 AM–9:30 PM.`,
   },
 ];
+
+/** Titles for shelves that are not one of the six main collections. */
+export const SHELF_SEO: Record<string, { title: string; h1: string; description: string }> = {
+  toys: {
+    title: "Toy Shop in Tigri Extension | Pencil Box",
+    h1: "Kids toys in Tigri Extension",
+    description: "A small toy shelf at Pencil Box, B-92 Tigri Extension, near Sangam Vihar, Khanpur and Devli. Ask what is in today. Open daily 7 AM–9:30 PM.",
+  },
+};
+
+export function shelfMeta(slug: string, label: string, about: string): { title: string; h1: string; description: string } {
+  return SHELF_SEO[slug] ?? {
+    title: `${label} in Tigri Extension | Pencil Box`,
+    h1: label,
+    description: about.replace(/\s+/g, " ").trim().slice(0, 160),
+  };
+}
 
 export function collectionBySlug(slug: string): ShopCollection | undefined {
   return COLLECTIONS.find((c) => c.slug === slug);
@@ -204,7 +227,7 @@ export function pageMeta({ title, description, path }: { title: string; descript
       images: [{ ...OG_IMAGE }],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
       images: [OG_IMAGE.url],
@@ -217,7 +240,7 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 export function storeJsonLd() {
   return {
     "@context": "https://schema.org",
-    "@type": "Store",
+    "@type": ["Store", "LocalBusiness"],
     name: SHOP_NAME,
     alternateName: SHOP_ALTERNATE_NAME,
     url: canonicalUrl("/"),
@@ -243,16 +266,17 @@ export function storeJsonLd() {
       },
     ],
     hasMap: MAPS_URL,
+    geo: { "@type": "GeoCoordinates", latitude: GEO.latitude, longitude: GEO.longitude },
     areaServed: AREAS_SERVED.map((name) => ({ "@type": "Place", name })),
     sameAs: [...SAME_AS],
   };
 }
 
-export function faqJsonLd() {
+export function faqJsonLd(items: FaqItem[] = faqItems()) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faqItems().map((item) => ({
+    mainEntity: items.map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: { "@type": "Answer", text: item.a },

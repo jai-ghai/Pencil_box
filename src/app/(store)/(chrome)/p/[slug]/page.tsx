@@ -1,19 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
 import { WishButton } from "@/components/desktop-actions";
 import { ProductBuy } from "@/components/product-buy";
 import { ProductGallery } from "@/components/product-gallery";
 import { cleanItemName, groupSameProducts } from "@/lib/browse";
-import { breadcrumbJsonLd, productJsonLd, productsInCollection } from "@/lib/product-json";
+import { cloudinarySquare, cloudinarySrcSet } from "@/lib/images";
+import { breadcrumbJsonLd, productJsonLd, productSeo, productsInCollection } from "@/lib/product-json";
 import { cachedCatalog } from "@/lib/public-catalog";
+import { retiredProductSlug } from "@/lib/retired-product";
 import { collectionByMatch, jsonLdScript, pageMeta } from "@/lib/shop";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const title = `${slug.replace(/-/g, " ")} | Pencil Box Stationery`;
-  return pageMeta({ title, description: "Item at Pencil Box Stationery, Tigri Extension, New Delhi.", path: `/p/${slug}` });
+  const catalog = await cachedCatalog();
+  const product = catalog?.products.find((item) => item.slug === slug);
+  if (!product) return { title: "Not found", robots: { index: false, follow: false } };
+  const seo = productSeo(product);
+  return pageMeta({ title: seo.title, description: seo.description, path: `/p/${slug}` });
 }
 
 async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
@@ -25,7 +30,7 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
   const category = catalog.categories.find((c) => c.id === product.categoryId);
   const top = category?.parentId ? catalog.categories.find((c) => c.id === category.parentId) : category;
   const collection = top ? collectionByMatch(top.name_en) : undefined;
-  const title = cleanItemName(product.name_en) || product.name_en;
+  const title = productSeo(product).name || cleanItemName(product.name_en) || product.name_en;
   const crumbs = [
     { name: "Home", path: "/" },
     ...(collection ? [{ name: collection.nav, path: `/c/${collection.slug}` }] : []),
@@ -44,7 +49,7 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
       </nav>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-[12px] border border-black/10 bg-[#f3f5f8] p-4">
-          <ProductGallery photos={photos} alt={`${product.brand ? `${product.brand} ` : ""}${title}`} />
+          <ProductGallery photos={photos} alt={title} />
         </div>
         <div>
           {product.brand && <p className="text-sm font-semibold text-[#5a6a82]">{product.brand}</p>}
@@ -72,10 +77,24 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
   );
 }
 
-export default function Page({ params }: { params: Promise<{ slug: string }> }) {
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const catalog = await cachedCatalog();
+  const product = catalog?.products.find((item) => item.slug === slug);
+  if (catalog && !product) {
+    const next = await retiredProductSlug(slug);
+    if (next) permanentRedirect(`/p/${next}`);
+    notFound();
+  }
+  const photo = product?.images[0] || product?.image || "";
+  const href = photo ? cloudinarySquare(photo, 800) : "";
+  const srcSet = photo ? cloudinarySrcSet(photo, [400, 800, 1200]) : undefined;
   return (
-    <Suspense fallback={<p className="mx-auto max-w-6xl px-4 py-6 text-sm">Loading item…</p>}>
-      <ProductRoute params={params} />
-    </Suspense>
+    <>
+      {href && <link rel="preload" as="image" href={href} imageSrcSet={srcSet} imageSizes="(max-width: 640px) 100vw, 480px" fetchPriority="high" />}
+      <Suspense fallback={<p className="mx-auto max-w-6xl px-4 py-6 text-sm">Loading item…</p>}>
+        <ProductRoute params={params} />
+      </Suspense>
+    </>
   );
 }

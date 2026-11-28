@@ -23,4 +23,4 @@ export async function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/admin/:path*", "/pos/:path*", "/qr-generator/:path*", "/api/admin/:path*", "/api/pos/:path*", "/api/auth/me"] };
+export const config = { matcher: ["/admin/:path*", "/pos/:path*", "/qr-generator/:path*", "/api/admin/:path*", "/api/pos/:path*"] };

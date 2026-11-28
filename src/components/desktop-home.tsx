@@ -4,13 +4,14 @@ import { HeroFrame } from "@/components/desktop-hero";
 import { CategoryTile, shelfArt } from "@/components/category-tile";
 import { homeShopCategories } from "@/lib/shop-category-data";
 import { shopCategories } from "@/lib/shop-category-store";
-import { HOME_H1, HOURS_LABEL, PHONE_TEL, REVIEW_URL } from "@/lib/shop";
+import { HOURS_LABEL, PHONE_TEL, REVIEW_URL } from "@/lib/shop";
 
 const NEEDS = [
   { slug: "school", title: "School", text: "Bags, books and the list the teacher sent.", href: "/c/school" },
   { slug: "office", title: "Office", text: "Files, staplers and a desk that can start the day.", href: "/c/office" },
   { slug: "art", title: "Art & craft", text: "Colours, clay and paper for the project tonight.", href: "/c/art" },
   { slug: "gifts", title: "Gifts", text: "Small return gifts for a class or a birthday.", href: "/c/gifts" },
+  { slug: "toys", title: "Toys", text: "Kids’ toys from the same counter. Ask what is in today.", href: "/c/toys" },
 ] as const;
 
 /** Desktop homepage. Categories and offers only — the product shelves live on their own pages. */
@@ -19,7 +20,6 @@ export async function DesktopHome() {
   const wa = `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}`;
   return (
     <div className="hidden xl:block">
-      <h1 className="pb-sr-only">{HOME_H1}</h1>
       <HeroFrame>
         <Slide
           kicker="For the school bag"
@@ -80,7 +80,7 @@ export async function DesktopHome() {
 
       <section className="mt-8" aria-labelledby="shop-need">
         <h2 id="shop-need" className="text-xl font-extrabold text-[#0c1222]">Shop by need</h2>
-        <ul className="mt-3 grid grid-cols-4 gap-3">
+        <ul className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-5">
           {NEEDS.map((need) => (
             <li key={need.slug}>
               <Link href={need.href} className="group block rounded-[14px] border border-black/10 bg-white p-3 no-underline transition duration-200 hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(21,58,122,0.12)]">

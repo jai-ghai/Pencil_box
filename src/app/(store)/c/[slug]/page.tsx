@@ -8,7 +8,7 @@ import { groupSameProducts, sortProducts } from "@/lib/browse";
 import { breadcrumbJsonLd, itemListJsonLd, productsInCollection } from "@/lib/product-json";
 import { cachedCatalog } from "@/lib/public-catalog";
 import { allDepartmentSlugs } from "@/lib/departments";
-import { COLLECTIONS, PHONE_TEL, collectionBySlug, jsonLdScript, pageMeta } from "@/lib/shop";
+import { COLLECTIONS, PHONE_TEL, collectionBySlug, faqJsonLd, jsonLdScript, pageMeta, shelfMeta } from "@/lib/shop";
 import { childShopCategories } from "@/lib/shop-category-data";
 import { shopCategories, shopCategoryBySlug } from "@/lib/shop-category-store";
 
@@ -23,17 +23,14 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const shelf = await shopCategoryBySlug(slug);
-  if (shelf?.listing && shelf.title) return pageMeta({ title: shelf.title, description: shelf.description, path: `/c/${shelf.slug}` });
-  if (shelf) {
-    return {
-      ...pageMeta({ title: `${shelf.label} | Pencil Box Stationery`, description: shelf.about.slice(0, 160), path: `/c/${shelf.slug}` }),
-      ...(shelf.parent ? { robots: { index: false, follow: true } } : {}),
-    };
-  }
   const collection = collectionBySlug(slug);
-  if (!collection) return {};
-  return pageMeta({ title: collection.title, description: collection.description, path: `/c/${collection.slug}` });
+  if (collection) return pageMeta({ title: collection.title, description: collection.description, path: `/c/${collection.slug}` });
+  const shelf = await shopCategoryBySlug(slug);
+  if (shelf) {
+    const seo = shelfMeta(shelf.slug, shelf.h1 || shelf.label, shelf.description || shelf.about);
+    return pageMeta({ title: seo.title, description: seo.description, path: `/c/${shelf.slug}` });
+  }
+  return { title: "Not found", robots: { index: false, follow: false } };
 }
 
 async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -56,7 +53,6 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
             <span aria-hidden> › </span>
             <span>{shelf.label}</span>
           </nav>
-          <h1 className="mt-1 text-lg font-extrabold leading-snug">{shelf.label}</h1>
           {shelf.subtitle ? <p className="mt-1 text-sm text-[#5a6a82]">{shelf.subtitle}</p> : null}
           {kids.length > 0 && (
             <ul className="mt-3 grid grid-cols-3 gap-2">
@@ -72,6 +68,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
         <section className="mt-6 max-w-3xl">
           <h2 className="text-lg font-extrabold">About this shelf</h2>
           <p className="mt-2 text-[15px] leading-relaxed">{shelf.about}</p>
+          {shelf.faqs.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(faqJsonLd(shelf.faqs)) }} />}
           {shelf.faqs.length > 0 && <FaqAccordion items={shelf.faqs} title="Questions" id={`faq-${shelf.slug}`} heading="h3" bare />}
         </section>
       </>
@@ -79,7 +76,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
   }
   const nav = shelf?.nav || fallback?.nav || slug;
   const match = shelf?.match || fallback?.match || "";
-  const lede = shelf?.lede || fallback?.lede || "";
+  const lede = fallback?.lede || shelf?.lede || "";
   const about = shelf?.about || "";
   const faqs = shelf?.faqs ?? [];
   const catalog = await cachedCatalog();
@@ -92,6 +89,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd(crumbs)) }} />
       {products.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(itemListJsonLd(products.slice(0, 24))) }} />}
+      {faqs.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(faqJsonLd(faqs)) }} />}
       <div className="order-1 pt-3">
         <nav aria-label="Breadcrumb" className="text-sm">
           <Link href="/" className="font-semibold underline">Home</Link>
@@ -121,11 +119,19 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
   );
 }
 
-export default function Page({ params }: { params: Promise<{ slug: string }> }) {
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const rows = await shopCategories();
+  const shelf = rows.find((row) => row.slug === slug);
+  const fallback = collectionBySlug(slug);
+  if ((!shelf && !fallback) || shelf?.hidden) notFound();
+  const listing = shelf ? shelf.listing : Boolean(fallback);
+  const heading = shelfMeta(slug, shelf?.label || fallback?.nav || slug, shelf?.about || "").h1;
   return (
     <>
       {/* Keeps Next from scrolling the questions block into view. A fixed mark is already on screen, so the late shelf text is not treated as the navigation target. */}
       <span aria-hidden="true" className="pointer-events-none fixed left-0 top-0 h-px w-px" />
+      {!listing && <h1 className="mt-1 text-lg font-extrabold leading-snug">{fallback?.h1 || heading}</h1>}
       <Suspense fallback={<div className="min-h-[70vh] pt-3 text-sm">Loading shelf…</div>}>
         <CollectionPage params={params} />
       </Suspense>

@@ -44,7 +44,7 @@ export const DEPARTMENTS: Department[] = [
   main("office", "Office", "Files, calculators, staplers and desk tools are kept for home offices and school offices."),
   main("tapes", "Tapes & glue", "Cello tape, foam tape and glue-gun sticks are asked for with craft and office jobs."),
   main("paper", "Paper", "A4 sheets, colour paper, drawing books and gift wrap are kept with the paper shelf."),
-  main("toys", "Toys & daily use", "Small toys, puzzles, locks and everyday items are asked for at the same counter as stationery."),
+  main("toys", "Toys & daily use", "Kids’ toys, puzzles and small everyday things are kept at the same counter as the stationery. Families from Sangam Vihar, Khanpur and Devli ask what is in today, then pick it up in Tigri Extension."),
 
   child("pencil-box", "Pencil box", "school", "A plain pencil box for the school list."),
   child("pencil-pouch", "Pencil pouch", "school", "A zipper pouch for pens and pencils."),
