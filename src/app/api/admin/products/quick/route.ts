@@ -19,6 +19,7 @@ const body = z.object({
     .optional(),
   /** when set, that customer request is marked in_stock (drops off the open list) */
   requestId: z.string().regex(/^[a-f0-9]{24}$/).optional(),
+  acknowledgeSamePrice: z.boolean().optional(),
 });
 
 /**
@@ -56,6 +57,7 @@ export const POST = route(can("products"), async (req) => {
     attributes: {},
     tags: [],
     active: true,
+    acknowledgeSamePrice: b.acknowledgeSamePrice,
     variants: [{ label: "", sellPrice: price, costPrice: 0, baseUnit: "piece", packSize: 1, reorderLevel: 0, quickTap: false, trackStock: true, active: true, aliases: [] }],
   });
 

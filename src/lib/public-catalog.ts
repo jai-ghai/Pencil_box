@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
 import { connectDb } from "./db";
+import { mergeSamePriceOnce } from "./same-price-merge";
 import { buildStoreCatalog, type StoreCatalog } from "./store";
 
 /**
@@ -13,6 +14,9 @@ export async function liveCatalog(): Promise<StoreCatalog | null> {
   if (!process.env.MONGODB_URI) return null;
   try {
     await connectDb();
+    await mergeSamePriceOnce().catch((error) => {
+      console.error("Same-price merge skipped:", error instanceof Error ? error.message : "unknown");
+    });
     return await buildStoreCatalog();
   } catch {
     return null;
@@ -27,6 +31,9 @@ export async function cachedCatalog(): Promise<StoreCatalog | null> {
   if (!process.env.MONGODB_URI || process.env.NEXT_PHASE === "phase-production-build") return null;
   try {
     await connectDb();
+    await mergeSamePriceOnce().catch((error) => {
+      console.error("Same-price merge skipped:", error instanceof Error ? error.message : "unknown");
+    });
     return await buildStoreCatalog();
   } catch {
     return null;

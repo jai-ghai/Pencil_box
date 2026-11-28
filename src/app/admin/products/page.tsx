@@ -48,13 +48,14 @@ interface ProductForm {
   supplierId?: string;
   internalNote?: string;
   description_en?: string;
+  acknowledgeSamePrice?: boolean;
   variants: VariantForm[];
 }
 
 const blankVariant = (): VariantForm => ({ label: "", sellPrice: undefined, costPrice: 0, packSize: 1, reorderLevel: 0, quickTap: false, trackStock: true });
 
 export default function Products() {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<ProductForm>();
   const [brands, setBrands] = useState<Opt[]>([]);
@@ -148,6 +149,7 @@ export default function Products() {
         description_en: v.description_en?.trim() || undefined,
         images,
         imageGeneric: images.length > 0 && generic,
+        acknowledgeSamePrice: v.acknowledgeSamePrice,
         variants: v.variants.map((x) => ({
           _id: x._id,
           label: (x.label ?? "").trim(),
@@ -168,7 +170,15 @@ export default function Products() {
       setEditing(null);
       await loadList(q, archived);
     } catch (e) {
-      message.error((e as Error).message);
+      const text = (e as Error).message;
+      if (text.startsWith("Same price:")) {
+        modal.confirm({
+          title: "Same price already in this category",
+          content: text,
+          okText: "Save anyway",
+          onOk: () => save({ ...v, acknowledgeSamePrice: true }),
+        });
+      } else message.error(text);
     } finally {
       setSaving(false);
     }

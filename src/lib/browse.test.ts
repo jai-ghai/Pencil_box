@@ -34,7 +34,7 @@ describe("browse", () => {
     expect(sortProducts(rows, "price-asc").map((p) => p.id)).toEqual(["a", "b"]);
   });
 
-  it("strips a trailing price and groups the same photo into one card", () => {
+  it("groups one category by price and drops the brand from the title", () => {
     expect(cleanItemName("Akash Notebook ₹30")).toBe("Akash Notebook");
     const cheap = item("Akash Notebook ₹20", 2000);
     const mid = item("Akash Notebook ₹30", 3000);
@@ -42,19 +42,25 @@ describe("browse", () => {
     mid.id = "2";
     cheap.brand = "Akash";
     mid.brand = "Akash";
-    cheap.image = "nb.png";
-    mid.image = "nb.png";
+    cheap.image = "twenty.jpg";
+    mid.image = "thirty.jpg";
     cheap.variants[0].id = "v1";
+    cheap.variants[0].label = "Maths";
     mid.variants[0].id = "v2";
-    mid.variants[0].label = "Maths";
-    const other = item("Alfa + Notebook ₹20", 2000);
-    other.id = "3";
-    other.brand = "Alfa +";
-    other.image = "nb.png";
-    const grouped = groupSameProducts([mid, other, cheap]);
-    const akash = grouped.find((p) => p.brand === "Akash");
+    mid.variants[0].label = "Hindi";
+    const alfa = item("Alfa + Notebook ₹20", 2000);
+    alfa.id = "3";
+    alfa.brand = "Alfa +";
+    alfa.image = "twenty.jpg";
+    alfa.variants[0].id = "v3";
+    alfa.variants[0].label = "English";
+    const grouped = groupSameProducts([mid, alfa, cheap]);
     expect(grouped).toHaveLength(2);
-    expect(akash?.name_en).toBe("Akash Notebook");
-    expect(akash?.variants.map((v) => v.id).sort()).toEqual(["v1", "v2"]);
+    const twenty = grouped.find((p) => p.variants[0].price === 2000);
+    const thirty = grouped.find((p) => p.variants.some((v) => v.price === 3000));
+    expect(twenty?.name_en).toBe("Notebook");
+    expect(twenty?.brand).toBe("");
+    expect(twenty?.variants.map((v) => v.label).sort()).toEqual(["English", "Maths"]);
+    expect(thirty?.name_en).toBe("Notebook");
   });
 });
