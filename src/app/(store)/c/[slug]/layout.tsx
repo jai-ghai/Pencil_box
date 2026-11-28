@@ -5,7 +5,7 @@ import { CatalogueShellSkeleton } from "@/components/store-skeleton";
 import { groupSameProducts, sortProducts } from "@/lib/browse";
 import { cloudinarySquare, cloudinarySrcSet } from "@/lib/images";
 import { productsInCollection } from "@/lib/product-json";
-import { cachedCatalog } from "@/lib/public-catalog";
+import { liveCatalog } from "@/lib/public-catalog";
 import { COLLECTIONS, collectionBySlug } from "@/lib/shop";
 import { Storefront } from "../../../storefront";
 
@@ -15,7 +15,7 @@ async function CollectionFrame({ children, params }: { children: React.ReactNode
   // Render the product photos in this response. A build-time shell has no database,
   // so the list is read when the page is actually requested.
   if (isCollection) await connection();
-  const initialCatalog = isCollection ? await cachedCatalog() : null;
+  const initialCatalog = isCollection ? await liveCatalog() : null;
   const collection = collectionBySlug(slug);
   const first = initialCatalog && collection ? sortProducts(groupSameProducts(productsInCollection(initialCatalog, collection.match)), "popular")[0] : undefined;
   const href = first?.image ? cloudinarySquare(first.image, 400) : undefined;
