@@ -41,11 +41,13 @@ export default async function CollectionLayout({ children, params }: { children:
   return (
     <div className="flex min-h-dvh flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))] xl:pb-0" style={{ background: "#f0f3f8" }}>
       {href && <link rel="preload" as="image" href={href} imageSrcSet={srcSet} imageSizes="(max-width: 640px) 45vw, 220px" fetchPriority="high" />}
-      <Suspense fallback={<div aria-hidden className="shrink-0 xl:hidden" style={{ height: 116, background: "#153a7a" }} />}>
+      <div className="xl:hidden">
+      <Suspense fallback={<div aria-hidden className="shrink-0" style={{ height: 116, background: "#153a7a" }} />}>
         <AntdRoot accent="sun" inlineCss={false} fill={false}>
           <Storefront shell="collection" initialCatalog={initialCatalog} />
         </AntdRoot>
       </Suspense>
+      </div>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-3">
         <h1 className="text-lg font-extrabold leading-snug">{collectionName}</h1>
         {initialCatalog && <p className="mt-1 text-sm font-semibold">{initialCatalog.products.length} {initialCatalog.products.length === 1 ? "item" : "items"}</p>}
