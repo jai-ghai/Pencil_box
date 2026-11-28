@@ -379,6 +379,75 @@ html[data-theme="dark"] .pb-seo-card {
   border-color: rgba(232, 238, 248, 0.1);
 }
 
+/* FAQ accordion. Answers stay in the HTML; they are only collapsed. */
+.pb-faq {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(12, 18, 34, 0.1);
+  border-radius: 14px;
+}
+.pb-faq details + details {
+  border-top: 1px solid rgba(21, 58, 122, 0.12);
+}
+.pb-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #153a7a;
+}
+.pb-faq summary::-webkit-details-marker { display: none; }
+.pb-faq summary::marker { content: ""; }
+.pb-faq summary:focus-visible {
+  outline: 2px solid #ecc233;
+  outline-offset: -2px;
+}
+.pb-faq-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #ecc233;
+  color: #0a1628;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.pb-faq details[open] .pb-faq-icon { transform: rotate(45deg); }
+.pb-faq details {
+  interpolate-size: allow-keywords;
+}
+.pb-faq details::details-content {
+  height: 0;
+  overflow: clip;
+  transition: height 0.28s ease, content-visibility 0.28s allow-discrete;
+}
+.pb-faq details[open]::details-content {
+  height: auto;
+}
+.pb-faq-body {
+  margin: 0;
+  padding: 0 16px 14px;
+  color: #5a6a82;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+html[data-theme="dark"] .pb-faq {
+  background: var(--pb-slate);
+  border-color: rgba(232, 238, 248, 0.1);
+}
+html[data-theme="dark"] .pb-faq summary { color: #f6e7a0; }
+html[data-theme="dark"] .pb-faq-body { color: #9aabc4; }
+
 /* Desktop install toast sits in the corner instead of above the phone tab bar. */
 @media (min-width: 1280px) {
   .pb-install {

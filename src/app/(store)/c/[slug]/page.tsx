@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { FaqAccordion } from "@/components/faq-accordion";
 import { ShopImage } from "@/components/shop-image";
 import { groupSameProducts, sortProducts } from "@/lib/browse";
 import { COLLECTION_COPY } from "@/lib/collection-copy";
@@ -70,12 +71,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
         <section className="mt-6 max-w-3xl">
           <h2 className="text-lg font-extrabold">About this shelf</h2>
           <p className="mt-2 text-[15px] leading-relaxed">{dept.about}</p>
-          <h3 className="mt-4 font-extrabold">Questions</h3>
-          <dl className="mt-2 flex flex-col gap-3">
-            {dept.faqs.map((f) => (
-              <div key={f.q}><dt className="font-bold">{f.q}</dt><dd className="text-[15px] leading-relaxed text-[#5a6a82]">{f.a}</dd></div>
-            ))}
-          </dl>
+          <FaqAccordion items={dept.faqs} title="Questions" id={`faq-${dept.slug}`} heading="h3" bare />
         </section>
       </>
     );
@@ -120,15 +116,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
           {copy && <p className="mt-2 text-[15px] leading-relaxed">{copy.about}</p>}
           {copy && (
             <>
-              <h3 className="mt-4 font-extrabold">Questions</h3>
-              <dl className="mt-2 flex flex-col gap-3">
-                {copy.faqs.map((f) => (
-                  <div key={f.q}>
-                    <dt className="font-bold">{f.q}</dt>
-                    <dd className="text-[15px] leading-relaxed text-[#5a6a82]">{f.a}</dd>
-                  </div>
-                ))}
-              </dl>
+              <FaqAccordion items={copy.faqs} title="Questions" id={`faq-${collection.slug}`} heading="h3" bare />
             </>
           )}
         </section>
