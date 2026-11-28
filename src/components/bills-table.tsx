@@ -1,11 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Button, Flex, Table, Tag, Typography } from "antd";
+import { useEffect, useState, type ReactNode } from "react";
+import { Button, Flex, Segmented, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { DownloadOutlined, PrinterOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { printA5Bill, downloadA5Bill, shareA5Bill } from "@/lib/a5-print";
-import { paymentLabel } from "@/lib/a5-bill";
+import { paymentLabel, type BillTone } from "@/lib/a5-bill";
 import { printReceipt } from "@/lib/receipt";
 import { inr } from "@/lib/client";
 import { formatIST } from "@/lib/time";
@@ -29,7 +29,32 @@ export interface Bill {
   items: { variantId?: string; name: string; qty: number; freeUnits: number; unitPrice: number; lineTotal: number; offer: string }[];
 }
 
+const TONE_KEY = "pb_bill_tone";
 const mode = (b: Bill) => paymentLabel(b.payments);
+
+function useBillTone(): [BillTone, (tone: BillTone) => void] {
+  const [tone, setTone] = useState<BillTone>("colour");
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      try {
+        const saved = localStorage.getItem(TONE_KEY);
+        if (saved === "bw" || saved === "colour") setTone(saved);
+      } catch {
+        /* private mode */
+      }
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
+  function choose(next: BillTone) {
+    setTone(next);
+    try {
+      localStorage.setItem(TONE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
+  return [tone, choose];
+}
 
 function toA5(b: Bill) {
   return {
@@ -47,6 +72,7 @@ function toA5(b: Bill) {
 
 /** Every bill made on the billing screen is an order record; this lists them with their items. `actions` adds buttons (edit, delete) for people allowed to use them. */
 export function BillsTable({ bills, loading, actions }: { bills: Bill[]; loading?: boolean; actions?: (b: Bill) => ReactNode }) {
+  const [tone, setTone] = useBillTone();
   const columns: TableColumnsType<Bill> = [
     { title: "Bill", dataIndex: "billNo", width: 64, render: (n: number, b) => <Typography.Text strong>#{n}{b.source === "whatsapp" && <Tag color="success" style={{ marginInlineStart: 6 }}>WhatsApp</Tag>}</Typography.Text> },
     { title: "Time", dataIndex: "at", render: (d: string) => formatIST(d) },
@@ -55,6 +81,16 @@ export function BillsTable({ bills, loading, actions }: { bills: Bill[]; loading
     { title: "Total", dataIndex: "total", align: "right", width: 84, render: (n: number) => <Typography.Text strong>{inr(n)}</Typography.Text> },
   ];
   return (
+    <div>
+    <Flex align="center" gap={8} wrap style={{ padding: "8px 12px" }}>
+      <Typography.Text strong>Bill style</Typography.Text>
+      <Segmented<BillTone>
+        value={tone}
+        onChange={setTone}
+        aria-label="Bill print style"
+        options={[{ value: "colour", label: "Colour" }, { value: "bw", label: "Black & white" }]}
+      />
+    </Flex>
     <Table<Bill>
       rowKey="id"
       size="small"
@@ -94,9 +130,9 @@ export function BillsTable({ bills, loading, actions }: { bills: Bill[]; loading
               </Typography.Paragraph>
             )}
             <Flex gap={8} wrap style={{ marginTop: 10 }}>
-              <Button type="primary" icon={<PrinterOutlined />} onClick={() => printA5Bill(toA5(b))}>Print bill</Button>
-              <Button icon={<DownloadOutlined />} onClick={() => downloadA5Bill(toA5(b))}>Download PDF</Button>
-              <Button icon={<WhatsAppOutlined />} onClick={() => shareA5Bill(toA5(b))}>Share</Button>
+              <Button type="primary" icon={<PrinterOutlined />} onClick={() => printA5Bill(toA5(b), tone)}>Print bill</Button>
+              <Button icon={<DownloadOutlined />} onClick={() => downloadA5Bill(toA5(b), tone)}>Download PDF</Button>
+              <Button icon={<WhatsAppOutlined />} onClick={() => shareA5Bill(toA5(b), tone)}>Share</Button>
               <Button onClick={() => printReceipt(b)}>Receipt</Button>
               {actions?.(b)}
             </Flex>
@@ -104,5 +140,6 @@ export function BillsTable({ bills, loading, actions }: { bills: Bill[]; loading
         ),
       }}
     />
+    </div>
   );
 }

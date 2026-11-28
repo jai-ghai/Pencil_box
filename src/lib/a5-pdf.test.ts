@@ -16,6 +16,7 @@ const sample = {
 describe("a5 pdf", () => {
   it("names the file and writes a cash-memo PDF", async () => {
     expect(billPdfName(12)).toBe("PencilBox-Bill-12.pdf");
+    expect(billPdfName(12, "bw")).toBe("PencilBox-Bill-12-BW.pdf");
     const bytes = await buildA5Pdf(sample);
     expect(Buffer.from(bytes).subarray(0, 5).toString()).toBe("%PDF-");
     const loaded = await PDFDocument.load(bytes);

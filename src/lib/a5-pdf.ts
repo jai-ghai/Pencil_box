@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage } from "pdf-lib";
 import QRCode from "qrcode";
-import { paymentLabel, upiPayLink, type A5BillInput } from "./a5-bill";
+import { paymentLabel, upiPayLink, type A5BillInput, type BillTone } from "./a5-bill";
 import { rupeesInWords } from "./money-words";
 import { ADDRESS_LINE, PHONE_DISPLAY, REVIEW_URL, SHOP_NAME, SITE } from "./shop";
 import { formatIST } from "./time";
@@ -10,8 +10,8 @@ const NAVY = rgb(21 / 255, 58 / 255, 122 / 255);
 const INK = rgb(0.07, 0.07, 0.07);
 const MUTED = rgb(0.28, 0.28, 0.28);
 
-export function billPdfName(billNo: number): string {
-  return `PencilBox-Bill-${billNo}.pdf`;
+export function billPdfName(billNo: number, tone: BillTone = "colour"): string {
+  return tone === "bw" ? `PencilBox-Bill-${billNo}-BW.pdf` : `PencilBox-Bill-${billNo}.pdf`;
 }
 
 const rs = (paise: number) =>
@@ -53,7 +53,7 @@ function wrap(text: string, font: PDFFont, size: number, max: number): string[] 
 }
 
 /** A5 cash memo as a real PDF. No GSTIN and no tax lines. */
-export async function buildA5Pdf(bill: A5BillInput, upiId = ""): Promise<Uint8Array> {
+export async function buildA5Pdf(bill: A5BillInput, upiId = "", tone: BillTone = "colour"): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle(`Bill ${bill.billNo}`);
   doc.setAuthor(SHOP_NAME);
@@ -83,10 +83,12 @@ export async function buildA5Pdf(bill: A5BillInput, upiId = ""): Promise<Uint8Ar
     page.drawText(safe, { x, y, size, font: opts?.font ?? font, color: opts?.color ?? INK });
   };
 
-  page.drawRectangle({ x: 0, y: height - 10, width, height: 10, color: rgb(236 / 255, 194 / 255, 51 / 255) });
-  text("Bill", left, 22, { font: bold, color: NAVY });
+  const ink = tone === "bw" ? INK : NAVY;
+  const rule = tone === "bw" ? INK : NAVY;
+  if (tone !== "bw") page.drawRectangle({ x: 0, y: height - 10, width, height: 10, color: rgb(236 / 255, 194 / 255, 51 / 255) });
+  text("Bill", left, 22, { font: bold, color: ink });
   y -= 16;
-  text("CASH MEMO", left, 10, { font: bold, color: NAVY });
+  text("CASH MEMO", left, 10, { font: bold, color: ink });
   y -= 16;
   text(SHOP_NAME, left, 11, { font: bold });
   y -= 13;
@@ -95,7 +97,7 @@ export async function buildA5Pdf(bill: A5BillInput, upiId = ""): Promise<Uint8Ar
     y -= 12;
   }
   y -= 4;
-  page.drawLine({ start: { x: left, y }, end: { x: right, y }, thickness: 1.5, color: NAVY });
+  page.drawLine({ start: { x: left, y }, end: { x: right, y }, thickness: tone === "bw" ? 0.8 : 1.5, color: rule });
   y -= 16;
   text(`No. ${bill.billNo}`, left, 11, { font: bold });
   const when = ascii(formatIST(bill.at));

@@ -1,7 +1,7 @@
 "use client";
 
 import QRCode from "qrcode";
-import { a5BillHtml, upiPayLink, type A5BillInput } from "./a5-bill";
+import { a5BillHtml, upiPayLink, type A5BillInput, type BillTone } from "./a5-bill";
 import { billPdfName, buildA5Pdf } from "./a5-pdf";
 import { REVIEW_URL } from "./shop";
 
@@ -20,11 +20,11 @@ async function loadUpiId(): Promise<string> {
   }
 }
 
-export async function renderA5Html(bill: A5BillInput, upiId = ""): Promise<string> {
+export async function renderA5Html(bill: A5BillInput, upiId = "", tone: BillTone = "colour"): Promise<string> {
   const reviewQr = await qr(REVIEW_URL);
   const id = upiId.trim();
   const upiQr = id ? await qr(upiPayLink(id, bill.total, bill.billNo)) : "";
-  return a5BillHtml(bill, { reviewQr, upiQr, upiId: id });
+  return a5BillHtml(bill, { reviewQr, upiQr, upiId: id, tone });
 }
 
 function printHtml(html: string) {
@@ -59,19 +59,19 @@ export function savePdfFile(bytes: Uint8Array, filename: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-export async function printA5Bill(bill: A5BillInput) {
-  printHtml(await renderA5Html(bill, await loadUpiId()));
+export async function printA5Bill(bill: A5BillInput, tone: BillTone = "colour") {
+  printHtml(await renderA5Html(bill, await loadUpiId(), tone));
 }
 
-export async function downloadA5Bill(bill: A5BillInput) {
-  const bytes = await buildA5Pdf(bill, await loadUpiId());
-  savePdfFile(bytes, billPdfName(bill.billNo));
+export async function downloadA5Bill(bill: A5BillInput, tone: BillTone = "colour") {
+  const bytes = await buildA5Pdf(bill, await loadUpiId(), tone);
+  savePdfFile(bytes, billPdfName(bill.billNo, tone));
 }
 
 /** Share the PDF (WhatsApp appears in the Android share sheet). Downloads the file when sharing files is unavailable. */
-export async function shareA5Bill(bill: A5BillInput) {
-  const bytes = await buildA5Pdf(bill, await loadUpiId());
-  const name = billPdfName(bill.billNo);
+export async function shareA5Bill(bill: A5BillInput, tone: BillTone = "colour") {
+  const bytes = await buildA5Pdf(bill, await loadUpiId(), tone);
+  const name = billPdfName(bill.billNo, tone);
   const file = new File([new Uint8Array(bytes)], name, { type: "application/pdf" });
   try {
     if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
