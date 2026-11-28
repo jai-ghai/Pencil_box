@@ -123,8 +123,12 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
 
 export default function Page({ params }: { params: Promise<{ slug: string }> }) {
   return (
-    <Suspense fallback={<p className="pt-3 text-sm">Loading shelf…</p>}>
-      <CollectionPage params={params} />
-    </Suspense>
+    <>
+      {/* Keeps Next from scrolling the questions block into view. A fixed mark is already on screen, so the late shelf text is not treated as the navigation target. */}
+      <span aria-hidden="true" className="pointer-events-none fixed left-0 top-0 h-px w-px" />
+      <Suspense fallback={<div className="min-h-[70vh] pt-3 text-sm">Loading shelf…</div>}>
+        <CollectionPage params={params} />
+      </Suspense>
+    </>
   );
 }
