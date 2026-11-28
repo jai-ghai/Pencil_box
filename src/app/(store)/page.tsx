@@ -15,7 +15,6 @@ export default function HomePage() {
   return (
     <div className="flex min-h-dvh flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))]" style={{ background: "#f0f3f8" }}>
       <link rel="canonical" href={canonicalUrl("/")} />
-      <link rel="preload" as="image" href="/category/notebooks.svg" fetchPriority="high" />
       <Suspense fallback={<div aria-hidden className="shrink-0" style={{ height: HEADER_PX, background: "#153a7a" }} />}>
         <AntdRoot accent="sun" fill={false}>
           <Storefront shell="home" />

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { orderedHomeLinks } from "@/lib/departments";
+import { HOME_DRAWING } from "@/components/home-drawings";
 
 /**
  * Category drawings in the first HTML. These are local files, not photos,
@@ -15,7 +16,7 @@ export function HomeCategoryGrid() {
             <span className="block aspect-square bg-[#eceff3]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/category/${card.slug}.svg`}
+                src={HOME_DRAWING[card.slug] ?? `/category/${card.slug}.svg`}
                 alt=""
                 width={400}
                 height={400}
