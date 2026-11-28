@@ -39,7 +39,7 @@ export function QuickAddModal({
 }
 
 function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: QuickAddSeed | null; onSaved: () => void | Promise<void> }) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [line, setLine] = useState(seed?.line ?? "");
   const [imageUrl, setImageUrl] = useState<string | null>(seed?.imageUrl ?? null);
   const [busy, setBusy] = useState(false);
@@ -48,8 +48,11 @@ function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: Quic
   const draft = parseQuickAdd(line, brands);
 
   useEffect(() => {
-    setLine(seed?.line ?? "");
-    setImageUrl(seed?.imageUrl ?? null);
+    const apply = setTimeout(() => {
+      setLine(seed?.line ?? "");
+      setImageUrl(seed?.imageUrl ?? null);
+    }, 0);
+    return () => clearTimeout(apply);
   }, [seed?.line, seed?.imageUrl]);
 
   async function onPhoto(file: File | undefined) {
@@ -70,7 +73,7 @@ function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: Quic
     }
   }
 
-  async function save() {
+  async function save(acknowledgeSamePrice = false) {
     if (!draft) {
       message.warning("Type a name and a price, e.g. Natraj HB pencil 5");
       return;
@@ -82,7 +85,7 @@ function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: Quic
     setBusy(true);
     try {
       const r = await api<{ product: { name_en: string }; variants: { shortCode?: string }[]; requestCleared?: boolean }>("/api/admin/products/quick", {
-        body: { line, imageUrl: imageUrl ?? undefined, requestId: seed?.requestId },
+        body: { line, imageUrl: imageUrl ?? undefined, requestId: seed?.requestId, acknowledgeSamePrice },
       });
       const code = r.variants[0]?.shortCode?.toUpperCase();
       message.success(
@@ -90,7 +93,15 @@ function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: Quic
       );
       await onSaved();
     } catch (e) {
-      message.error((e as Error).message);
+      const text = (e as Error).message;
+      if (text.startsWith("Same price:")) {
+        modal.confirm({
+          title: "Same price already in this category",
+          content: text,
+          okText: "Save anyway",
+          onOk: () => save(true),
+        });
+      } else message.error(text);
     } finally {
       setBusy(false);
     }
@@ -109,7 +120,7 @@ function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: Quic
         placeholder="Natraj HB pencil 5"
         value={line}
         onChange={(e) => setLine(e.target.value)}
-        onPressEnter={save}
+        onPressEnter={() => save()}
         aria-label="Quick add line"
       />
       {draft && (
@@ -139,7 +150,7 @@ function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: Quic
         {imageUrl && (
           <span className="block w-12 shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={imageUrl} alt="Product" width={96} sizes="48px" /></span>
         )}
-        <Button type="primary" size="large" loading={busy} disabled={!draft || draft.price === undefined} onClick={save} style={{ marginLeft: "auto" }}>
+        <Button type="primary" size="large" loading={busy} disabled={!draft || draft.price === undefined} onClick={() => save()} style={{ marginLeft: "auto" }}>
           Save now
         </Button>
       </Flex>

@@ -91,6 +91,8 @@ export const productInput = z.object({
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
   tags: z.array(z.string().max(40)).max(20).default([]),
   active: z.boolean().default(true),
+  /** set after the owner confirms a same-category, same-price warning */
+  acknowledgeSamePrice: z.boolean().optional(),
   variants: z.array(variantInput).min(1).max(30),
 });
 export type ProductInput = z.infer<typeof productInput>;
@@ -118,8 +120,27 @@ export async function removeUnusedImages(urls: string[]): Promise<number> {
   return removed;
 }
 
+/** Another active product in this category already sells at one of these prices (paise). */
+export async function samePriceClash(categoryId: string, pricesPaise: number[], exceptProductId?: string): Promise<string | null> {
+  const prices = [...new Set(pricesPaise)];
+  if (!prices.length) return null;
+  const hits = await Variant.find({ sellPrice: { $in: prices }, active: { $ne: false } }, "productId sellPrice").lean();
+  const ids = [...new Set(hits.map((hit) => String(hit.productId)))].filter((id) => id !== exceptProductId);
+  if (!ids.length) return null;
+  const products = await Product.find({ _id: { $in: ids }, categoryId, active: { $ne: false } }, "name_en").lean();
+  if (!products.length) return null;
+  const used = new Set(products.map((p) => String(p._id)));
+  const clashing = [...new Set(hits.filter((hit) => used.has(String(hit.productId))).map((hit) => hit.sellPrice))];
+  const list = clashing.map((paise) => `₹${paise / 100}`).join(", ");
+  return `Same price: this category already has an item at ${list}. Customers see that as one product.`;
+}
+
 export async function saveProduct(input: ProductInput, productId?: string) {
-  const { variants, brandId, supplierId, imageGeneric, ...fields } = input;
+  const { variants, brandId, supplierId, imageGeneric, acknowledgeSamePrice, ...fields } = input;
+  if (!acknowledgeSamePrice) {
+    const warning = await samePriceClash(input.categoryId, variants.map((v) => toPaise(v.sellPrice)), productId);
+    if (warning) throw new CatalogError(warning);
+  }
   const before: string[] = productId ? ((await Product.findById(productId, { images: 1 }).lean())?.images ?? []) : [];
   const doc = { ...fields, ...(imageGeneric !== undefined ? { imageGeneric } : {}), brandId: brandId || undefined, supplierId: supplierId || undefined };
   const product = productId ? await Product.findByIdAndUpdate(productId, doc, { returnDocument: "after" }) : await Product.create(doc);

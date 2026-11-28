@@ -33,45 +33,96 @@ export function cleanItemName(name: string): string {
   return name.replace(/\s*(?:₹|Rs\.?)\s*\d+(?:[.,]\d+)?\s*$/i, "").replace(/\s{2,}/g, " ").trim();
 }
 
-function listingKey(p: StoreProduct): string {
-  return `${(p.brand || "").trim().toLowerCase()}|${cleanItemName(p.name_en).toLowerCase()}|${(p.image || "").trim()}`;
+/** "Akash Notebook" with brand Akash → "Notebook". The price on the card comes from the variant. */
+export function genericItemName(name: string, brand?: string): string {
+  let n = cleanItemName(name);
+  const b = (brand || "").trim();
+  if (b && n.toLowerCase().startsWith(b.toLowerCase())) n = n.slice(b.length).replace(/^[\s+\-–:]+/, "").trim();
+  return n || cleanItemName(name) || name;
+}
+
+function solePrice(p: StoreProduct): number | null {
+  const prices = new Set(p.variants.map((v) => v.price));
+  return prices.size === 1 ? [...prices][0] : null;
+}
+
+function normImage(url: string): string {
+  return url.replace(/\/upload\/[^/]+\//, "/upload/").split("?")[0];
 }
 
 /**
- * One card when separate catalogue rows are the same product (same brand, same name once a
- * trailing price is removed, same photo). Variants are combined. Rows are not deleted.
+ * One card per category and price. Brand is not part of the title.
+ * A product whose options have different prices stays on its own.
+ * Rows in the database are not removed here.
  */
 export function groupSameProducts(products: StoreProduct[]): StoreProduct[] {
+  const freq = new Map<string, number>();
+  for (const p of products) {
+    for (const url of [p.image, ...p.images]) {
+      if (!url) continue;
+      const key = normImage(url);
+      freq.set(key, (freq.get(key) ?? 0) + 1);
+    }
+  }
   const sorted = [...products].sort(byId);
-  const groups = new Map<string, StoreProduct>();
+  const groups = new Map<string, StoreProduct[]>();
   const order: string[] = [];
   for (const p of sorted) {
-    const key = listingKey(p);
-    const name = cleanItemName(p.name_en) || p.name_en;
-    const hit = groups.get(key);
-    if (!hit) {
-      groups.set(key, { ...p, name_en: name, variants: p.variants.map((v) => ({ ...v })) });
+    const price = solePrice(p);
+    const key = price === null ? `own:${p.id}` : `${p.categoryId}|${price}`;
+    const list = groups.get(key);
+    if (!list) {
+      groups.set(key, [p]);
       order.push(key);
-      continue;
-    }
-    const ids = new Set(hit.variants.map((v) => v.id));
-    for (const v of p.variants) {
-      if (!ids.has(v.id)) hit.variants.push({ ...v });
-    }
-    if (p.createdAt > hit.createdAt) hit.createdAt = p.createdAt;
+    } else list.push(p);
   }
-  for (const g of groups.values()) {
-    if (g.variants.length < 2) continue;
-    const counts = new Map<string, number>();
-    for (const v of g.variants) counts.set(v.label, (counts.get(v.label) ?? 0) + 1);
-    g.variants = g.variants.map((v) => {
-      const base = v.label || formatInr(v.price);
-      const shared = (counts.get(v.label) ?? 0) > 1 || !v.label;
-      const label = shared && !base.includes("₹") ? `${base} · ${formatInr(v.price)}` : base;
-      return { ...v, label };
-    });
-  }
-  return order.map((key) => groups.get(key)!);
+  return order.map((key) => {
+    const members = groups.get(key)!;
+    if (members.length === 1 && solePrice(members[0]) === null) {
+      const only = members[0];
+      return { ...only, name_en: genericItemName(only.name_en, only.brand), variants: only.variants.map((v) => ({ ...v })) };
+    }
+    const names = new Map<string, number>();
+    for (const p of members) {
+      const name = genericItemName(p.name_en, p.brand);
+      names.set(name, (names.get(name) ?? 0) + 1);
+    }
+    const title = [...names.entries()].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0][0];
+    let image = "";
+    let best = 0;
+    for (const p of members) {
+      for (const url of [p.image, ...p.images]) {
+        if (!url) continue;
+        const n = freq.get(normImage(url)) ?? 1;
+        if (n >= 8) continue;
+        const score = 1000 / n + (p.imageGeneric ? 0 : 2);
+        if (score > best) {
+          best = score;
+          image = url;
+        }
+      }
+    }
+    const keeper = [...members].sort((a, b) => b.variants.length - a.variants.length || a.id.localeCompare(b.id))[0];
+    const seen = new Set<string>();
+    const variants = [];
+    for (const p of members) {
+      for (const v of p.variants) {
+        const labelKey = `${v.label.trim().toLowerCase()}|${v.price}`;
+        if (seen.has(labelKey)) continue;
+        seen.add(labelKey);
+        variants.push({ ...v });
+      }
+    }
+    return {
+      ...keeper,
+      name_en: title,
+      brand: "",
+      image,
+      images: image ? [image] : [],
+      variants,
+      createdAt: Math.max(...members.map((p) => p.createdAt)),
+    };
+  });
 }
 
 export function pageCount(total: number, size = PAGE_SIZE): number {
