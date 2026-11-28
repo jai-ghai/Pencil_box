@@ -168,15 +168,17 @@ export function Storefront({
   children,
   initialCatalog = null,
   shell,
+  menuLinks,
 }: {
   children?: ReactNode;
   initialCatalog?: StoreCatalog | null;
   /** Home draws its own category grid in the first HTML. This shell is only the header and the tab bar. */
   shell?: "home" | "collection";
+  menuLinks?: { slug: string; label: string; href: string }[];
 }) {
   return (
     <AccentScope accent="sun">
-      <StorefrontInner initialCatalog={initialCatalog} shell={shell}>{children}</StorefrontInner>
+      <StorefrontInner initialCatalog={initialCatalog} shell={shell} menuLinks={menuLinks}>{children}</StorefrontInner>
     </AccentScope>
   );
 }
@@ -192,10 +194,12 @@ function StorefrontInner({
   children,
   initialCatalog = null,
   shell,
+  menuLinks,
 }: {
   children?: ReactNode;
   initialCatalog?: StoreCatalog | null;
   shell?: "home" | "collection";
+  menuLinks?: { slug: string; label: string; href: string }[];
 }) {
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
@@ -469,7 +473,7 @@ function StorefrontInner({
             <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => { setQ(e.target.value); window.dispatchEvent(new CustomEvent("pb-home-q", { detail: e.target.value })); }} placeholder={t("search")} aria-label={t("search")} />
           </div>
         </header>
-        <ShopMenu open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
+        <ShopMenu links={menuLinks} open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
         <ShopTabBar cartCount={cartCount} onCart={() => setSheet(true)} />
         <CartDrawer
           open={sheet} onClose={() => setSheet(false)} t={t} lang={lang} cartIds={cartIds} cart={cart} variantInfo={variantInfo} priced={priced}
@@ -499,7 +503,7 @@ function StorefrontInner({
           <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => { setQ(e.target.value); if (shell === "home") window.dispatchEvent(new CustomEvent("pb-home-q", { detail: e.target.value })); }} placeholder={t("search")} aria-label={t("search")} />
         </div>
       </header>
-      <ShopMenu open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
+      <ShopMenu links={menuLinks} open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-3">
         {children}

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { FaqAccordion } from "@/components/faq-accordion";
+import { shopCategories } from "@/lib/shop-category-store";
 import {
   ADDRESS_LINE,
-  COLLECTIONS,
   HOURS_LABEL,
   INSTAGRAM_URL,
   MAPS_URL,
@@ -39,8 +39,9 @@ export function ShopFaq() {
   return <FaqAccordion items={faqItems()} />;
 }
 
-export function ShopFooter() {
+export async function ShopFooter() {
   const whatsapp = `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}`;
+  const categories = (await shopCategories()).filter((row) => row.listOrder >= 0 && !row.hidden).sort((a, b) => a.listOrder - b.listOrder);
   return (
     <footer className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-8 xl:px-6 xl:pb-10">
       <div className="pb-seo-card grid gap-6 px-4 py-5 text-[15px] leading-relaxed sm:grid-cols-2 xl:grid-cols-4 xl:px-6">
@@ -55,7 +56,7 @@ export function ShopFooter() {
         <nav aria-label="Shop categories">
           <p className="font-extrabold">Categories</p>
           <ul className="mt-2 flex flex-col gap-1 text-sm">
-            {COLLECTIONS.map((c) => (
+            {categories.map((c) => (
               <li key={c.slug}><Link href={`/c/${c.slug}`} className="pb-seo-link">{c.nav}</Link></li>
             ))}
           </ul>

@@ -27,11 +27,13 @@ function installedAlready(): boolean {
 }
 
 export function ShopMenu({
+  links = HOME_LINKS,
   open,
   onClose,
   cartCount,
   onCart,
 }: {
+  links?: { slug: string; label: string; href: string }[];
   open: boolean;
   onClose: () => void;
   cartCount: number;
@@ -108,7 +110,7 @@ export function ShopMenu({
       </nav>
       <div className="px-4 pb-2 pt-3 text-xs font-extrabold tracking-wide" style={{ color: BRAND.navy }}>CATEGORIES</div>
       <ul className="m-0 list-none p-0 pb-6">
-        {HOME_LINKS.map((c) => (
+        {links.map((c) => (
           <li key={c.slug}>
             <Link href={c.href} className="block px-4 py-2 text-sm font-semibold text-[#153a7a] no-underline" onClick={onClose}>
               {c.label}

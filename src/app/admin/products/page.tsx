@@ -10,6 +10,7 @@ import { can, useMe } from "@/lib/use-me";
 import { QuickAddModal } from "@/components/quick-add-modal";
 
 interface Opt { _id: string; name?: string; name_en?: string; parentId?: string | null }
+interface ShelfOpt { slug: string; label: string; parent: string; catalogCategoryId: string }
 interface VariantDoc { _id: string; label: string; shortCode?: string; sellPrice: number; costPrice: number; mrp?: number; packSize: number; reorderLevel: number; quickTap: boolean; trackStock?: boolean; stockOnHand: number }
 interface ProductDoc {
   _id: string;
@@ -58,6 +59,7 @@ export default function Products() {
   const [form] = Form.useForm<ProductForm>();
   const [brands, setBrands] = useState<Opt[]>([]);
   const [cats, setCats] = useState<Opt[]>([]);
+  const [shelves, setShelves] = useState<ShelfOpt[]>([]);
   const [suppliers, setSuppliers] = useState<Opt[]>([]);
   const [list, setList] = useState<ProductDoc[] | null>(null);
   const [q, setQ] = useState("");
@@ -75,19 +77,39 @@ export default function Products() {
   }, []);
 
   useEffect(() => {
-    Promise.all([api<{ brands: Opt[] }>("/api/admin/brands"), api<{ categories: Opt[] }>("/api/admin/categories"), api<{ suppliers: Opt[] }>("/api/admin/suppliers"), api<{ products: ProductDoc[] }>("/api/admin/products")])
-      .then(([b, c, s, p]) => (setBrands(b.brands), setCats(c.categories), setSuppliers(s.suppliers), setList(p.products)))
+    Promise.all([
+      api<{ brands: Opt[] }>("/api/admin/brands"),
+      api<{ categories: Opt[] }>("/api/admin/categories"),
+      api<{ suppliers: Opt[] }>("/api/admin/suppliers"),
+      api<{ products: ProductDoc[] }>("/api/admin/products"),
+      api<{ categories: ShelfOpt[] }>("/api/admin/shop-categories").catch(() => ({ categories: [] as ShelfOpt[] })),
+    ])
+      .then(([b, c, s, p, shelvesResult]) => (setBrands(b.brands), setCats(c.categories), setSuppliers(s.suppliers), setList(p.products), setShelves(shelvesResult.categories)))
       .catch((e: Error) => message.error(e.message));
   }, [message]);
 
-  /* categories grouped under their parent; a parent with no children can be chosen itself */
+  /* Shop shelves first. Catalogue categories that are not a shelf stay available so an existing item keeps its place. */
   const categoryOptions = useMemo(() => {
-    const tops = cats.filter((c) => !c.parentId);
-    return tops.map((t) => {
-      const kids = cats.filter((c) => c.parentId === t._id);
-      return kids.length ? { label: t.name_en, options: kids.map((k) => ({ value: k._id, label: k.name_en })) } : { label: t.name_en, options: [{ value: t._id, label: t.name_en }] };
-    });
-  }, [cats]);
+    if (!shelves.length) {
+      const tops = cats.filter((c) => !c.parentId);
+      return tops.map((t) => {
+        const kids = cats.filter((c) => c.parentId === t._id);
+        return kids.length ? { label: t.name_en, options: kids.map((k) => ({ value: k._id, label: k.name_en })) } : { label: t.name_en, options: [{ value: t._id, label: t.name_en }] };
+      });
+    }
+    const used = new Set(shelves.map((row) => row.catalogCategoryId).filter(Boolean));
+    const groups = shelves.filter((row) => !row.parent).map((group) => {
+      const kids = shelves.filter((row) => row.parent === group.slug && row.catalogCategoryId);
+      const options = [
+        ...(group.catalogCategoryId ? [{ value: group.catalogCategoryId, label: group.label }] : []),
+        ...kids.map((row) => ({ value: row.catalogCategoryId, label: row.label })),
+      ];
+      return options.length ? { label: group.label, options } : null;
+    }).filter((group) => group !== null);
+    const extra = cats.filter((cat) => cat._id && !used.has(cat._id));
+    if (extra.length) groups.push({ label: "Other", options: extra.map((cat) => ({ value: cat._id, label: cat.name_en || cat.name || "Category" })) });
+    return groups;
+  }, [cats, shelves]);
 
   function startNew() {
     form.resetFields();

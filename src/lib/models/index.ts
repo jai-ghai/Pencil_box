@@ -49,6 +49,35 @@ const categorySchema = new Schema(
 );
 export const Category = model("Category", categorySchema);
 
+const shopCategorySchema = new Schema(
+  {
+    slug: { type: String, required: true, unique: true },
+    label: { type: String, required: true, trim: true },
+    groupLabel: { type: String, default: "" },
+    groupOrder: { type: Number, default: -1 },
+    nav: { type: String, default: "" },
+    parent: { type: String, default: "" },
+    home: { type: Boolean, default: false },
+    subtitle: { type: String, default: "" },
+    about: { type: String, default: "" },
+    faqs: { type: [{ q: String, a: String }], default: [] },
+    sortOrder: { type: Number, default: 0 },
+    listOrder: { type: Number, default: -1 },
+    hidden: { type: Boolean, default: false },
+    image: { type: String, default: "" },
+    match: { type: String, default: "" },
+    title: { type: String, default: "" },
+    h1: { type: String, default: "" },
+    description: { type: String, default: "" },
+    lede: { type: String, default: "" },
+    listing: { type: Boolean, default: false },
+    catalogCategoryId: { type: Schema.Types.ObjectId, ref: "Category", default: null },
+  },
+  opts,
+);
+export type ShopCategoryDoc = InferSchemaType<typeof shopCategorySchema>;
+export const ShopCategory = model("ShopCategory", shopCategorySchema);
+
 const productSchema = new Schema(
   {
     name_en: { type: String, required: true, trim: true },
