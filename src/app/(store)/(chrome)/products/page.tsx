@@ -16,7 +16,6 @@ export default async function ProductsPage() {
   return (
     <div className="py-3">
       <h1 className="text-lg font-extrabold">All products</h1>
-      <p className="mt-2 max-w-3xl text-[15px] leading-relaxed">What is on the shelves at B-92, Tigri Extension. Prices are on each card. Call or WhatsApp if you need a school list packed.</p>
       {products.length > 0 && (
         <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {products.map((product) => {

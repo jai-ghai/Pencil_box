@@ -53,6 +53,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
             <span aria-hidden> › </span>
             <span>{shelf.label}</span>
           </nav>
+          <h1 className="mt-1 text-lg font-extrabold leading-snug">{shelf.label}</h1>
           {shelf.subtitle ? <p className="mt-1 text-sm text-[#5a6a82]">{shelf.subtitle}</p> : null}
           {kids.length > 0 && (
             <ul className="mt-3 grid grid-cols-3 gap-2">
@@ -125,13 +126,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const shelf = rows.find((row) => row.slug === slug);
   const fallback = collectionBySlug(slug);
   if ((!shelf && !fallback) || shelf?.hidden) notFound();
-  const listing = shelf ? shelf.listing : Boolean(fallback);
-  const heading = shelfMeta(slug, shelf?.label || fallback?.nav || slug, shelf?.about || "").h1;
   return (
     <>
       {/* Keeps Next from scrolling the questions block into view. A fixed mark is already on screen, so the late shelf text is not treated as the navigation target. */}
       <span aria-hidden="true" className="pointer-events-none fixed left-0 top-0 h-px w-px" />
-      {!listing && <h1 className="mt-1 text-lg font-extrabold leading-snug">{fallback?.h1 || heading}</h1>}
       <Suspense fallback={<div className="min-h-[70vh] pt-3 text-sm">Loading shelf…</div>}>
         <CollectionPage params={params} />
       </Suspense>
