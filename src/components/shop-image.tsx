@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cloudinaryBlur, cloudinarySquare, cloudinarySrcSet } from "@/lib/images";
+import { cloudinarySquare, cloudinarySrcSet } from "@/lib/images";
 
 const FALLBACK = "/category/pencil.svg";
 
@@ -30,7 +30,6 @@ export function ShopImage({
   const [ready, setReady] = useState(false);
   const shown = failed ? fallback : cloudinarySquare(src, width);
   const set = failed ? undefined : cloudinarySrcSet(src);
-  const blur = failed ? undefined : cloudinaryBlur(src);
 
   useEffect(() => {
     setFailed(false);
@@ -38,7 +37,7 @@ export function ShopImage({
   }, [src]);
 
   return (
-    <span className={`pb-photo ${className}`} style={blur ? { backgroundImage: `url(${blur})` } : undefined}>
+    <span className={`pb-photo ${className}`}>
       {!ready && <span className="pb-shimmer" aria-hidden />}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
