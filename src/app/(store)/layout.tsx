@@ -1,6 +1,6 @@
 import { DesktopChrome } from "@/components/desktop-chrome";
 import { DesktopSidebar } from "@/components/desktop-sidebar";
-import { ShopFaq, ShopFooter, ShopJsonLd } from "@/components/shop-seo";
+import { ShopFooter, ShopJsonLd } from "@/components/shop-seo";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,7 +15,6 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
           <div className="min-h-dvh min-w-0">{children}</div>
         </div>
       </div>
-      <ShopFaq />
       <ShopFooter />
     </>
   );

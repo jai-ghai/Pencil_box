@@ -3,8 +3,8 @@ import { pageMeta } from "@/lib/shop";
 import { shopCategories } from "@/lib/shop-category-store";
 
 export const metadata = pageMeta({
-  title: "All categories | Pencil Box Stationery",
-  description: "School, writing, office, paper, art, gifts and everyday items at Pencil Box Stationery, Tigri Extension.",
+  title: "Shop categories in Tigri Extension | Pencil Box",
+  description: "Notebooks, school stationery, chart paper, photocopy, toys and return gifts at Pencil Box, Tigri Extension, near Sangam Vihar.",
   path: "/categories",
 });
 
@@ -16,6 +16,7 @@ export default async function CategoriesPage() {
   return (
     <div className="py-3">
       <h1 className="text-lg font-extrabold">All categories</h1>
+      <p className="mt-2 max-w-3xl text-[15px] leading-relaxed">Stationery, photocopy and a small toy shelf. The counter is in Tigri Extension, near Sangam Vihar, Khanpur and Devli.</p>
       <div className="mt-4 flex flex-col gap-6">
         {parents.map((parent) => {
           const kids = rows.filter((row) => row.parent === parent.slug).sort((a, b) => a.sortOrder - b.sortOrder);

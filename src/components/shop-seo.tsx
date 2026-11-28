@@ -11,19 +11,13 @@ import {
   REVIEW_URL,
   SHOP_NAME,
   faqItems,
-  faqJsonLd,
   jsonLdScript,
   storeJsonLd,
 } from "@/lib/shop";
 
-/** Both schema blocks. Rendered outside the client catalogue so they are in the first HTML. */
+/** Store schema. FAQ schema is rendered only on the page that shows those questions. */
 export function ShopJsonLd() {
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(storeJsonLd()) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(faqJsonLd()) }} />
-    </>
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(storeJsonLd()) }} />;
 }
 
 /**

@@ -12,7 +12,7 @@ export function ProductGallery({ photos, alt }: { photos: string[]; alt: string 
   return (
     <div>
       <button type="button" className="block w-full" aria-label="Look closer" onClick={() => setOpen(true)}>
-        <ShopImage src={src} alt={alt} width={1200} priority sizes="(max-width: 640px) 100vw, 480px" />
+        <ShopImage src={src} alt={alt} width={800} priority sizes="(max-width: 640px) 100vw, 480px" />
       </button>
       {photos.length > 1 && (
         <ul className="mt-3 flex gap-2">

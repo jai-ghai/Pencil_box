@@ -174,7 +174,7 @@ export function Storefront({
   children?: ReactNode;
   initialCatalog?: StoreCatalog | null;
   /** Home draws its own category grid in the first HTML. This shell is only the header and the tab bar. */
-  shell?: "home" | "collection";
+  shell?: "home" | "collection" | "chrome";
   menuLinks?: { slug: string; label: string; href: string }[];
 }) {
   return (
@@ -199,7 +199,7 @@ function StorefrontInner({
 }: {
   children?: ReactNode;
   initialCatalog?: StoreCatalog | null;
-  shell?: "home" | "collection";
+  shell?: "home" | "collection" | "chrome";
   menuLinks?: { slug: string; label: string; href: string }[];
 }) {
   const { token } = theme.useToken();
@@ -453,7 +453,7 @@ function StorefrontInner({
   const waHref = catalog?.whatsapp && orderLines.length ? whatsappUrl(catalog.whatsapp, buildOrderMessage(orderLines, total, { lang, hasPriceRange: hasRange })) : null;
   const catName = (c: { name_en: string; name_hi: string }) => (lang === "hi" && c.name_hi ? c.name_hi : c.name_en);
 
-  if (shell === "home" || shell === "collection") {
+  if (shell === "home" || shell === "collection" || shell === "chrome") {
     return (
       <>
         <header style={{ background: BRAND.navy, minHeight: 116 }} className="sticky top-0 z-40 overflow-x-hidden xl:hidden">

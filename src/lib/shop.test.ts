@@ -21,9 +21,9 @@ describe("local shop facts", () => {
     expect(PRINT_RATES.colour).toBe(price("Printout (Colour)"));
   });
 
-  it("describes a Store with hours, map and no coordinates", () => {
+  it("describes a Store with hours, map and a Tigri pin", () => {
     const data = storeJsonLd();
-    expect(data["@type"]).toBe("Store");
+    expect(data["@type"]).toEqual(["Store", "LocalBusiness"]);
     expect(data.name).toBe(SHOP_NAME);
     expect(data.alternateName).toBe("Pencil Box");
     expect(data.telephone).toBe(PHONE_SCHEMA);
@@ -35,7 +35,7 @@ describe("local shop facts", () => {
     expect(data.sameAs.some((url) => url.includes("pencilbox.stationary") || url.includes("pencilboxstationery"))).toBe(false);
     expect(data.areaServed.map((a) => a.name)).toEqual([...AREAS_SERVED]);
     expect(data.address).toMatchObject({ streetAddress: "B-92, Block B, Tigri Extension", postalCode: "110062", addressCountry: "IN" });
-    expect(data).not.toHaveProperty("geo");
+    expect(data.geo).toMatchObject({ "@type": "GeoCoordinates", latitude: 28.5122, longitude: 77.2439 });
   });
 
   it("publishes the FAQ answers, including the live print rates", () => {
