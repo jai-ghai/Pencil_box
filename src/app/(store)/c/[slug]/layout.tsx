@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import "@/styles/antd-store.css";
 import { connection } from "next/server";
 import { AntdRoot } from "@/components/antd-root";
 import { CatalogueShellSkeleton } from "@/components/store-skeleton";
@@ -32,7 +33,7 @@ async function CollectionFrame({ children, params }: { children: React.ReactNode
   return (
     <>
       {href && <link rel="preload" as="image" href={href} imageSrcSet={srcSet} imageSizes="(max-width: 640px) 45vw, 220px" fetchPriority="high" />}
-      <AntdRoot accent="sun">
+      <AntdRoot accent="sun" inlineCss={false}>
         <Storefront initialCatalog={initialCatalog ? firstScreen(initialCatalog, slug) : null}>{children}</Storefront>
       </AntdRoot>
     </>

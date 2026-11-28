@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { ShopAntdRegistry } from "@/components/antd-registry";
 import { App, ConfigProvider } from "antd";
 import { buildTheme } from "@/lib/theme";
 
@@ -63,15 +63,26 @@ export function useThemeMode() {
  * The theme is set once here, at the root. `accent` lets the public storefront use the yellow accent
  * while staff screens use navy (see lib/theme.ts).
  */
-export function Providers({ children, accent = "navy" }: { children: React.ReactNode; accent?: "navy" | "sun" }) {
+export function Providers({
+  children,
+  accent = "navy",
+  inlineCss = true,
+  fill = true,
+}: {
+  children: React.ReactNode;
+  accent?: "navy" | "sun";
+  /** Collection pages use the static stylesheet instead of a giant inline style block. */
+  inlineCss?: boolean;
+  fill?: boolean;
+}) {
   const { dark, reduceMotion } = useThemeMode();
   const theme = useMemo(() => buildTheme({ dark, reduceMotion, accent }), [dark, reduceMotion, accent]);
   return (
-    <AntdRegistry layer>
+    <ShopAntdRegistry layer inline={inlineCss}>
       <ConfigProvider theme={theme}>
-        <App className="flex min-h-dvh flex-1 flex-col">{children}</App>
+        <App className={fill ? "flex min-h-dvh flex-1 flex-col" : "flex flex-col"}>{children}</App>
       </ConfigProvider>
-    </AntdRegistry>
+    </ShopAntdRegistry>
   );
 }
 
