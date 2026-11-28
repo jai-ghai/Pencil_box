@@ -63,4 +63,17 @@ describe("browse", () => {
     expect(twenty?.variants.map((v) => v.label).sort()).toEqual(["English", "Maths"]);
     expect(thirty?.name_en).toBe("Notebook");
   });
+
+  it("keeps a real photo that several prices of one item share", () => {
+    const rows = [20, 30, 40, 50, 60, 70, 80, 90, 100, 110].map((rupees, index) => {
+      const row = item("Register", rupees * 100);
+      row.id = String(index);
+      row.image = "https://res.cloudinary.com/demo/image/upload/v1/pencilbox/front.jpg";
+      row.images = [row.image, "https://res.cloudinary.com/demo/image/upload/v1/pencilbox/back.jpg"];
+      return row;
+    });
+    const grouped = groupSameProducts(rows);
+    expect(grouped).toHaveLength(10);
+    expect(grouped.every((p) => p.image.endsWith("front.jpg") && p.images.length === 2)).toBe(true);
+  });
 });
