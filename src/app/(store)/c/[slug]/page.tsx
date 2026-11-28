@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ShopImage } from "@/components/shop-image";
 import { groupSameProducts, sortProducts } from "@/lib/browse";
 import { COLLECTION_COPY } from "@/lib/collection-copy";
 import { breadcrumbJsonLd, itemListJsonLd, productsInCollection } from "@/lib/product-json";
@@ -57,7 +58,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
                 <li key={kid.slug}>
                   <Link href={`/c/${kid.slug}`} className="block rounded-[10px] border border-black/10 bg-white p-2 no-underline">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/category/${kid.slug}.svg`} alt="" className="aspect-square w-full object-contain" />
+                    <ShopImage src={`/category/${kid.slug}.svg`} alt="" />
                     <span className="mt-1 block text-left text-[11px] font-extrabold uppercase leading-tight text-[#0c1222]">{kid.label}</span>
                   </Link>
                 </li>
@@ -105,7 +106,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
               <li key={kid.slug}>
                 <Link href={`/c/${kid.slug}`} className="block rounded-[10px] border border-black/10 bg-white p-2 no-underline">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/category/${kid.slug}.svg`} alt="" className="aspect-square w-full object-contain" />
+                  <ShopImage src={`/category/${kid.slug}.svg`} alt="" />
                   <span className="mt-1 block text-[11px] font-extrabold uppercase leading-tight text-[#0c1222]">{kid.label}</span>
                 </Link>
               </li>

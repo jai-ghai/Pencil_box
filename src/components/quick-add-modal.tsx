@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, App, Button, Flex, Input, Modal, Typography } from "antd";
 import { CameraOutlined } from "@ant-design/icons";
+import { ShopImage } from "@/components/shop-image";
 import { api } from "@/lib/client";
 import { parseQuickAdd } from "@/lib/quick-add";
 
@@ -136,8 +137,7 @@ function QuickAddForm({ brands, seed, onSaved }: { brands: string[]; seed?: Quic
           {imageUrl ? "Change photo" : "Add photo"}
         </Button>
         {imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="Product" width={48} height={48} style={{ objectFit: "cover", borderRadius: 8 }} />
+          <span className="block w-12 shrink-0 overflow-hidden rounded-[8px]"><ShopImage src={imageUrl} alt="Product" width={96} sizes="48px" /></span>
         )}
         <Button type="primary" size="large" loading={busy} disabled={!draft || draft.price === undefined} onClick={save} style={{ marginLeft: "auto" }}>
           Save now

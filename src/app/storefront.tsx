@@ -17,7 +17,7 @@ import { text, type Lang, type TextKey } from "@/lib/i18n";
 import { BRAND } from "@/lib/theme";
 import { buildOrderMessage, whatsappUrl, type OrderLine } from "@/lib/whatsapp";
 import { categoryMatchFromPath, collectionByMatch } from "@/lib/shop";
-import { cloudinarySquare } from "@/lib/images";
+import { ShopImage } from "@/components/shop-image";
 import { SORTS, cleanItemName, discountPercent, groupSameProducts, lowestPrice, pageCount, pageSlice, sortProducts, type SortKey } from "@/lib/browse";
 import { COLLECTIONS } from "@/lib/shop";
 import type { StoreCatalog, StoreProduct, StoreVariant } from "@/lib/store";
@@ -89,7 +89,6 @@ function loadCart(): Cart {
 }
 
 /** Square Cloudinary photos on white; local drawings stay as they are. */
-const thumb = (url: string) => cloudinarySquare(url);
 const priceText = (v: StoreVariant) => (v.maxPrice ? `${inr(v.price)}–${inr(v.maxPrice).replace("₹", "")}` : inr(v.price));
 function pageHref(pathname: string, params: { toString(): string }, page: number): string {
   const next = new URLSearchParams(params.toString());
@@ -527,9 +526,9 @@ function StorefrontInner({ children }: { children?: ReactNode }) {
             </aside>
             <div className="min-w-0 flex-1">
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-                {pageItems.map((p) => (
+                {pageItems.map((p, i) => (
                   <li key={p.id}>
-                    <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} />
+                    <ProductCard p={p} lang={lang} t={t} cart={cart} setQty={setQty} priority={safePage === 1 && i < 4} />
                   </li>
                 ))}
               </ul>
@@ -700,7 +699,7 @@ function Stepper({ qty, max, onChange, label, t, block }: { qty: number; max: nu
  * A compact card: picture, name, price and ONE button. An item with a single choice is added straight from the card;
  * an item with several (colours, sizes, languages) shows "N options" and opens the choices only when tapped.
  */
-function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang; t: T; cart: Cart; setQty: (id: string, qty: number) => void }) {
+function ProductCard({ p, lang, t, cart, setQty, priority = false }: { p: StoreProduct; lang: Lang; t: T; cart: Cart; setQty: (id: string, qty: number) => void; priority?: boolean }) {
   const { token } = theme.useToken();
   const [open, setOpen] = useState(false);
   const name = lang === "hi" && p.name_hi ? p.name_hi : stripBrand(p.name_en, p.brand);
@@ -714,10 +713,9 @@ function ProductCard({ p, lang, t, cart, setQty }: { p: StoreProduct; lang: Lang
     <Card hoverable={false} styles={{ body: { padding: 0 } }} className="h-full overflow-hidden [&>.ant-card-body]:h-full">
       <div className="flex h-full flex-col">
         {/* picture frame: square, the whole picture visible; empty until a picture exists */}
-        <div className="relative aspect-square w-full overflow-hidden bg-white p-3">
+        <div className="relative aspect-square w-full overflow-hidden bg-white">
           {p.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumb(p.image)} alt={productAlt(p)} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-contain p-3" />
+            <ShopImage src={p.image} alt={productAlt(p)} priority={priority} />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center"><PictureOutlined style={{ fontSize: 30, color: token.colorTextQuaternary }} aria-hidden /></div>
           )}

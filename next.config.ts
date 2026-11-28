@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   experimental: {
     agentUpgrade: "security",
+    optimizePackageImports: ["antd", "@ant-design/icons"],
   },
   turbopack: {
     rules: {

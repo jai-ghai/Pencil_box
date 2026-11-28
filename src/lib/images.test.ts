@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cloudinarySquare } from "./images";
+import { cloudinaryBlur, cloudinarySquare, cloudinarySrcSet } from "./images";
 
 describe("cloudinary square", () => {
   it("pads a cloudinary photo onto a white square", () => {
@@ -10,5 +10,14 @@ describe("cloudinary square", () => {
 
   it("leaves a local drawing alone", () => {
     expect(cloudinarySquare("/category/pencil.svg")).toBe("/category/pencil.svg");
+    expect(cloudinarySrcSet("/category/pencil.svg")).toBeUndefined();
+    expect(cloudinaryBlur("/category/pencil.svg")).toBeUndefined();
+  });
+
+  it("offers a small blurred stand-in and a srcset", () => {
+    const url = "https://res.cloudinary.com/demo/image/upload/v1/pencilbox/a.jpg";
+    expect(cloudinaryBlur(url)).toContain("e_blur:200");
+    expect(cloudinarySrcSet(url)).toContain(" 200w");
+    expect(cloudinarySrcSet(url)).toContain(" 800w");
   });
 });
