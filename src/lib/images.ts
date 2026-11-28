@@ -9,7 +9,8 @@ export function isCloudinary(url: string): boolean {
 
 export function cloudinarySquare(url: string, width = 400): string {
   if (!isCloudinary(url)) return url;
-  return url.replace("/upload/", `/upload/c_pad,b_white,ar_1:1,w_${width},f_auto,q_auto/`);
+  // Trim the pale edge, pad to a square, then a light enhance. Not background removal.
+  return url.replace("/upload/", `/upload/e_trim:8,c_pad,b_auto,ar_1:1,w_${width},e_improve,f_auto,q_auto/`);
 }
 
 /** Tiny blurred stand-in. One cheap request, used only as a CSS background while the real file loads. */
@@ -18,7 +19,7 @@ export function cloudinaryBlur(url: string): string | undefined {
   return url.replace("/upload/", "/upload/c_pad,b_white,ar_1:1,w_32,e_blur:200,q_30,f_auto/");
 }
 
-export function cloudinarySrcSet(url: string, widths: number[] = [200, 400, 800]): string | undefined {
+export function cloudinarySrcSet(url: string, widths: number[] = [200, 400, 800, 1200]): string | undefined {
   if (!isCloudinary(url)) return undefined;
   return widths.map((w) => `${cloudinarySquare(url, w)} ${w}w`).join(", ");
 }

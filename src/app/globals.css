@@ -299,7 +299,7 @@ textarea:focus-visible {
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  background-color: #eceff3;
+  background-color: #f3f5f8;
   background-size: cover;
   background-position: center;
 }
