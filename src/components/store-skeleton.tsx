@@ -1,7 +1,7 @@
 /** Grey shimmer blocks that hold the shop layout while the catalogue shell arrives. */
 export function StoreSkeleton({ rows = 9 }: { rows?: number }) {
   return (
-    <div className="px-4 py-4" aria-busy="true" aria-label="Loading">
+    <div className="min-h-dvh px-4 py-4" aria-busy="true" aria-label="Loading">
       <div className="mb-3 h-5 w-40 rounded bg-[#e6e9ee]" />
       <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {Array.from({ length: rows }, (_, i) => (

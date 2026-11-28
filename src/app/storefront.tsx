@@ -409,7 +409,7 @@ function StorefrontInner({
   const pickCollection = (catId: string, parentId: string | null) => {
     setTopCat(parentId ?? catId);
     setSubCat(parentId ? catId : null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
   const clearFilters = () => {
     setQ("");
