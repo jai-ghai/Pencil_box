@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { WishButton } from "@/components/desktop-actions";
 import { ProductBuy } from "@/components/product-buy";
 import { ShopImage } from "@/components/shop-image";
 import { cleanItemName, groupSameProducts } from "@/lib/browse";
@@ -52,6 +53,7 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
           <h1 className="text-2xl font-extrabold leading-tight">{title}</h1>
           {product.description_en && <p className="mt-2 text-[15px] leading-relaxed">{product.description_en}</p>}
           <ProductBuy product={product} whatsapp={catalog.whatsapp} />
+          <WishButton id={product.id} label={title} />
         </div>
       </div>
       {photos.length > 1 && (

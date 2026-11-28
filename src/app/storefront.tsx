@@ -203,10 +203,10 @@ function StorefrontInner({
   const [requestOpen, setRequestOpen] = useState(false);
   const [catalog, setCatalog] = useState<StoreCatalog | null>(initialCatalog);
   const [error, setError] = useState(false);
-  const [q, setQ] = useState("");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [q, setQ] = useState(searchParams.get("q") ?? "");
   const routeName = categoryMatchFromPath(pathname);
   const subSlug = searchParams.get("sub");
   /* Category filter. A /c/<slug> URL sets it; subcategory picks on the home page set it too.
@@ -451,7 +451,7 @@ function StorefrontInner({
   if (shell === "home" || shell === "collection") {
     return (
       <>
-        <header style={{ background: BRAND.navy, minHeight: 116 }} className="sticky top-0 z-40 overflow-x-hidden">
+        <header style={{ background: BRAND.navy, minHeight: 116 }} className="sticky top-0 z-40 overflow-x-hidden xl:hidden">
           <div className="mx-auto w-full max-w-6xl px-3 pb-3 pt-2">
             <Flex align="center" gap={screens.sm ? 12 : 4}>
               <Button type="text" aria-label="Open menu" icon={<MenuOutlined style={{ color: "#fff", fontSize: 20 }} />} onClick={() => setMenuOpen(true)} style={{ paddingInline: 6 }} />
@@ -481,7 +481,7 @@ function StorefrontInner({
 
   return (
     <div className="flex min-h-dvh flex-1 flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))]" style={{ background: token.colorBgLayout }}>
-      <header style={{ background: BRAND.navy }} className="sticky top-0 z-40 overflow-x-hidden">
+      <header style={{ background: BRAND.navy }} className="sticky top-0 z-40 overflow-x-hidden xl:hidden">
         <div className="mx-auto w-full max-w-6xl px-3 pb-3 pt-2">
           <Flex align="center" gap={screens.sm ? 12 : 4}>
             <Button type="text" aria-label="Open menu" icon={<MenuOutlined style={{ color: "#fff", fontSize: 20 }} />} onClick={() => setMenuOpen(true)} style={{ paddingInline: 6 }} />

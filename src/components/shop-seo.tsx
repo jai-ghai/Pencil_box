@@ -55,37 +55,39 @@ export function ShopFaq() {
 export function ShopFooter() {
   const whatsapp = `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}`;
   return (
-    <footer className="mx-auto w-full max-w-6xl px-4 pb-28 pt-8">
-      <div className="pb-seo-card px-4 py-4 text-[15px] leading-relaxed">
-        <address className="not-italic">
+    <footer className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-8 xl:px-6 xl:pb-10">
+      <div className="pb-seo-card grid gap-6 px-4 py-5 text-[15px] leading-relaxed sm:grid-cols-2 xl:grid-cols-4 xl:px-6">
+        <div>
           <strong className="block text-base">{SHOP_NAME}</strong>
-          <span className="pb-seo-muted">{ADDRESS_LINE}</span>
-          <br />
-          <a className="pb-seo-link" href={`tel:${PHONE_TEL}`}>
-            {PHONE_DISPLAY}
-          </a>
-        </address>
-        <p className="mt-2 font-semibold">{HOURS_LABEL}</p>
-        <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-          <a className="pb-seo-link" href={MAPS_URL}>Get directions</a>
-          <a className="pb-seo-link" href={REVIEW_URL}>Review us on Google</a>
-          <a className="pb-seo-link" href={whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-          <a className="pb-seo-link inline-flex items-center gap-1.5" href={INSTAGRAM_URL} rel="me noopener noreferrer" target="_blank">
-            <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm10 1.8H7A2.2 2.2 0 0 0 4.8 7v10A2.2 2.2 0 0 0 7 19.2h10a2.2 2.2 0 0 0 2.2-2.2V7A2.2 2.2 0 0 0 17 4.8zM12 8.2A3.8 3.8 0 1 1 8.2 12 3.8 3.8 0 0 1 12 8.2zm0 1.6A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8zM17.35 6.4a.95.95 0 1 1-.95.95.95.95 0 0 1 .95-.95z" />
-            </svg>
-            Instagram
-          </a>
-        </p>
-        <nav aria-label="Shop categories" className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-          {COLLECTIONS.map((c) => (
-            <Link key={c.slug} href={`/c/${c.slug}`} className="pb-seo-link">{c.nav}</Link>
-          ))}
+          <p className="pb-seo-muted mt-2">A stationery counter in Tigri Extension. School lists, art supplies, gifts, photocopy and print.</p>
+          <div className="pb-seo-muted mt-3 text-sm leading-relaxed">
+            <p>Fixed price on stationery. No bargaining.</p>
+            <p>No return or exchange on toys and electronics.</p>
+          </div>
+        </div>
+        <nav aria-label="Shop categories">
+          <p className="font-extrabold">Categories</p>
+          <ul className="mt-2 flex flex-col gap-1 text-sm">
+            {COLLECTIONS.map((c) => (
+              <li key={c.slug}><Link href={`/c/${c.slug}`} className="pb-seo-link">{c.nav}</Link></li>
+            ))}
+          </ul>
         </nav>
-        <div className="pb-seo-muted mt-4 text-sm leading-relaxed">
-          <p>Fixed price on stationery. No bargaining.</p>
-          <p>No return or exchange on toys and electronics.</p>
-          <p className="mt-2">Pickup from the shop. The price on the bill is the price you pay.</p>
+        <address className="not-italic">
+          <p className="font-extrabold">Contact</p>
+          <span className="pb-seo-muted mt-2 block">{ADDRESS_LINE}</span>
+          <a className="pb-seo-link mt-1 inline-block" href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
+          <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <a className="pb-seo-link" href={MAPS_URL}>Map</a>
+            <a className="pb-seo-link" href={whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a className="pb-seo-link" href={INSTAGRAM_URL} rel="me noopener noreferrer" target="_blank">Instagram</a>
+          </p>
+        </address>
+        <div>
+          <p className="font-extrabold">Hours</p>
+          <p className="mt-2 font-semibold">{HOURS_LABEL}</p>
+          <p className="pb-seo-muted mt-2 text-sm">Sunday is a working day.</p>
+          <a className="pb-seo-link mt-2 inline-block" href={REVIEW_URL}>Review us on Google</a>
         </div>
       </div>
     </footer>
