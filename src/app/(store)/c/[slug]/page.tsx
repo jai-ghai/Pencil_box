@@ -98,8 +98,6 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
           <span aria-hidden> › </span>
           <span>{collection.nav}</span>
         </nav>
-        <h1 className="mt-1 text-lg font-extrabold leading-snug">{collection.nav}</h1>
-        {catalog && <p className="mt-1 text-sm font-semibold">{products.length} {products.length === 1 ? "item" : "items"}</p>}
         {childDepartments(collection.slug).some((kid) => !hidden.has(kid.slug)) && (
           <ul className="mt-3 grid grid-cols-3 gap-2">
             {childDepartments(collection.slug).filter((kid) => !hidden.has(kid.slug)).map((kid) => (

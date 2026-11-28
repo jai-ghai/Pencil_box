@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import "@/styles/antd-store.css";
 import { AntdRoot } from "@/components/antd-root";
+import { CollectionShelf } from "@/components/collection-shelf";
 import { CatalogueShellSkeleton } from "@/components/store-skeleton";
 import { PAGE_SIZE, groupSameProducts, sortProducts } from "@/lib/browse";
 import { cloudinarySquare, cloudinarySrcSet } from "@/lib/images";
@@ -41,12 +42,23 @@ export default async function CollectionLayout({ children, params }: { children:
   const first = initialCatalog && collection ? sortProducts(groupSameProducts(productsInCollection(initialCatalog, collection.match)), "popular")[0] : undefined;
   const href = first?.image ? cloudinarySquare(first.image, 400) : undefined;
   const srcSet = first?.image ? cloudinarySrcSet(first.image) : undefined;
+  const collectionName = collection?.nav ?? slug;
   return (
-    <>
+    <div className="flex min-h-dvh flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))]" style={{ background: "#f0f3f8" }}>
       {href && <link rel="preload" as="image" href={href} imageSrcSet={srcSet} imageSizes="(max-width: 640px) 45vw, 220px" fetchPriority="high" />}
-      <AntdRoot accent="sun" inlineCss={false}>
-        <Storefront initialCatalog={initialCatalog}>{children}</Storefront>
-      </AntdRoot>
-    </>
+      <Suspense fallback={<div aria-hidden className="shrink-0" style={{ height: 116, background: "#153a7a" }} />}>
+        <AntdRoot accent="sun" inlineCss={false} fill={false}>
+          <Storefront shell="collection" initialCatalog={initialCatalog} />
+        </AntdRoot>
+      </Suspense>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-3">
+        <h1 className="text-lg font-extrabold leading-snug">{collectionName}</h1>
+        {initialCatalog && <p className="mt-1 text-sm font-semibold">{initialCatalog.products.length} {initialCatalog.products.length === 1 ? "item" : "items"}</p>}
+        <div className="mt-3">
+          <CollectionShelf products={initialCatalog?.products ?? []} />
+        </div>
+        {children}
+      </main>
+    </div>
   );
 }
