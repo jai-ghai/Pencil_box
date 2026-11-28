@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cloudinarySquare, cloudinarySrcSet } from "@/lib/images";
 
 const FALLBACK = "/category/pencil.svg";
@@ -27,14 +27,19 @@ export function ShopImage({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const [ready, setReady] = useState(false);
+  // The first photos are visible in the HTML. Waiting for React to fade them in
+  // keeps the largest one invisible until the script runs.
+  const [ready, setReady] = useState(priority);
   const shown = failed ? fallback : cloudinarySquare(src, width);
   const set = failed ? undefined : cloudinarySrcSet(src);
+  const seen = useRef(src);
 
   useEffect(() => {
+    if (seen.current === src) return;
+    seen.current = src;
     setFailed(false);
-    setReady(false);
-  }, [src]);
+    setReady(priority);
+  }, [src, priority]);
 
   return (
     <span className={`pb-photo ${className}`}>

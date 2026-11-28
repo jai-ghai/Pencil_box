@@ -164,20 +164,27 @@ function productAlt(p: StoreProduct): string {
   return p.imageGeneric ? `Illustration of ${name}` : name;
 }
 
-export function Storefront({ children }: { children?: ReactNode }) {
+export function Storefront({ children, initialCatalog = null }: { children?: ReactNode; initialCatalog?: StoreCatalog | null }) {
   return (
     <AccentScope accent="sun">
-      <StorefrontInner>{children}</StorefrontInner>
+      <StorefrontInner initialCatalog={initialCatalog}>{children}</StorefrontInner>
     </AccentScope>
   );
 }
 
-function StorefrontInner({ children }: { children?: ReactNode }) {
+function routeCategory(catalog: StoreCatalog | null, pathname: string, subSlug: string | null): { top: string | null; sub: string | null } {
+  const routeName = categoryMatchFromPath(pathname);
+  const top = routeName && catalog ? (catalog.categories.find((c) => !c.parentId && c.name_en === routeName)?.id ?? null) : null;
+  const sub = subSlug && top && catalog ? (catalog.categories.find((c) => c.slug === subSlug && c.parentId === top)?.id ?? null) : null;
+  return { top, sub };
+}
+
+function StorefrontInner({ children, initialCatalog = null }: { children?: ReactNode; initialCatalog?: StoreCatalog | null }) {
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
   const [lang, setLang] = useState<Lang>("en");
   const [requestOpen, setRequestOpen] = useState(false);
-  const [catalog, setCatalog] = useState<StoreCatalog | null>(null);
+  const [catalog, setCatalog] = useState<StoreCatalog | null>(initialCatalog);
   const [error, setError] = useState(false);
   const [q, setQ] = useState("");
   const pathname = usePathname();
@@ -185,9 +192,11 @@ function StorefrontInner({ children }: { children?: ReactNode }) {
   const searchParams = useSearchParams();
   const routeName = categoryMatchFromPath(pathname);
   const subSlug = searchParams.get("sub");
-  /* Category filter. A /c/<slug> URL sets it; subcategory picks on the home page set it too. */
-  const [topCat, setTopCat] = useState<string | null>(null);
-  const [subCat, setSubCat] = useState<string | null>(null);
+  /* Category filter. A /c/<slug> URL sets it; subcategory picks on the home page set it too.
+     Seed it when the catalogue is already known, so the first HTML is the real shelf. */
+  const seeded = routeCategory(initialCatalog, pathname, subSlug);
+  const [topCat, setTopCat] = useState<string | null>(seeded.top);
+  const [subCat, setSubCat] = useState<string | null>(seeded.sub);
   const routeKey = `${routeName ?? ""}:${subSlug ?? ""}:${catalog ? "y" : "n"}`;
   const [appliedRoute, setAppliedRoute] = useState(routeKey);
   const sort = (SORTS.some((s) => s.value === searchParams.get("sort")) ? searchParams.get("sort") : "popular") as SortKey;
