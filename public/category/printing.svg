@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#ffffff"/>
-  <rect x="58" y="40" width="84" height="36" rx="4" fill="#e2e8f0"/>
-  <rect x="46" y="72" width="108" height="58" rx="10" fill="#334155"/>
-  <rect x="64" y="118" width="72" height="40" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
-  <circle cx="128" cy="96" r="6" fill="#22c55e"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none"><title>printing</title><rect x="62" y="36" width="76" height="34" rx="4" fill="#f7f4ee" /><rect x="48" y="66" width="104" height="58" rx="12" fill="#153a7a" /><rect x="66" y="112" width="68" height="46" rx="3" fill="#ffffff" /><rect x="74" y="122" width="40" height="4" rx="2" fill="#c5d0e0" /><rect x="74" y="132" width="32" height="4" rx="2" fill="#c5d0e0" /><circle cx="132" cy="90" r="7" fill="#ecc233"/><rect x="58" y="76" width="20" height="10" rx="3" fill="#ffffff" opacity="0.45"/></svg>

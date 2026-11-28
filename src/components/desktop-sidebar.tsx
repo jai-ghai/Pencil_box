@@ -16,8 +16,10 @@ export async function DesktopSidebar() {
         {cards.map((card) => (
           <li key={card.slug}>
             <Link href={`/c/${card.slug}`} className="flex items-center gap-2 rounded-[8px] px-1.5 py-1.5 text-sm font-semibold text-[#0c1222] no-underline hover:bg-[#f0f3f8]">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#153a7a]/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={card.image ? (isCloudinary(card.image) ? cloudinarySquare(card.image, 64) : card.image) : `/category/${card.slug}.svg`} alt="" width={28} height={28} className="h-7 w-7 object-contain" />
+              <img src={card.image ? (isCloudinary(card.image) ? cloudinarySquare(card.image, 64) : card.image) : `/category/${card.slug}.svg`} alt="" width={22} height={22} className="h-[70%] w-[70%] object-contain" />
+              </span>
               {card.label}
             </Link>
           </li>

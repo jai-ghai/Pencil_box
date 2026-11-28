@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#ffffff"/>
-  <g transform="rotate(-38 100 100)">
-    <rect x="86" y="28" width="28" height="118" rx="3" fill="#f0c14b"/>
-    <rect x="86" y="28" width="28" height="18" fill="#f3a6b8"/>
-    <rect x="86" y="46" width="28" height="8" fill="#eceff3"/>
-    <polygon points="86,146 114,146 100,178" fill="#e7c4a0"/>
-    <polygon points="95,168 105,168 100,178" fill="#2c2c2c"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none"><title>pencil</title><g transform="rotate(-40 100 108)"><rect x="84" y="28" width="32" height="120" rx="6" fill="#ecc233" /><rect x="84" y="28" width="32" height="24" rx="6" fill="#e36b5a" /><path d="M84 148h32l-16 28z" fill="#f7f4ee"/><path d="M92 168h16l-8 12z" fill="#1c2433"/><rect x="90" y="60" width="8" height="50" rx="3" fill="#ffffff" opacity="0.45"/></g></svg>

@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#ffffff"/>
-  <g transform="rotate(-38 100 100)">
-    <rect x="90" y="24" width="20" height="118" rx="8" fill="#2f6fed"/>
-    <rect x="90" y="24" width="20" height="22" rx="8" fill="#1d4ed8"/>
-    <rect x="96" y="30" width="8" height="10" rx="2" fill="#dbe7ff"/>
-    <polygon points="90,134 110,134 100,168" fill="#1e3a8a"/>
-    <circle cx="100" cy="172" r="3" fill="#0f172a"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none"><title>pen</title><g transform="rotate(-40 100 108)"><rect x="88" y="24" width="24" height="124" rx="8" fill="#153a7a" /><rect x="88" y="24" width="24" height="28" rx="8" fill="#ecc233" /><path d="M88 148h24l-12 26z" fill="#0e2c5c"/><rect x="94" y="60" width="6" height="48" rx="3" fill="#ffffff" opacity="0.45"/></g></svg>

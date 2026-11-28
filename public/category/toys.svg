@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#ffffff"/>
-  <circle cx="70" cy="78" r="16" fill="#d6a07a"/>
-  <circle cx="130" cy="78" r="16" fill="#d6a07a"/>
-  <ellipse cx="100" cy="112" rx="46" ry="40" fill="#f59e0b"/>
-  <circle cx="84" cy="106" r="5" fill="#1f2937"/>
-  <circle cx="116" cy="106" r="5" fill="#1f2937"/>
-  <ellipse cx="100" cy="122" rx="8" ry="6" fill="#b45309"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none"><title>toys</title><circle cx="62" cy="62" r="16" fill="#ecc233"/><circle cx="138" cy="62" r="16" fill="#ecc233"/><ellipse cx="100" cy="108" rx="48" ry="42" fill="#153a7a"/><ellipse cx="100" cy="118" rx="22" ry="16" fill="#f6e7a0"/><circle cx="84" cy="102" r="5" fill="#1c2433"/><circle cx="116" cy="102" r="5" fill="#1c2433"/><path d="M92 118h16l-8 8z" fill="#e36b5a"/><rect x="58" y="124" width="18" height="28" rx="8" fill="#0e2c5c" /><rect x="124" y="124" width="18" height="28" rx="8" fill="#0e2c5c" /><ellipse cx="78" cy="156" rx="14" ry="10" fill="#ecc233"/><ellipse cx="122" cy="156" rx="14" ry="10" fill="#ecc233"/></svg>

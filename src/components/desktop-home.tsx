@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HOME_DRAWING } from "@/components/home-drawings";
 import { HeroFrame } from "@/components/desktop-hero";
-import { cloudinarySquare, isCloudinary } from "@/lib/images";
+import { CategoryTile, shelfArt } from "@/components/category-tile";
 import { homeShopCategories } from "@/lib/shop-category-data";
 import { shopCategories } from "@/lib/shop-category-store";
 import { HOME_H1, HOURS_LABEL, PHONE_TEL, REVIEW_URL } from "@/lib/shop";
@@ -83,9 +83,11 @@ export async function DesktopHome() {
         <ul className="mt-3 grid grid-cols-4 gap-3">
           {NEEDS.map((need) => (
             <li key={need.slug}>
-              <Link href={need.href} className="block rounded-[14px] border border-black/10 bg-white p-3 no-underline">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={HOME_DRAWING[need.slug]} alt="" width={120} height={120} className="mx-auto h-24 w-24 object-contain" />
+              <Link href={need.href} className="group block rounded-[14px] border border-black/10 bg-white p-3 no-underline transition duration-200 hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(21,58,122,0.12)]">
+                <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#153a7a]/10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={shelfArt(need.slug, "")} alt="" width={96} height={96} className="h-[78%] w-[78%] object-contain" />
+                </span>
                 <p className="mt-2 text-sm font-extrabold text-[#0c1222]">{need.title}</p>
                 <p className="mt-1 text-xs leading-snug text-[#5a6a82]">{need.text}</p>
               </Link>
@@ -102,13 +104,7 @@ export async function DesktopHome() {
         <ul className="grid grid-cols-4 gap-3 2xl:grid-cols-6">
           {cards.map((card) => (
             <li key={card.slug} data-home-card={card.label.toLowerCase()}>
-              <Link href={`/c/${card.slug}`} className="flex h-full flex-col overflow-hidden rounded-[14px] border border-black/10 bg-white no-underline">
-                <span className="block aspect-square bg-[#f7f8fb]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={card.image ? (isCloudinary(card.image) ? cloudinarySquare(card.image, 400) : card.image) : (HOME_DRAWING[card.slug] ?? `/category/${card.slug}.svg`)} alt="" width={240} height={240} className="h-full w-full object-contain" />
-                </span>
-                <span className="px-3 py-2 text-sm font-extrabold text-[#0c1222]">{card.label}</span>
-              </Link>
+              <CategoryTile href={`/c/${card.slug}`} label={card.label} slug={card.slug} image={card.image} subtitle={card.subtitle} />
             </li>
           ))}
         </ul>
