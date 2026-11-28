@@ -42,8 +42,7 @@ export default async function CollectionLayout({ children, params }: { children:
   const first = initialCatalog && collection ? sortProducts(groupSameProducts(productsInCollection(initialCatalog, collection.match)), "popular")[0] : undefined;
   const href = first?.image ? cloudinarySquare(first.image, 400) : undefined;
   const srcSet = first?.image ? cloudinarySrcSet(first.image) : undefined;
-  const fromCode = collectionBySlug(slug);
-  const collectionName = fromCode?.h1 || collection?.h1 || shelf?.h1 || collection?.nav || shelf?.nav || slug;
+  const collectionName = collection?.nav || shelf?.nav || slug;
   return (
     <div className="flex min-h-dvh flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))] xl:pb-0" style={{ background: "#f0f3f8" }}>
       {href && <link rel="preload" as="image" href={href} imageSrcSet={srcSet} imageSizes="(max-width: 640px) 45vw, 220px" fetchPriority="high" />}

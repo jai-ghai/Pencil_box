@@ -125,7 +125,7 @@ export const COLLECTIONS: ShopCollection[] = [
     title: "Notebooks & Registers in Tigri Extension | Pencil Box",
     h1: "Notebook and register shop in Tigri Extension",
     description: `School notebooks and registers near Sangam Vihar, Khanpur and Devli. ${place}`,
-    lede: "Copies, notebooks and registers for school, from one counter in Tigri Extension. Sangam Vihar, Khanpur aur Devli ke paas.",
+    lede: "School notebooks and registers. Sangam Vihar, Khanpur aur Devli ke paas — copies, registers, sab isi dukaan pe.",
   },
   {
     slug: "pens",
@@ -134,7 +134,7 @@ export const COLLECTIONS: ShopCollection[] = [
     title: "Pens and Pencils in Tigri Extension | Pencil Box",
     h1: "Pens and pencils in Tigri Extension",
     description: `Ball pens, gel pens, pencils, erasers and sharpeners for school. ${place}`,
-    lede: "Ball pens, gel pens, pencils, erasers and sharpeners. One pen or a class set, Tigri Extension mein.",
+    lede: "Ball pens, gel pens, pencils, erasers and sharpeners. DOMS, Nataraj, Apsara and more, Tigri Extension mein.",
   },
   {
     slug: "art",
@@ -143,7 +143,7 @@ export const COLLECTIONS: ShopCollection[] = [
     title: "Chart Paper & Art Supplies in Tigri Extension | Pencil Box",
     h1: "Chart paper and art supplies near Sangam Vihar",
     description: `Chart paper, colours and craft supplies in Tigri Extension, near Sangam Vihar. ${place}`,
-    lede: "Chart paper, colours and craft supplies for a school project. Ask at the counter in Tigri Extension.",
+    lede: "Chart paper, colours, crayons and craft supplies for school projects. One shop in Tigri Extension.",
   },
   {
     slug: "school",
@@ -152,7 +152,7 @@ export const COLLECTIONS: ShopCollection[] = [
     title: "School Stationery near Sangam Vihar | Pencil Box",
     h1: "School stationery in Tigri Extension",
     description: `Glue, markers, covers and the rest of the school list near Sangam Vihar and Khanpur. ${place}`,
-    lede: "The rest of the school list: glue, markers, covers and maps. B-92, Tigri Extension.",
+    lede: "Glue, markers, covers, maps and the rest of the school list. B-92, Tigri Extension.",
   },
   {
     slug: "gifts",
@@ -161,7 +161,7 @@ export const COLLECTIONS: ShopCollection[] = [
     title: "Birthday Return Gifts in Tigri Extension | Pencil Box",
     h1: "Gift shop near Sangam Vihar and Tigri",
     description: `Birthday return gifts and small party items near Sangam Vihar, Khanpur and Devli. ${place}`,
-    lede: "Birthday return gifts and small party pieces. Sangam Vihar, Khanpur aur Devli ke paas.",
+    lede: "Birthday return gifts, soft toys and party items. Sangam Vihar, Khanpur aur Devli ke paas.",
   },
   {
     slug: "printing",
@@ -170,7 +170,7 @@ export const COLLECTIONS: ShopCollection[] = [
     title: "Photocopy & Printout near Tigri Extension | Pencil Box",
     h1: "Photocopy and printout near Sangam Vihar",
     description: `Photocopy ₹${PRINT_RATES.photocopy}/page, B&W printout ₹${PRINT_RATES.blackAndWhite}, colour ₹${PRINT_RATES.colour}. Phone, WhatsApp or pen drive. ${place}`,
-    lede: `Photocopy ₹${PRINT_RATES.photocopy} a page, black and white print ₹${PRINT_RATES.blackAndWhite}, colour ₹${PRINT_RATES.colour}. Phone, WhatsApp ya pen drive. Roz khula, 7 AM–9:30 PM.`,
+    lede: `Photocopy ₹${PRINT_RATES.photocopy} a page, B&W printout ₹${PRINT_RATES.blackAndWhite}, colour printout ₹${PRINT_RATES.colour}. Phone, WhatsApp ya pen drive. Roz 7 AM–9:30 PM.`,
   },
 ];
 
