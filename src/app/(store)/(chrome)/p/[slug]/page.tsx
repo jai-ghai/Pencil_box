@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { WishButton } from "@/components/desktop-actions";
 import { ProductBuy } from "@/components/product-buy";
-import { ShopImage } from "@/components/shop-image";
+import { ProductGallery } from "@/components/product-gallery";
 import { cleanItemName, groupSameProducts } from "@/lib/browse";
 import { breadcrumbJsonLd, productJsonLd, productsInCollection } from "@/lib/product-json";
 import { cachedCatalog } from "@/lib/public-catalog";
@@ -43,10 +43,8 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
         <span aria-hidden> › </span> <span>{title}</span>
       </nav>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex aspect-square items-center justify-center rounded-[12px] border border-black/10 bg-white p-4">
-          {photos[0] ? (
-            <ShopImage src={photos[0]} alt={`${product.brand ? `${product.brand} ` : ""}${title}`} width={800} priority sizes="(max-width: 640px) 100vw, 480px" />
-          ) : <span className="text-sm text-[#5a6a82]">No photo yet</span>}
+        <div className="rounded-[12px] border border-black/10 bg-[#f3f5f8] p-4">
+          <ProductGallery photos={photos} alt={`${product.brand ? `${product.brand} ` : ""}${title}`} />
         </div>
         <div>
           {product.brand && <p className="text-sm font-semibold text-[#5a6a82]">{product.brand}</p>}
@@ -56,15 +54,6 @@ async function ProductRoute({ params }: { params: Promise<{ slug: string }> }) {
           <WishButton id={product.id} label={title} />
         </div>
       </div>
-      {photos.length > 1 && (
-        <ul className="mt-3 flex gap-2">
-          {photos.slice(1, 5).map((url) => (
-            <li key={url} className="h-16 w-16 overflow-hidden rounded-[8px] border bg-white">
-              <ShopImage src={url} alt={`${title} photo`} width={200} sizes="64px" />
-            </li>
-          ))}
-        </ul>
-      )}
       {related.length > 0 && (
         <section className="mt-6">
           <h2 className="text-lg font-extrabold">More in this category</h2>

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Alert, Badge, Button, Card, Checkbox, ConfigProvider, Drawer, Empty, Flex, Grid, Input, Modal, Result, Segmented, Select, Skeleton, Slider, Space, Tag, Typography, theme } from "antd";
-import { DownOutlined, MenuOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, SearchOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { DownOutlined, MenuOutlined, MinusOutlined, PictureOutlined, PlusOutlined, PrinterOutlined, SafetyCertificateOutlined, ShoppingCartOutlined, StopOutlined, TagsOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { HomeGrid } from "@/components/home-grid";
+import { SearchBar } from "@/components/search-bar";
 import { ShopMenu } from "@/components/shop-menu";
 import { ShopTabBar } from "@/components/shop-tabbar";
 import { Wordmark } from "@/components/wordmark";
@@ -470,7 +471,7 @@ function StorefrontInner({
                 <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => setSheet(true)} aria-label={`${t("cart")}: ${cartCount}`} style={{ paddingInline: screens.sm ? undefined : 8 }} />
               </Badge>
             </Flex>
-            <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => { setQ(e.target.value); window.dispatchEvent(new CustomEvent("pb-home-q", { detail: e.target.value })); }} placeholder={t("search")} aria-label={t("search")} />
+            <SearchBar tone="mobile" initial={q} onValue={(value) => { setQ(value); window.dispatchEvent(new CustomEvent("pb-home-q", { detail: value })); }} />
           </div>
         </header>
         <ShopMenu links={menuLinks} open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />
@@ -500,7 +501,7 @@ function StorefrontInner({
               <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => setSheet(true)} aria-label={`${t("cart")}: ${cartCount}`} style={{ paddingInline: screens.sm ? undefined : 8 }} />
             </Badge>
           </Flex>
-          <Input size="large" allowClear className="mt-2" prefix={<SearchOutlined />} value={q} onChange={(e) => { setQ(e.target.value); if (shell === "home") window.dispatchEvent(new CustomEvent("pb-home-q", { detail: e.target.value })); }} placeholder={t("search")} aria-label={t("search")} />
+          <SearchBar tone="mobile" initial={q} onValue={(value) => { setQ(value); if (shell === "home") window.dispatchEvent(new CustomEvent("pb-home-q", { detail: value })); }} />
         </div>
       </header>
       <ShopMenu links={menuLinks} open={menuOpen} onClose={() => setMenuOpen(false)} cartCount={cartCount} onCart={() => setSheet(true)} />

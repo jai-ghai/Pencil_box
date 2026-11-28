@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DesktopActions } from "@/components/desktop-actions";
+import { SearchBar } from "@/components/search-bar";
 import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/shop";
 
 /** White desktop shop header. Hidden on phones, where the navy bar stays. */
@@ -22,11 +23,7 @@ export function DesktopChrome() {
             <span className="mt-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-[#b8860b]">Stationery</span>
           </span>
         </Link>
-        <form action="/products" method="get" className="mx-auto flex h-12 min-w-0 max-w-3xl flex-1 overflow-hidden rounded-full border border-[#153a7a]/20 bg-white shadow-[0_1px_2px_rgba(21,58,122,0.06)]" role="search">
-          <label className="sr-only" htmlFor="desk-q">Search the shop</label>
-          <input id="desk-q" name="q" placeholder="Search for products (e.g. Pen, Diary, Pouch...)" className="min-w-0 flex-1 bg-transparent px-5 text-[15px] text-[#0c1222] outline-none" />
-          <button type="submit" className="m-1 rounded-full bg-[#ecc233] px-6 text-sm font-extrabold text-[#0a1628]">Search</button>
-        </form>
+        <SearchBar tone="desktop" />
         <DesktopActions />
       </div>
     </div>
