@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#ffffff"/>
-  <rect x="40" y="48" width="120" height="104" rx="10" fill="#dbeafe"/>
-  <rect x="40" y="48" width="120" height="104" rx="10" fill="none" stroke="#2563eb" stroke-width="6"/>
-  <polygon points="70,128 100,72 130,128" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linejoin="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none"><title>geometry</title><rect x="36" y="86" width="128" height="64" rx="8" fill="#153a7a" /><path d="M56 136l40-40 10 8-40 40z" fill="#ecc233"/><circle cx="128" cy="108" r="16" fill="#f7f4ee"/><circle cx="128" cy="108" r="6" fill="#0e2c5c"/></svg>

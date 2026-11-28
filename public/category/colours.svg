@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#ffffff"/>
-  <g transform="rotate(-8 100 110)">
-    <rect x="46" y="78" width="16" height="78" rx="6" fill="#ef4444"/>
-    <rect x="68" y="70" width="16" height="86" rx="6" fill="#f59e0b"/>
-    <rect x="90" y="64" width="16" height="92" rx="6" fill="#22c55e"/>
-    <rect x="112" y="70" width="16" height="86" rx="6" fill="#3b82f6"/>
-    <rect x="134" y="78" width="16" height="78" rx="6" fill="#a855f7"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none"><title>colours</title><circle cx="70" cy="110" r="22" fill="#e36b5a"/><circle cx="108" cy="86" r="22" fill="#ecc233"/><circle cx="132" cy="120" r="22" fill="#1f7a6b"/><circle cx="96" cy="136" r="18" fill="#153a7a"/><rect x="40" y="150" width="120" height="12" rx="6" fill="#0e2c5c" /></svg>

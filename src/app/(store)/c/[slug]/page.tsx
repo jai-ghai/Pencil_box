@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { FaqAccordion } from "@/components/faq-accordion";
-import { ShopImage } from "@/components/shop-image";
+import { CategoryTile } from "@/components/category-tile";
 import { groupSameProducts, sortProducts } from "@/lib/browse";
 import { breadcrumbJsonLd, itemListJsonLd, productsInCollection } from "@/lib/product-json";
 import { cachedCatalog } from "@/lib/public-catalog";
@@ -14,10 +14,6 @@ import { shopCategories, shopCategoryBySlug } from "@/lib/shop-category-store";
 
 function askLink(label: string): string {
   return `https://wa.me/${PHONE_TEL.replace(/\D/g, "")}?text=${encodeURIComponent(`Hello, do you have ${label}?`)}`;
-}
-
-function shelfArt(slug: string, image: string): string {
-  return image || `/category/${slug}.svg`;
 }
 
 export function generateStaticParams() {
@@ -66,10 +62,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
             <ul className="mt-3 grid grid-cols-3 gap-2">
               {kids.map((kid) => (
                 <li key={kid.slug}>
-                  <Link href={`/c/${kid.slug}`} className="block rounded-[10px] border border-black/10 bg-white p-2 no-underline">
-                    <ShopImage src={shelfArt(kid.slug, kid.image)} alt="" />
-                    <span className="mt-1 block text-left text-[11px] font-extrabold uppercase leading-tight text-[#0c1222]">{kid.label}</span>
-                  </Link>
+                  <CategoryTile href={`/c/${kid.slug}`} label={kid.label} slug={kid.slug} image={kid.image} subtitle={kid.subtitle} />
                 </li>
               ))}
             </ul>
@@ -109,10 +102,7 @@ async function CollectionPage({ params }: { params: Promise<{ slug: string }> })
           <ul className="mt-3 grid grid-cols-3 gap-2">
             {kids.map((kid) => (
               <li key={kid.slug}>
-                <Link href={`/c/${kid.slug}`} className="block rounded-[10px] border border-black/10 bg-white p-2 no-underline">
-                  <ShopImage src={shelfArt(kid.slug, kid.image)} alt="" />
-                  <span className="mt-1 block text-left text-[11px] font-extrabold uppercase leading-tight text-[#0c1222]">{kid.label}</span>
-                </Link>
+                <CategoryTile href={`/c/${kid.slug}`} label={kid.label} slug={kid.slug} image={kid.image} subtitle={kid.subtitle} />
               </li>
             ))}
           </ul>

@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <rect width="200" height="200" fill="#ffffff"/>
-  <rect x="46" y="84" width="108" height="72" rx="6" fill="#e11d48"/>
-  <rect x="40" y="68" width="120" height="24" rx="4" fill="#fb7185"/>
-  <rect x="92" y="68" width="16" height="88" fill="#fecdd3"/>
-  <path d="M100 68c-16-28-40-20-28-4 8 10 28 4 28 4s20 6 28-4c12-16-12-24-28 4z" fill="#be123c"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none"><title>gifts</title><rect x="44" y="92" width="112" height="68" rx="8" fill="#153a7a" /><rect x="36" y="74" width="128" height="26" rx="6" fill="#ecc233" /><rect x="92" y="74" width="16" height="86" rx="2" fill="#e36b5a" /><path d="M100 74c-18-30-46-18-30 0 8 8 30 0 30 0s18 10 30 0c14-18-14-30-30 0z" fill="#0e2c5c"/><rect x="52" y="100" width="22" height="10" rx="3" fill="#ffffff" opacity="0.45"/></svg>
