@@ -462,6 +462,12 @@ html[data-theme="dark"] .pb-faq-body { color: #9aabc4; }
   .pb-tabbar { display: none !important; }
 }
 
+/* Ant Design hides this root until its css-in-js tag is injected. The shop already
+   loads those styles from the extracted sheet, so the search bar must stay on screen. */
+.ant-app.flex {
+  display: flex !important;
+}
+
 /* Fixed shop tab bar. Content above it uses padding so nothing sits underneath. */
 .pb-tabbar {
   position: fixed;

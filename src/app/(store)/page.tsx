@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import "@/styles/antd-store.css";
 import { AntdRoot } from "@/components/antd-root";
 import { HomeCategoryGrid } from "@/components/home-category-grid";
 import { HomeGridFilter } from "@/components/home-grid-filter";
@@ -20,7 +21,7 @@ export default function HomePage() {
     <h1 className="pb-sr-only">{HOME_H1}<span lang="hi">. तिगरी एक्सटेंशन में स्टेशनरी की दुकान</span></h1>
     <div className="flex min-h-dvh flex-col pb-[calc(76px+env(safe-area-inset-bottom,0px))] xl:hidden" style={{ background: "#f0f3f8" }}>
       <Suspense fallback={<div aria-hidden className="shrink-0" style={{ height: HEADER_PX, background: "#153a7a" }} />}>
-        <AntdRoot accent="sun" fill={false}>
+        <AntdRoot accent="sun" inlineCss={false} fill={false}>
           <StorefrontWithMenu shell="home" />
         </AntdRoot>
       </Suspense>
