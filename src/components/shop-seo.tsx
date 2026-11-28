@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FaqAccordion } from "@/components/faq-accordion";
 import {
   ADDRESS_LINE,
   COLLECTIONS,
@@ -35,21 +36,7 @@ export function ShopHero({ title, hideTitle = false }: { title: string; hideTitl
 }
 
 export function ShopFaq() {
-  return (
-    <section aria-labelledby="shop-faq" className="mx-auto w-full max-w-6xl px-4 pt-8">
-      <h2 id="shop-faq" className="text-lg font-extrabold">
-        Common questions
-      </h2>
-      <dl className="mt-3 flex flex-col gap-4">
-        {faqItems().map((item) => (
-          <div key={item.q}>
-            <dt className="font-bold leading-snug">{item.q}</dt>
-            <dd className="pb-seo-muted mt-1 text-[15px] leading-relaxed">{item.a}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  );
+  return <FaqAccordion items={faqItems()} />;
 }
 
 export function ShopFooter() {
