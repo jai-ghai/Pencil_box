@@ -17,7 +17,7 @@ interface SalesRow { date: string; cash: number; upi: number; note: string; phot
 interface CostRow { id: string; date: string; kind: "purchase" | "expense"; amount: number; party: string; note: string }
 interface BillRow { date: string; cash: number; upi: number; bills: number }
 interface Data { range: { from: string; to: string }; sales: SalesRow[]; costs: CostRow[]; bills: BillRow[] }
-interface DayLine { date: string; sales: number | null; fromBills: number | null; buying: number; expenses: number }
+interface DayLine { date: string; sales: number | null; buying: number; expenses: number }
 
 const toPaise = (rupees: number | null) => Math.round((rupees ?? 0) * 100);
 const dayLabel = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short" });
@@ -77,7 +77,6 @@ export default function DailyBookPage() {
   }
   const reload = async () => setTick((n) => n + 1);
   const saved = data?.sales.find((s) => s.date === date);
-  const bill = data?.bills.find((b) => b.date === date);
   const dayCosts = (data?.costs ?? []).filter((c) => c.date === date);
   const parties = useMemo(() => [...new Set((data?.costs ?? []).map((c) => c.party).filter(Boolean))].map((value) => ({ value })), [data]);
 
@@ -97,12 +96,10 @@ export default function DailyBookPage() {
       .reverse()
       .map((d) => {
         const s = data.sales.find((x) => x.date === d);
-        const b = data.bills.find((x) => x.date === d);
         const c = data.costs.filter((x) => x.date === d);
         return {
           date: d,
           sales: s ? s.cash + s.upi : null,
-          fromBills: b ? b.cash + b.upi : null,
           buying: c.filter((x) => x.kind === "purchase").reduce((n, x) => n + x.amount, 0),
           expenses: c.filter((x) => x.kind === "expense").reduce((n, x) => n + x.amount, 0),
         };
@@ -128,14 +125,14 @@ export default function DailyBookPage() {
 
   const columns: TableColumnsType<DayLine> = [
     { title: "Day", dataIndex: "date", render: (d: string) => <Button type="link" style={{ padding: 0 }} onClick={() => pick(d)} aria-current={d === date ? "date" : undefined}>{dayLabel(d)}</Button> },
-    { title: "Sales", align: "right", render: (_: unknown, l) => (l.sales !== null ? inr(l.sales) : l.fromBills !== null ? <Typography.Text type="secondary">{inr(l.fromBills)} (bills)</Typography.Text> : "–") },
+    { title: "Sales", align: "right", render: (_: unknown, l) => (l.sales !== null ? inr(l.sales) : "–") },
     { title: "Bought stock", dataIndex: "buying", align: "right", render: (n: number) => (n ? inr(n) : "–") },
     { title: "Expenses", dataIndex: "expenses", align: "right", render: (n: number) => (n ? inr(n) : "–") },
     {
       title: "",
       key: "s",
       render: (_: unknown, l) =>
-        l.sales !== null ? <Tag color="success">Entered</Tag> : l.fromBills !== null ? <Tag color="processing">From bills</Tag> : l.date < today ? <Tag color="error">Missing</Tag> : <Tag>Today</Tag>,
+        l.sales !== null ? <Tag color="success">Entered</Tag> : l.date < today ? <Tag color="error">Missing</Tag> : <Tag>Today</Tag>,
     },
   ];
 
@@ -158,7 +155,6 @@ export default function DailyBookPage() {
             key={date}
             date={date}
             saved={saved}
-            bill={bill}
             parties={parties}
             onDone={reload}
           />
@@ -259,13 +255,11 @@ export default function DailyBookPage() {
 function DayForm({
   date,
   saved,
-  bill,
   parties,
   onDone,
 }: {
   date: string;
   saved?: SalesRow;
-  bill?: BillRow;
   parties: { value: string }[];
   onDone: () => Promise<void>;
 }) {
@@ -347,7 +341,7 @@ function DayForm({
   function removeSales() {
     modal.confirm({
       title: `Remove the sales total for ${dayLabel(date)}?`,
-      content: bill ? "The day will use its billing-screen total instead." : "The day will show as missing.",
+      content: "The day will show as missing. Bills on the billing screen are left as they are.",
       okText: "Remove",
       okButtonProps: { danger: true },
       onOk: async () => {
@@ -380,15 +374,6 @@ function DayForm({
           </Row>
           {(cash !== null || upi !== null) && (
             <Typography.Text type="secondary" className="mt-1 block">Total sales {inr(salesTotal)}</Typography.Text>
-          )}
-          {bill && !saved && (
-            <Alert
-              className="mt-2"
-              type="info"
-              showIcon
-              title={`Billing screen: ${bill.bills} bill${bill.bills === 1 ? "" : "s"} · ${inr(bill.cash + bill.upi)}`}
-              action={<Button size="small" onClick={() => { setCash(bill.cash / 100); setUpi(bill.upi / 100); }}>Use this</Button>}
-            />
           )}
         </div>
 
