@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
 import { connectDb } from "./db";
+import { ensureRegisterCovers } from "./register-covers";
 import { mergeSamePriceOnce } from "./same-price-merge";
 import { buildStoreCatalog, type StoreCatalog } from "./store";
 
@@ -17,6 +18,9 @@ export async function liveCatalog(): Promise<StoreCatalog | null> {
     await mergeSamePriceOnce().catch((error) => {
       console.error("Same-price merge skipped:", error instanceof Error ? error.message : "unknown");
     });
+    await ensureRegisterCovers().catch((error) => {
+      console.error("Register covers skipped:", error instanceof Error ? error.message : "unknown");
+    });
     return await buildStoreCatalog();
   } catch {
     return null;
@@ -33,6 +37,9 @@ export async function cachedCatalog(): Promise<StoreCatalog | null> {
     await connectDb();
     await mergeSamePriceOnce().catch((error) => {
       console.error("Same-price merge skipped:", error instanceof Error ? error.message : "unknown");
+    });
+    await ensureRegisterCovers().catch((error) => {
+      console.error("Register covers skipped:", error instanceof Error ? error.message : "unknown");
     });
     return await buildStoreCatalog();
   } catch {

@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
     agentUpgrade: "security",
     optimizePackageImports: ["antd", "@ant-design/icons"],
   },
+  outputFileTracingIncludes: {
+    "/*": ["src/lib/register-covers/*.jpg"],
+  },
   turbopack: {
     rules: {
       "*.css": {
